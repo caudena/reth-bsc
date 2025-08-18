@@ -16,7 +16,7 @@ pub mod bsc;
 pub mod bsc_chapel;
 pub mod bsc_rialto;
 pub mod parser;
-pub mod rialto;
+pub mod genesis_override;
 pub mod bootnode_override;
 mod local;
 
@@ -64,7 +64,7 @@ impl EthChainSpec for BscChainSpec {
 
     fn genesis_hash(&self) -> B256 {
         // Check if genesis hash override is active
-        if let Some(override_hash) = rialto::get_genesis_hash_override() {
+        if let Some(override_hash) = genesis_override::get_genesis_hash_override() {
             return override_hash;
         }
         
@@ -125,33 +125,16 @@ impl Hardforks for BscChainSpec {
     }
 
     fn fork_id(&self, head: &Head) -> ForkId {
-        // If we have a genesis hash override, use our custom head for fork ID calculation
-        if rialto::get_genesis_hash_override().is_some() {
-            let custom_head = self.head();
-            self.inner.fork_id(&custom_head)
-        } else {
-            self.inner.fork_id(head)
-        }
+        self.inner.fork_id(head)
     }
 
     fn latest_fork_id(&self) -> ForkId {
-        // If we have a genesis hash override, calculate latest fork ID with custom head
-        if rialto::get_genesis_hash_override().is_some() {
-            let custom_head = self.head();
-            self.inner.fork_id(&custom_head)
-        } else {
-            self.inner.latest_fork_id()
-        }
+        let head = self.head();
+        self.inner.fork_id(&head)
     }
 
     fn fork_filter(&self, head: Head) -> ForkFilter {
-        // If we have a genesis hash override, use our custom head for fork filter calculation
-        if rialto::get_genesis_hash_override().is_some() {
-            let custom_head = self.head();
-            self.inner.fork_filter(custom_head)
-        } else {
-            self.inner.fork_filter(head)
-        }
+        self.inner.fork_filter(head)
     }
 }
 
@@ -196,7 +179,7 @@ impl BscChainSpec {
         };
 
         // Override head hash if genesis hash override is set
-        if let Some(override_hash) = rialto::get_genesis_hash_override() {
+        if let Some(override_hash) = genesis_override::get_genesis_hash_override() {
             head.hash = override_hash;
         }
 
@@ -274,7 +257,7 @@ mod tests {
         let chain_spec = BscChainSpec::from(bsc_testnet());
         
         // Check if override is already set from other tests
-        let override_already_set = crate::chainspec::rialto::get_genesis_hash_override().is_some();
+        let override_already_set = crate::chainspec::genesis_override::get_genesis_hash_override().is_some();
         
         if !override_already_set {
             // Test original behavior without override first
@@ -283,7 +266,7 @@ mod tests {
             
             // Set genesis hash override
             let custom_genesis_hash = B256::from_str("0xb4844167d735617495363867c84affa9f4069bcdae48411ae3badbe1d227d3e5").unwrap();
-            crate::chainspec::rialto::set_genesis_hash_override(Some("0xb4844167d735617495363867c84affa9f4069bcdae48411ae3badbe1d227d3e5".to_string()))
+            crate::chainspec::genesis_override::set_genesis_hash_override(Some("0xb4844167d735617495363867c84affa9f4069bcdae48411ae3badbe1d227d3e5".to_string()))
                 .expect("Should set genesis hash override");
             
             // Test that all methods now use the override
@@ -308,11 +291,11 @@ mod tests {
             assert_eq!(overridden_fork_id.next, overridden_latest_fork_id.next, "fork_id() and latest_fork_id() should have same next");
             
             // Test validation function
-            assert!(crate::chainspec::rialto::validate_genesis_hash(custom_genesis_hash), "Custom genesis hash should validate");
-            assert!(!crate::chainspec::rialto::validate_genesis_hash(original_genesis_hash), "Original genesis hash should not validate with override set");
+            assert!(crate::chainspec::genesis_override::validate_genesis_hash(custom_genesis_hash), "Custom genesis hash should validate");
+            assert!(!crate::chainspec::genesis_override::validate_genesis_hash(original_genesis_hash), "Original genesis hash should not validate with override set");
         } else {
             // Override is already set from another test, just verify it's working
-            let current_override = crate::chainspec::rialto::get_genesis_hash_override().unwrap();
+            let current_override = crate::chainspec::genesis_override::get_genesis_hash_override().unwrap();
             
             let genesis_hash = chain_spec.genesis_hash();
             let head = chain_spec.head();
@@ -323,88 +306,19 @@ mod tests {
             assert_eq!(head.hash, current_override, "head().hash should match current override");
             assert_eq!(fork_id.hash, latest_fork_id.hash, "fork_id() and latest_fork_id() should have same hash");
             
-            println!("Genesis hash override test: Using existing override {:#x}", current_override);
         }
     }
 
     #[test]
-    fn test_genesis_hash_override_fork_id_reproduction() {
-        use alloy_primitives::B256;
-        use std::str::FromStr;
-        use crate::chainspec::parser::BscChainSpecParser;
-        use reth_cli::chainspec::ChainSpecParser;
+    fn test_fork_id_consistency() {
+        // Test that fork_id() and latest_fork_id() are consistent
+        let chain_spec = BscChainSpec::from(bsc_testnet());
+        let head = chain_spec.head();
+        let fork_id = chain_spec.fork_id(&head);
+        let latest_fork_id = chain_spec.latest_fork_id();
         
-        // Test reproducing the exact fork ID mismatch from the logs
-        // Your node: ForkHash("0b5b3c57"), next: 1757420505
-        // Remote peer: ForkHash("67a5f017"), next: 0
-        
-        let target_genesis_hash = B256::from_str("0xb4844167d735617495363867c84affa9f4069bcdae48411ae3badbe1d227d3e5").unwrap();
-        let expected_your_fork_hash = "0b5b3c57";
-        let expected_remote_fork_hash = "67a5f017";
-        let expected_next = 1757420505u64;
-        
-        // Set genesis hash override to match your node
-        crate::chainspec::rialto::set_genesis_hash_override(Some("0xb4844167d735617495363867c84affa9f4069bcdae48411ae3badbe1d227d3e5".to_string()))
-            .unwrap_or_else(|_| {}); // Ignore if already set
-        
-        // Load the custom genesis chain (chain ID 714 from your genesis.json)
-        let chain_spec_result = BscChainSpecParser::parse("/Users/user/development/node-deploy/.local/node1/genesis.json");
-        
-        if let Ok(custom_chain_spec) = chain_spec_result {
-            let head = custom_chain_spec.head();
-            let fork_id = custom_chain_spec.fork_id(&head);
-            let latest_fork_id = custom_chain_spec.latest_fork_id();
-            
-            println!("=== Fork ID Reproduction Test ===");
-            println!("Genesis hash: {:#x}", target_genesis_hash);
-            println!("Chain ID: {}", custom_chain_spec.chain().id());
-            println!("Head: {:?}", head);
-            println!("Calculated fork ID: {:?}", fork_id);
-            println!("Latest fork ID: {:?}", latest_fork_id);
-            println!("Expected your node's fork hash: {}", expected_your_fork_hash);
-            println!("Expected remote peer's fork hash: {}", expected_remote_fork_hash);
-            
-            // Check if we can reproduce your node's fork ID
-            let fork_hash_hex = format!("{:08x}", u32::from_be_bytes(fork_id.hash.0));
-            let latest_fork_hash_hex = format!("{:08x}", u32::from_be_bytes(latest_fork_id.hash.0));
-            
-            println!("Your fork hash (calculated): {}", fork_hash_hex);
-            println!("Latest fork hash (calculated): {}", latest_fork_hash_hex);
-            
-            // The next timestamp should match the Shanghai fork time from your genesis
-            println!("Expected next timestamp: {}", expected_next);
-            println!("Calculated next timestamp: {}", fork_id.next);
-            
-            // Test consistency
-            assert_eq!(fork_id.hash, latest_fork_id.hash, "fork_id and latest_fork_id should have same hash");
-            assert_eq!(fork_id.next, latest_fork_id.next, "fork_id and latest_fork_id should have same next");
-            
-            // Check if next timestamp matches expected Shanghai time
-            if fork_id.next == expected_next {
-                println!("✅ Next timestamp matches Shanghai fork time from genesis.json");
-            }
-            
-            // Check if we reproduced the expected fork hash
-            if fork_hash_hex == expected_your_fork_hash {
-                println!("✅ Successfully reproduced your node's fork hash: {}", expected_your_fork_hash);
-            } else {
-                println!("❌ Fork hash mismatch - calculated: {}, expected: {}", fork_hash_hex, expected_your_fork_hash);
-                println!("This suggests the fork ID calculation may depend on factors we haven't accounted for");
-            }
-            
-        } else {
-            println!("⚠️  Could not load custom genesis file - testing with default BSC testnet");
-            
-            // Fallback to testing with BSC testnet
-            let chain_spec = BscChainSpec::from(bsc_testnet());
-            let head = chain_spec.head();
-            let fork_id = chain_spec.fork_id(&head);
-            
-            println!("BSC Testnet fork ID: {:?}", fork_id);
-            println!("BSC Testnet head: {:?}", head);
-            
-            let fork_hash_hex = format!("{:08x}", u32::from_be_bytes(fork_id.hash.0));
-            println!("BSC Testnet fork hash: {}", fork_hash_hex);
-        }
+        // Test consistency
+        assert_eq!(fork_id.hash, latest_fork_id.hash, "fork_id and latest_fork_id should have same hash");
+        assert_eq!(fork_id.next, latest_fork_id.next, "fork_id and latest_fork_id should have same next");
     }
 }

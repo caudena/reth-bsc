@@ -245,9 +245,6 @@ impl BscNetworkBuilder {
         let mut network_config = ctx.build_network_config(network_builder);
         // Ensure our advertised fork ID matches the fork filter we validate against.
         network_config.status.forkid = network_config.fork_filter.current();
-        
-        // Debug: Log the fork ID we're advertising
-        info!(target: "bsc", "Advertising Fork ID: {:?}", network_config.status.forkid);
 
         Ok(network_config)
     }

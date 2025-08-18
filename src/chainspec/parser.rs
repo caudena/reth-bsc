@@ -143,10 +143,18 @@ fn add_hardforks_to_chainspec(
     if let Some(hertz_fix_block) = config.get("hertzfixBlock").and_then(|v| v.as_u64()) {
         chain_spec = chain_spec.with_fork(BscHardfork::HertzFix, ForkCondition::Block(hertz_fix_block));
     }
+
+    // Handle block-based forks from geth genesis format
+    if let Some(berlin_block) = config.get("berlinBlock").and_then(|v| v.as_u64()) {
+        chain_spec = chain_spec.with_fork(EthereumHardfork::Berlin, ForkCondition::Block(berlin_block));
+    }
+    
+    if let Some(london_block) = config.get("londonBlock").and_then(|v| v.as_u64()) {
+        chain_spec = chain_spec.with_fork(EthereumHardfork::London, ForkCondition::Block(london_block));
+    }
     
     // Handle timestamp-based forks
     if let Some(shanghai_time) = config.get("shanghaiTime").and_then(|v| v.as_u64()) {
-        println!("DEBUG: Parsed shanghaiTime = {}", shanghai_time);
         chain_spec = chain_spec.with_fork(EthereumHardfork::Shanghai, ForkCondition::Timestamp(shanghai_time));
     }
     
@@ -192,22 +200,11 @@ fn add_hardforks_to_chainspec(
     }
     
     if let Some(lorentz_time) = config.get("lorentzTime").and_then(|v| v.as_u64()) {
-        println!("DEBUG: Parsed lorentzTime = {}", lorentz_time);
         chain_spec = chain_spec.with_fork(BscHardfork::Lorentz, ForkCondition::Timestamp(lorentz_time));
     }
     
     if let Some(maxwell_time) = config.get("maxwellTime").and_then(|v| v.as_u64()) {
-        println!("DEBUG: Parsed maxwellTime = {}", maxwell_time);
         chain_spec = chain_spec.with_fork(BscHardfork::Maxwell, ForkCondition::Timestamp(maxwell_time));
-    }
-    
-    // Handle block-based forks from geth genesis format
-    if let Some(berlin_block) = config.get("berlinBlock").and_then(|v| v.as_u64()) {
-        chain_spec = chain_spec.with_fork(EthereumHardfork::Berlin, ForkCondition::Block(berlin_block));
-    }
-    
-    if let Some(london_block) = config.get("londonBlock").and_then(|v| v.as_u64()) {
-        chain_spec = chain_spec.with_fork(EthereumHardfork::London, ForkCondition::Block(london_block));
     }
     
     Ok(chain_spec)

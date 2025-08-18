@@ -2,7 +2,7 @@ use clap::{Args, Parser};
 use reth::{builder::NodeHandle, cli::Cli};
 use reth_bsc::node::consensus::BscConsensus;
 use reth_bsc::{
-    chainspec::{parser::BscChainSpecParser, rialto},
+    chainspec::{parser::BscChainSpecParser, genesis_override},
     node::{evm::config::BscEvmConfig, BscNode},
 };
 use std::sync::Arc;
@@ -55,7 +55,7 @@ fn main() -> eyre::Result<()> {
         |spec| (BscEvmConfig::new(spec.clone()), BscConsensus::new(spec)),
         async move |builder, args| {
             // Set genesis hash override if provided
-            if let Err(e) = rialto::set_genesis_hash_override(args.genesis_hash.clone()) {
+            if let Err(e) = genesis_override::set_genesis_hash_override(args.genesis_hash.clone()) {
                 tracing::error!("Failed to set genesis hash override: {}", e);
                 return Err(e);
             }

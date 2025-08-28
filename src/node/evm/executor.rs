@@ -67,8 +67,6 @@ where
     _ctx: EthBlockExecutionCtx<'a>,
     /// Utility to call system caller.
     system_caller: SystemCaller<Spec>,
-    /// state hook
-    hook: Option<Box<dyn OnStateHook>>,
 }
 
 impl<'a, DB, EVM, Spec, R: ReceiptBuilder> BscBlockExecutor<'a, EVM, Spec, R>
@@ -106,7 +104,6 @@ where
             system_contracts,
             _ctx,
             system_caller: SystemCaller::new(spec_clone),
-            hook: None,
         }
     }
 
@@ -212,9 +209,9 @@ where
 
         let ResultAndState { result, state } = result_and_state;
 
-        if let Some(hook) = &mut self.hook {
-            hook.on_state(StateChangeSource::Transaction(self.receipts.len()), &state);
-        }
+        let mut temp_state = state.clone();
+        temp_state.remove(&SYSTEM_ADDRESS);
+        self.system_caller.on_state(StateChangeSource::Transaction(self.receipts.len()), &temp_state);
 
         let tx = tx.clone();
         let gas_used = result.gas_used();
@@ -488,12 +485,9 @@ where
 
         f(&result);
 
-        // Call state hook if it exists, passing the evmstate
-        if let Some(hook) = &mut self.hook {
-            let mut temp_state = state.clone();
-            temp_state.remove(&SYSTEM_ADDRESS);
-            hook.on_state(StateChangeSource::Transaction(self.receipts.len()), &temp_state);
-        }
+        let mut temp_state = state.clone();
+        temp_state.remove(&SYSTEM_ADDRESS);
+        self.system_caller.on_state(StateChangeSource::Transaction(self.receipts.len()), &temp_state);
 
         let gas_used = result.gas_used();
         self.gas_used += gas_used;
@@ -570,7 +564,7 @@ where
     }
 
     fn set_state_hook(&mut self, _hook: Option<Box<dyn OnStateHook>>) {
-        self.hook = _hook;
+        self.system_caller.with_state_hook(_hook);
     }
 
     fn evm_mut(&mut self) -> &mut Self::Evm {

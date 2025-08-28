@@ -124,6 +124,7 @@ where
         payload: BscExecutionData,
     ) -> Result<SealedBlock<BscBlock>, PayloadError> {
         let block = payload.0;
+
         let expected_hash = block.header.hash_slow();
         let sealed_block = block.seal_slow();
 

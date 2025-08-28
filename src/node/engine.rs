@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::consensus::parlia::util::calculate_millisecond_timestamp;
 use crate::node::engine_api::validator::{BscEngineValidator, BscExecutionData};
 use crate::{
@@ -11,6 +9,7 @@ use crate::{
     },
     BscBlock, BscPrimitives,
 };
+use alloy_consensus::{BlockHeader, Transaction};
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::{Address, Bytes, U256};
 use k256::ecdsa::SigningKey;
@@ -25,6 +24,8 @@ use reth_evm::ConfigureEvm;
 use reth_payload_primitives::BuiltPayload;
 use reth_primitives::{SealedBlock, TransactionSigned};
 use reth_provider::{BlockNumReader, HeaderProvider};
+use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::{broadcast, mpsc};
 use tokio::time::interval;
 use tracing::{debug, error, info, warn};
@@ -378,7 +379,8 @@ where
         if let Some(sender) = get_block_import_sender() {
             // Wrap into IncomingBlock tuple (BlockMsg, PeerId)
             let peer_id = PeerId::default(); // `None` for self-originated blocks
-            let incoming: crate::node::network::block_import::service::IncomingBlock = (msg, peer_id);
+            let incoming: crate::node::network::block_import::service::IncomingBlock =
+                (msg, peer_id);
             if sender.send(incoming).is_err() {
                 warn!("Failed to send mined block to import service: channel closed");
             }
@@ -393,17 +395,16 @@ where
 impl<Node, Pool, Evm> PayloadServiceBuilder<Node, Pool, Evm> for BscPayloadServiceBuilder
 where
     Node: FullNodeTypes<Types = BscNode>,
-    Pool: TransactionPool,
+    Pool: TransactionPool + Clone + 'static,
     Evm: ConfigureEvm,
 {
     async fn spawn_payload_builder_service(
         self,
         ctx: &BuilderContext<Node>,
-        _pool: Pool,
+        pool: Pool,
         _evm_config: Evm,
     ) -> eyre::Result<PayloadBuilderHandle<BscPayloadTypes>> {
         let (tx, mut rx) = mpsc::unbounded_channel();
-
         // Load mining configuration from environment, allow override via CLI if set globally
         let mining_config =
             if let Some(cfg) = crate::node::mining_config::get_global_mining_config() {
@@ -473,11 +474,10 @@ where
                 match message {
                     PayloadServiceCommand::Subscribe(tx) => {
                         let (events_tx, events_rx) = broadcast::channel(100);
-                        // Retain senders to make sure that channels are not getting closed
                         subscriptions.push(events_tx);
                         let _ = tx.send(events_rx);
                     }
-                    message => warn!(?message, "Noop payload service received a message"),
+                    message => debug!(?message, "BSC payload service received engine message"),
                 }
             }
         });
@@ -486,17 +486,9 @@ where
     }
 }
 
-// impl From<EthBuiltPayload> for BscBuiltPayload {
-//     fn from(value: EthBuiltPayload) -> Self {
-//         let EthBuiltPayload { id, block, fees, sidecars, requests } = value;
-//         BscBuiltPayload {
-//             id,
-//             block: block.into(),
-//             fees,
-//             requests,
-//         }
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    // Tests for miner logic
 
     /// Simple test to verify the head block fetching logic works
     #[tokio::test]

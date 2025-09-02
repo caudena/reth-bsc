@@ -118,6 +118,7 @@ libc = "0.2"
 [features]
 default = ["jemalloc"]
 jemalloc = ["dep:tikv-jemallocator"]
+jemalloc-prof = ["tikv-jemallocator?/profiling"] 
 dev = ["reth-cli-commands/arbitrary", "reth/dev", "revm/dev"]
 
 asm-keccak = [
@@ -162,6 +163,11 @@ debug = "none"
 strip = "symbols"
 panic = "unwind"
 codegen-units = 16
+
+[profile.profiling]
+inherits = "release"
+debug = 2
+strip = "none"
 
 [profile.maxperf]
 inherits = "release"

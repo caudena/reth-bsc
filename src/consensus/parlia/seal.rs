@@ -3,6 +3,7 @@ use super::{
     vote_pool::fetch_vote_by_block_hash,
     Snapshot, SnapshotProvider, VoteAddress, VoteAttestation, VoteData, VoteSignature,
 };
+use crate::chainspec::BscChainSpec;
 use crate::consensus::parlia::util::encode_header_with_chain_id;
 use crate::{hardforks::BscHardforks, BscBlock};
 use alloy_consensus::{BlockHeader, Header};
@@ -19,24 +20,29 @@ use reth::consensus::ConsensusError;
 use reth_chainspec::EthChainSpec;
 use reth_primitives::SealedBlock;
 use reth_primitives_traits::{Block, SealedHeader};
+use std::fmt;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub struct SealBlock<ChainSpec> {
+#[derive(Clone)]
+pub struct SealBlock {
     snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
-    chain_spec: Arc<ChainSpec>,
+    chain_spec: Arc<BscChainSpec>,
 
     signing_key: SigningKey,
 }
 
-impl<ChainSpec> SealBlock<ChainSpec>
-where
-    ChainSpec: EthChainSpec + BscHardforks,
-{
+impl fmt::Debug for SealBlock {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("to seal block").finish()
+    }
+}
+
+impl SealBlock {
     #[allow(dead_code)]
     pub(crate) fn new(
         snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
-        chain_spec: Arc<ChainSpec>,
+        chain_spec: Arc<BscChainSpec>,
         signing_key: SigningKey,
     ) -> Self {
         Self { snapshot_provider, chain_spec, signing_key }

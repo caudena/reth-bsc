@@ -1,4 +1,5 @@
 use super::payload::BscPayloadTypes;
+use crate::consensus::parlia::seal::SealBlock;
 use crate::{chainspec::BscChainSpec, hardforks::BscHardforks, BscBlock, BscPrimitives};
 use alloy_consensus::BlockHeader;
 use alloy_eips::eip4895::Withdrawal;
@@ -12,13 +13,14 @@ use reth::{
     },
     consensus::ConsensusError,
 };
+use reth_chainspec::EthChainSpec;
 use reth_engine_primitives::{ExecutionPayload, PayloadValidator};
 use reth_payload_primitives::NewPayloadError;
 use reth_primitives::{RecoveredBlock, SealedBlock};
+use reth_primitives_traits::Block;
 use reth_trie_common::HashedPostState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use reth_primitives_traits::Block;
 
 #[derive(Debug, Default, Clone)]
 #[non_exhaustive]
@@ -33,7 +35,7 @@ where
     type Validator = BscEngineValidator;
 
     async fn build(self, ctx: &AddOnsContext<'_, Node>) -> eyre::Result<Self::Validator> {
-        Ok(BscEngineValidator::new(Arc::new(ctx.config.chain.clone().as_ref().clone())))
+        Ok(BscEngineValidator::new(Arc::new(ctx.config.chain.clone().as_ref().clone()), None))
     }
 }
 
@@ -48,8 +50,8 @@ pub struct BscEngineValidator {
 
 impl BscEngineValidator {
     /// Instantiates a new validator.
-    pub fn new(chain_spec: Arc<BscChainSpec>) -> Self {
-        Self { inner: BscExecutionPayloadValidator { inner: chain_spec } }
+    pub fn new(chain_spec: Arc<BscChainSpec>, to_seal: Option<SealBlock>) -> Self {
+        Self { inner: BscExecutionPayloadValidator { inner: chain_spec, to_seal } }
     }
 }
 
@@ -113,11 +115,12 @@ pub struct BscExecutionPayloadValidator<ChainSpec> {
     /// Chain spec to validate against.
     #[allow(unused)]
     inner: Arc<ChainSpec>,
+    to_seal: Option<SealBlock>,
 }
 
 impl<ChainSpec> BscExecutionPayloadValidator<ChainSpec>
 where
-    ChainSpec: BscHardforks,
+    ChainSpec: EthChainSpec + BscHardforks,
 {
     pub fn ensure_well_formed_payload(
         &self,
@@ -126,14 +129,25 @@ where
         let block = payload.0;
 
         let expected_hash = block.header.hash_slow();
-        let sealed_block = block.seal_slow();
+        let sealed_block;
+        match &self.to_seal {
+            Some(to_seal) => {
+                // `seal` takes ownership; clone to avoid moving out of `&SealBlock`
+                let to_seal_owned = to_seal.clone();
+                sealed_block =
+                    to_seal_owned.seal(block).map_err(|_| PayloadError::InvalidVersionedHashes)?;
+            }
+            None => {
+                sealed_block = block.seal_slow();
+            }
+        }
 
         // Ensure the hash included in the payload matches the block hash
         if expected_hash != sealed_block.hash() {
             return Err(PayloadError::BlockHash {
                 execution: sealed_block.hash(),
                 consensus: expected_hash,
-            })?
+            })?;
         }
 
         Ok(sealed_block)

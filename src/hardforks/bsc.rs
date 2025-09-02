@@ -196,6 +196,13 @@ impl BscHardfork {
             (Self::Bohr.boxed(), ForkCondition::Timestamp(1722444422)),
         ])
     }
+
+    pub fn bsc_local() -> ChainHardforks {
+        ChainHardforks::new(vec![
+            (EthereumHardfork::Frontier.boxed(), ForkCondition::Block(0)),
+            (Self::Bohr.boxed(), ForkCondition::Block(0)),
+        ])
+    }
 }
 
 /// Match helper method since it's not possible to match on `dyn Hardfork`

@@ -15,6 +15,7 @@ use std::{fmt::Display, sync::Arc};
 pub mod bsc;
 pub mod bsc_chapel;
 pub mod parser;
+mod local;
 
 pub use bsc_chapel::bsc_testnet;
 
@@ -149,7 +150,7 @@ impl BscChainSpec {
         match self.inner.chain().try_into().ok().unwrap_or(NamedChain::BinanceSmartChain) {
             NamedChain::BinanceSmartChain => bsc::head(),
             NamedChain::BinanceSmartChainTestnet => bsc_chapel::head(),
-            _ => bsc::head(),
+            _ => local::head(),
         }
     }
 }

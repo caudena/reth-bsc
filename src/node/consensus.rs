@@ -1,18 +1,24 @@
-use crate::{hardforks::BscHardforks, node::BscNode, BscBlock, BscBlockBody, BscPrimitives};
-use alloy_consensus::Header;
-use alloy_primitives::B256;
+use crate::{
+    hardforks::BscHardforks, 
+    node::BscNode, 
+    BscBlock, BscBlockBody, BscPrimitives,
+    consensus::parlia::{provider::EnhancedDbSnapshotProvider, Parlia, util::calculate_millisecond_timestamp},
+};
+use alloy_consensus::{Header, TxReceipt};
+use alloy_primitives::{B256, Bytes};
+use alloy_eips::Encodable2718;
 use reth::{
     api::FullNodeTypes,
-    beacon_consensus::EthBeaconConsensus,
     builder::{components::ConsensusBuilder, BuilderContext},
-    consensus::{Consensus, ConsensusError, FullConsensus, HeaderValidator},
-    consensus_common::validation::{
-        validate_against_parent_4844, validate_against_parent_hash_number,
-    },
+    consensus::{ConsensusError, FullConsensus, Consensus, HeaderValidator},
+    beacon_consensus::EthBeaconConsensus,
+    consensus_common::validation::{validate_against_parent_hash_number, validate_against_parent_4844},
+    primitives::{SealedHeader, SealedBlock, RecoveredBlock},
+    providers::BlockExecutionResult,
 };
 use reth_chainspec::EthChainSpec;
-use reth_primitives::{Receipt, RecoveredBlock, SealedBlock, SealedHeader};
-use reth_provider::BlockExecutionResult;
+use reth_primitives::{gas_spent_by_transactions, GotExpected};
+use reth_ethereum_primitives::Receipt;
 use std::sync::Arc;
 
 /// A basic Bsc consensus builder.
@@ -26,7 +32,20 @@ where
 {
     type Consensus = Arc<dyn FullConsensus<BscPrimitives, Error = ConsensusError>>;
 
+    /// return a parlia consensus instance, automatically called by the ComponentsBuilder framework.
     async fn build_consensus(self, ctx: &BuilderContext<Node>) -> eyre::Result<Self::Consensus> {
+        let snapshot_provider = create_snapshot_provider(ctx)
+            .unwrap_or_else(|e| {
+                panic!("Failed to initialize snapshot provider, due to {e}");
+            });
+        
+        crate::shared::set_snapshot_provider(
+            snapshot_provider as Arc<dyn crate::consensus::parlia::SnapshotProvider + Send + Sync>,
+        ).unwrap_or_else(|_| panic!("Failed to set global snapshot provider"));
+
+        crate::shared::set_header_provider(Arc::new(ctx.provider().clone()))
+            .unwrap_or_else(|e| panic!("Failed to set global header provider: {e}"));
+
         Ok(Arc::new(BscConsensus::new(ctx.chain_spec())))
     }
 }
@@ -36,22 +55,26 @@ where
 /// Provides basic checks as outlined in the execution specs.
 #[derive(Debug, Clone)]
 pub struct BscConsensus<ChainSpec> {
-    inner: EthBeaconConsensus<ChainSpec>,
+    base: EthBeaconConsensus<ChainSpec>,
+    parlia: Arc<Parlia<ChainSpec>>,
     chain_spec: Arc<ChainSpec>,
 }
 
-impl<ChainSpec: EthChainSpec + BscHardforks> BscConsensus<ChainSpec> {
-    /// Create a new instance of [`BscConsensus`]
+impl<ChainSpec: EthChainSpec + BscHardforks + 'static> BscConsensus<ChainSpec> {
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
-        Self { inner: EthBeaconConsensus::new(chain_spec.clone()), chain_spec }
+        Self { base: EthBeaconConsensus::new(chain_spec.clone()), parlia: Arc::new(Parlia::new(chain_spec.clone(), 200)), chain_spec }
     }
 }
 
-impl<ChainSpec: EthChainSpec + BscHardforks> HeaderValidator for BscConsensus<ChainSpec> {
-    fn validate_header(&self, _header: &SealedHeader) -> Result<(), ConsensusError> {
-        // TODO: doesn't work because of extradata check
-        // self.inner.validate_header(header)
-
+/// header stage validation.
+impl<ChainSpec: EthChainSpec + BscHardforks + 'static> HeaderValidator<Header> 
+    for BscConsensus<ChainSpec> {
+    fn validate_header(&self, header: &SealedHeader) -> Result<(), ConsensusError> {
+        // tracing::debug!("Validating header, block_number: {:?}", header.number);
+        if let Err(err) = self.parlia.validate_header(header) {
+            tracing::warn!("Failed to validate_header, block_number: {}, err: {:?}", header.number, err);
+            return Err(err);
+        }
         Ok(())
     }
 
@@ -60,11 +83,16 @@ impl<ChainSpec: EthChainSpec + BscHardforks> HeaderValidator for BscConsensus<Ch
         header: &SealedHeader,
         parent: &SealedHeader,
     ) -> Result<(), ConsensusError> {
-        validate_against_parent_hash_number(header.header(), parent)?;
+        // tracing::debug!("Validating header against parent, block_number: {:?}", header.number);
+        if let Err(err) = validate_against_parent_hash_number(header.header(), parent) {
+            tracing::warn!("Failed to validate_against_parent_hash_number, block_number: {}, err: {:?}", header.number, err);
+            return Err(err)
+        }
 
         let header_ts = calculate_millisecond_timestamp(header.header());
         let parent_ts = calculate_millisecond_timestamp(parent.header());
         if header_ts <= parent_ts {
+            tracing::warn!("Failed to check timestamp, block_number: {}", header.number);
             return Err(ConsensusError::TimestampIsInPast {
                 parent_timestamp: parent_ts,
                 timestamp: header_ts,
@@ -72,124 +100,173 @@ impl<ChainSpec: EthChainSpec + BscHardforks> HeaderValidator for BscConsensus<Ch
         }
 
         // ensure that the blob gas fields for this block
-        if let Some(blob_params) = self.chain_spec.blob_params_at_timestamp(header.timestamp) {
-            validate_against_parent_4844(header.header(), parent.header(), blob_params)?;
+        if self.chain_spec.is_london_active_at_block(header.header().number) && BscHardforks::is_cancun_active_at_timestamp(&*self.chain_spec, header.header().number, header.header().timestamp) {
+            if let Some(blob_params) = self.chain_spec.blob_params_at_timestamp(header.timestamp) {
+                if let Err(err) = validate_against_parent_4844(header.header(), parent.header(), blob_params) {
+                    tracing::warn!("Failed to validate_against_parent_4844, block_number: {}, err: {:?}", header.number, err);
+                    return Err(err)
+                }
+            }
         }
 
         Ok(())
     }
 }
 
-impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks> Consensus<BscBlock>
+impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> Consensus<BscBlock>
     for BscConsensus<ChainSpec>
 {
     type Error = ConsensusError;
 
+    /// live-sync validation.
     fn validate_body_against_header(
         &self,
         body: &BscBlockBody,
         header: &SealedHeader,
     ) -> Result<(), ConsensusError> {
-        Consensus::<BscBlock>::validate_body_against_header(&self.inner, body, header)
+        // tracing::debug!("Validating body against header, block_number: {:?}", header.number);
+        Consensus::<BscBlock>::validate_body_against_header(&self.base, body, header)
     }
 
+    /// body stage validation.
     fn validate_block_pre_execution(
         &self,
-        _block: &SealedBlock<BscBlock>,
+        block: &SealedBlock<BscBlock>,
     ) -> Result<(), ConsensusError> {
-        // Check ommers hash
-        // let ommers_hash = block.body().calculate_ommers_root();
-        // if Some(block.ommers_hash()) != ommers_hash {
-        //     return Err(ConsensusError::BodyOmmersHashDiff(
-        //         GotExpected {
-        //             got: ommers_hash.unwrap_or(EMPTY_OMMER_ROOT_HASH),
-        //             expected: block.ommers_hash(),
-        //         }
-        //         .into(),
-        //     ))
-        // }
-
-        // // Check transaction root
-        // if let Err(error) = block.ensure_transaction_root_valid() {
-        //     return Err(ConsensusError::BodyTransactionRootDiff(error.into()))
-        // }
-
-        // if self.chain_spec.is_cancun_active_at_timestamp(block.timestamp()) {
-        //     validate_cancun_gas(block)?;
-        // } else {
-        //     return Ok(())
-        // }
-
+        // tracing::debug!("Validating block pre-execution, block_number: {:?}", block.header().number);
+        self.parlia.validate_block_pre_execution(block)?;
         Ok(())
     }
 }
 
-impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks> FullConsensus<BscPrimitives>
+impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> FullConsensus<BscPrimitives>
     for BscConsensus<ChainSpec>
 {
+    /// execution stage validation.
     fn validate_block_post_execution(
         &self,
         block: &RecoveredBlock<BscBlock>,
         result: &BlockExecutionResult<Receipt>,
     ) -> Result<(), ConsensusError> {
-        FullConsensus::<BscPrimitives>::validate_block_post_execution(&self.inner, block, result)
-    }
-}
+        let receipts = &result.receipts;
+        let requests = &result.requests;
+        let chain_spec = &self.chain_spec;
 
-/// Calculate the millisecond timestamp of a block header.
-/// Refer to https://github.com/bnb-chain/BEPs/blob/master/BEPs/BEP-520.md.
-pub fn calculate_millisecond_timestamp<H: alloy_consensus::BlockHeader>(header: &H) -> u64 {
-    let seconds = header.timestamp();
-    let mix_digest = header.mix_hash().unwrap_or(B256::ZERO);
-
-    let milliseconds = if mix_digest != B256::ZERO {
-        let bytes = mix_digest.as_slice();
-        // Convert last 8 bytes to u64 (big-endian), equivalent to Go's
-        // uint256.SetBytes32().Uint64()
-        let mut result = 0u64;
-        for &byte in bytes.iter().skip(24).take(8) {
-            result = (result << 8) | u64::from(byte);
+        // Check if gas used matches the value set in header.
+        let cumulative_gas_used =
+            receipts.last().map(|receipt| receipt.cumulative_gas_used).unwrap_or(0);
+        if block.header().gas_used != cumulative_gas_used {
+            return Err(ConsensusError::BlockGasUsed {
+                gas: GotExpected { got: cumulative_gas_used, expected: block.header().gas_used },
+                gas_spent_by_tx: gas_spent_by_transactions(receipts),
+            })
         }
-        result
-    } else {
-        0
-    };
 
-    seconds * 1000 + milliseconds
+        // Before Byzantium, receipts contained state root that would mean that expensive
+        // operation as hashing that is required for state root got calculated in every
+        // transaction This was replaced with is_success flag.
+        // See more about EIP here: https://eips.ethereum.org/EIPS/eip-658
+        if chain_spec.is_byzantium_active_at_block(block.header().number) {
+            if let Err(error) = verify_receipts(block.header().receipts_root, block.header().logs_bloom, receipts)
+            {
+                let receipts = receipts
+                    .iter()
+                    .map(|r| Bytes::from(r.with_bloom_ref().encoded_2718()))
+                    .collect::<Vec<_>>();
+                tracing::debug!(%error, ?receipts, "receipts verification failed");
+                return Err(error)
+            }
+        }
+
+        // Validate that the header requests hash matches the calculated requests hash
+        if chain_spec.is_london_active_at_block(block.header().number) && chain_spec.is_prague_active_at_timestamp(block.header().timestamp) {
+            let Some(header_requests_hash) = block.header().requests_hash else {
+                return Err(ConsensusError::RequestsHashMissing)
+            };
+            let requests_hash = requests.requests_hash();
+            if requests_hash != header_requests_hash {
+                return Err(ConsensusError::BodyRequestsHashDiff(
+                    GotExpected::new(requests_hash, header_requests_hash).into(),
+                ))
+            }
+        }
+
+        Ok(())
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use alloy_consensus::Header;
-    use alloy_primitives::B256;
+/// Calculate the receipts root, and compare it against the expected receipts root and logs bloom.
+/// This is a direct copy of reth's implementation from:
+/// https://github.com/paradigmxyz/reth/blob/616e492c79bb4143071ac6bf0831a249a504359f/crates/ethereum/consensus/src/validation.rs#L71
+fn verify_receipts<R: reth_primitives_traits::Receipt>(
+    expected_receipts_root: B256,
+    expected_logs_bloom: alloy_primitives::Bloom,
+    receipts: &[R],
+) -> Result<(), reth::consensus::ConsensusError> {
+    // Calculate receipts root.
+    let receipts_with_bloom = receipts.iter().map(TxReceipt::with_bloom_ref).collect::<Vec<_>>();
+    let receipts_root = alloy_consensus::proofs::calculate_receipt_root(&receipts_with_bloom);
 
-    #[test]
-    fn test_calculate_millisecond_timestamp_without_mix_hash() {
-        // Create a header with current timestamp and zero mix_hash
-        let timestamp =
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    // Calculate header logs bloom.
+    let logs_bloom = receipts_with_bloom.iter().fold(alloy_primitives::Bloom::ZERO, |bloom, r| bloom | r.bloom_ref());
 
-        let header = Header { timestamp, mix_hash: B256::ZERO, ..Default::default() };
+    compare_receipts_root_and_logs_bloom(
+        receipts_root,
+        logs_bloom,
+        expected_receipts_root,
+        expected_logs_bloom,
+    )?;
 
-        let result = calculate_millisecond_timestamp(&header);
-        assert_eq!(result, timestamp * 1000);
+    Ok(())
+}
+
+/// Compare the calculated receipts root with the expected receipts root, also compare
+/// the calculated logs bloom with the expected logs bloom.
+/// This is a direct copy of reth's implementation.
+fn compare_receipts_root_and_logs_bloom(
+    calculated_receipts_root: B256,
+    calculated_logs_bloom: alloy_primitives::Bloom,
+    expected_receipts_root: B256,
+    expected_logs_bloom: alloy_primitives::Bloom,
+) -> Result<(), reth::consensus::ConsensusError> {
+    if calculated_receipts_root != expected_receipts_root {
+        return Err(reth::consensus::ConsensusError::BodyReceiptRootDiff(
+            GotExpected { got: calculated_receipts_root, expected: expected_receipts_root }.into(),
+        ))
     }
 
-    #[test]
-    fn test_calculate_millisecond_timestamp_with_milliseconds() {
-        // Create a header with current timestamp and mix_hash containing milliseconds
-        let timestamp =
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-
-        let milliseconds = 750u64;
-        let mut mix_hash_bytes = [0u8; 32];
-        mix_hash_bytes[24..32].copy_from_slice(&milliseconds.to_be_bytes());
-        let mix_hash = B256::new(mix_hash_bytes);
-
-        let header = Header { timestamp, mix_hash, ..Default::default() };
-
-        let result = calculate_millisecond_timestamp(&header);
-        assert_eq!(result, timestamp * 1000 + milliseconds);
+    if calculated_logs_bloom != expected_logs_bloom {
+        return Err(reth::consensus::ConsensusError::BodyBloomLogDiff(
+            GotExpected { got: calculated_logs_bloom, expected: expected_logs_bloom }.into(),
+        ))
     }
+
+    Ok(())
+}
+
+fn create_snapshot_provider<Node>(
+    ctx: &BuilderContext<Node>,
+) -> eyre::Result<Arc<EnhancedDbSnapshotProvider<Arc<reth_db::DatabaseEnv>>>>
+where
+    Node: FullNodeTypes<Types = BscNode>,
+{
+
+    let datadir = ctx.config().datadir.clone();
+    let main_dir = datadir.resolve_datadir(ctx.chain_spec().chain());
+    let db_path = main_dir.data_dir().join("parlia_snapshots");
+    use reth_db::{init_db, mdbx::DatabaseArguments};
+    let snapshot_db = Arc::new(init_db(
+        &db_path,
+        DatabaseArguments::new(Default::default())
+    ).map_err(|e| eyre::eyre!("Failed to initialize snapshot database: {}", e))?);
+    tracing::info!("Succeed to create a separate database instance for persistent snapshots");
+
+    let snapshot_provider = Arc::new(EnhancedDbSnapshotProvider::new(
+        snapshot_db,
+        2048, // Production LRU cache size
+        ctx.chain_spec().clone(),
+    ));
+    tracing::info!("Succeed to create EnhancedDbSnapshotProvider with backward walking capability");
+
+    Ok(snapshot_provider)
 }

@@ -1,4 +1,4 @@
-use super::{executor::BscBlockExecutor, factory::BscEvmFactory};
+use super::{assembler::BscBlockAssembler, executor::BscBlockExecutor, factory::BscEvmFactory};
 use crate::{
     chainspec::BscChainSpec,
     evm::transaction::BscTxEnv,
@@ -18,7 +18,7 @@ use reth_evm::{
     ConfigureEngineEvm, ConfigureEvm, EvmEnv, EvmFactory, ExecutableTxIterator, ExecutionCtxFor,
     FromRecoveredTx, FromTxWithEncoded, IntoTxEnv, NextBlockEnvAttributes,
 };
-use reth_evm_ethereum::{EthBlockAssembler, RethReceiptBuilder};
+use reth_evm_ethereum::RethReceiptBuilder;
 use reth_primitives::{BlockTy, HeaderTy, SealedBlock, SealedHeader, TransactionSigned};
 use reth_revm::State;
 use revm::{
@@ -29,14 +29,32 @@ use revm::{
 };
 use std::{borrow::Cow, convert::Infallible, sync::Arc};
 
+/// Context for BSC block execution.
+/// Contains all the fields from EthBlockExecutionCtx plus additional header field.
+#[derive(Debug, Clone)]
+pub struct BscBlockExecutionCtx<'a> {
+    /// Base Ethereum execution context.
+    pub base: EthBlockExecutionCtx<'a>,
+    /// Block header (optional for BSC-specific logic).
+    pub header: Option<Header>,
+}
+
+impl<'a> BscBlockExecutionCtx<'a> {
+    /// Convert to EthBlockExecutionCtx for compatibility with existing BlockAssembler.
+    pub fn as_eth_context(&self) -> &EthBlockExecutionCtx<'a> {
+        &self.base
+    }
+}
+
+
 /// Ethereum-related EVM configuration.
 #[derive(Debug, Clone)]
 pub struct BscEvmConfig {
     /// Inner [`BscBlockExecutorFactory`].
     pub executor_factory:
         BscBlockExecutorFactory<RethReceiptBuilder, Arc<BscChainSpec>, BscEvmFactory>,
-    /// Ethereum block assembler.
-    pub block_assembler: EthBlockAssembler<BscChainSpec>,
+    /// BSC block assembler.
+    pub block_assembler: BscBlockAssembler<BscChainSpec>,
 }
 
 impl BscEvmConfig {
@@ -55,7 +73,7 @@ impl BscEvmConfig {
     /// Creates a new Ethereum EVM configuration with the given chain spec and EVM factory.
     pub fn new_with_evm_factory(chain_spec: Arc<BscChainSpec>, evm_factory: BscEvmFactory) -> Self {
         Self {
-            block_assembler: EthBlockAssembler::new(chain_spec.clone()),
+            block_assembler: BscBlockAssembler::new(chain_spec.clone()),
             executor_factory: BscBlockExecutorFactory::new(
                 RethReceiptBuilder::default(),
                 chain_spec,
@@ -113,7 +131,7 @@ where
     BscTxEnv: IntoTxEnv<<EvmF as EvmFactory>::Tx>,
 {
     type EvmFactory = EvmF;
-    type ExecutionCtx<'a> = EthBlockExecutionCtx<'a>;
+    type ExecutionCtx<'a> = BscBlockExecutionCtx<'a>;
     type Transaction = TransactionSigned;
     type Receipt = R::Receipt;
 
@@ -161,7 +179,10 @@ where
     }
 
     fn evm_env(&self, header: &Header) -> EvmEnv<BscHardfork> {
-        let blob_params = self.chain_spec().blob_params_at_timestamp(header.timestamp);
+        let mut blob_params = None;
+        if self.chain_spec().is_london_active_at_block(header.number) && BscHardforks::is_cancun_active_at_timestamp(self.chain_spec(), header.number, header.timestamp) {
+            blob_params = self.chain_spec().blob_params_at_timestamp(header.timestamp);
+        }
         let spec = revm_spec_by_timestamp_and_block_number(
             self.chain_spec().clone(),
             header.timestamp(),
@@ -281,11 +302,14 @@ where
         &self,
         block: &'a SealedBlock<BlockTy<Self::Primitives>>,
     ) -> ExecutionCtxFor<'a, Self> {
-        EthBlockExecutionCtx {
-            parent_hash: block.header().parent_hash,
-            parent_beacon_block_root: block.header().parent_beacon_block_root,
-            ommers: &block.body().ommers,
-            withdrawals: block.body().withdrawals.as_ref().map(Cow::Borrowed),
+        BscBlockExecutionCtx {
+            base: EthBlockExecutionCtx {
+                parent_hash: block.header().parent_hash,
+                parent_beacon_block_root: block.header().parent_beacon_block_root,
+                ommers: &block.body().ommers,
+                withdrawals: block.body().withdrawals.as_ref().map(Cow::Borrowed),
+            },
+            header: Some(block.header().clone()),
         }
     }
 
@@ -294,11 +318,14 @@ where
         parent: &SealedHeader<HeaderTy<Self::Primitives>>,
         attributes: Self::NextBlockEnvCtx,
     ) -> ExecutionCtxFor<'_, Self> {
-        EthBlockExecutionCtx {
-            parent_hash: parent.hash(),
-            parent_beacon_block_root: attributes.parent_beacon_block_root,
-            ommers: &[],
-            withdrawals: attributes.withdrawals.map(Cow::Owned),
+        BscBlockExecutionCtx {
+            base: EthBlockExecutionCtx {
+                parent_hash: parent.hash(),
+                parent_beacon_block_root: attributes.parent_beacon_block_root,
+                ommers: &[],
+                withdrawals: attributes.withdrawals.map(Cow::Owned),
+            },
+            header: None, // No header available for next block context
         }
     }
 }
@@ -311,13 +338,16 @@ where
         self.evm_env(&payload.0.header)
     }
 
-    fn context_for_payload<'a>(&self, payload: &'a BscExecutionData) -> EthBlockExecutionCtx<'a> {
+    fn context_for_payload<'a>(&self, payload: &'a BscExecutionData) -> BscBlockExecutionCtx<'a> {
         let block = &payload.0;
-        EthBlockExecutionCtx {
-            parent_hash: block.header.parent_hash(),
-            parent_beacon_block_root: block.header.parent_beacon_block_root,
-            ommers: &block.body.inner.ommers,
-            withdrawals: block.body.inner.withdrawals.as_ref().map(Cow::Borrowed),
+        BscBlockExecutionCtx {
+            base: EthBlockExecutionCtx {
+                parent_hash: block.header.parent_hash(),
+                parent_beacon_block_root: block.header.parent_beacon_block_root,
+                ommers: &block.body.inner.ommers,
+                withdrawals: block.body.inner.withdrawals.as_ref().map(Cow::Borrowed),
+            },
+            header: Some(block.header.clone()),
         }
     }
 
@@ -335,25 +365,25 @@ pub fn revm_spec_by_timestamp_and_block_number(
     timestamp: u64,
     block_number: u64,
 ) -> BscHardfork {
-    if chain_spec.is_maxwell_active_at_timestamp(timestamp) {
+    if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Maxwell
-    } else if chain_spec.is_lorentz_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_lorentz_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Lorentz
-    } else if chain_spec.is_pascal_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_pascal_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Pascal
-    } else if chain_spec.is_bohr_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_bohr_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Bohr
-    } else if chain_spec.is_haber_fix_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_haber_fix_active_at_timestamp(block_number, timestamp) {
         BscHardfork::HaberFix
-    } else if chain_spec.is_haber_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_haber_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Haber
-    } else if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, timestamp) {
+    } else if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
         BscHardfork::Cancun
-    } else if chain_spec.is_feynman_fix_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_feynman_fix_active_at_timestamp(block_number, timestamp) {
         BscHardfork::FeynmanFix
-    } else if chain_spec.is_feynman_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_feynman_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Feynman
-    } else if chain_spec.is_kepler_active_at_timestamp(timestamp) {
+    } else if chain_spec.is_kepler_active_at_timestamp(block_number, timestamp) {
         BscHardfork::Kepler
     } else if chain_spec.is_hertz_fix_active_at_block(block_number) {
         BscHardfork::HertzFix

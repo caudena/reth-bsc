@@ -48,7 +48,7 @@ impl SealBlock {
         Self { snapshot_provider, chain_spec, signing_key }
     }
 
-    pub fn seal(self, block: BscBlock) -> Result<SealedBlock<BscBlock>, ConsensusError> {
+    pub fn seal(&self, block: BscBlock) -> Result<SealedBlock<BscBlock>, ConsensusError> {
         let header = block.header();
         if header.number == 0 {
             return Err(ConsensusError::Other(

@@ -148,14 +148,15 @@ where
         info!("Starting BSC mining service for validator: {}", self.validator_address);
 
         // Mining interval from config or default
-        let interval_ms = self.mining_config.mining_interval_ms.unwrap_or(500);
+        let interval_ms = self.mining_config.mining_interval_ms.unwrap_or(3000);
         let mut mining_interval = interval(Duration::from_millis(interval_ms));
 
+        info!("BSC mining interval is: {}", interval_ms);
         loop {
             mining_interval.tick().await;
 
             if let Err(e) = self.try_mine_block().await {
-                debug!("Mining attempt failed: {}", e);
+                error!("Mining attempt failed: {}", e);
                 // Continue mining loop even if individual attempts fail
             }
         }
@@ -359,21 +360,30 @@ where
         &self,
         sealed_block: &SealedBlock<BscBlock>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use crate::node::network::BscNewBlock;
+        use crate::shared::get_block_import_sender;
+        use alloy_primitives::U128;
+        use reth_network::message::NewBlockMessage;
+        use reth_network_api::PeerId;
+
         let block_hash = sealed_block.hash();
         let block = sealed_block.clone_block();
-        // if let Some(import_handle) = crate::shared::get_import_handle() {
-        if true {
-            use crate::node::network::BscNewBlock;
-            use alloy_primitives::U128;
-            use reth_network::message::NewBlockMessage;
 
-            let td = U128::from(1u64); // placeholder total difficulty
-            let new_block = BscNewBlock(reth_eth_wire::NewBlock { block: block.clone(), td });
-            let msg = NewBlockMessage { hash: block_hash, block: Arc::new(new_block) };
+        // Construct the NewBlock network message
+        let td = U128::from(1u64); // TODO: compute real total difficulty
+        let new_block = BscNewBlock(reth_eth_wire::NewBlock { block: block.clone(), td });
+        let msg = NewBlockMessage { hash: block_hash, block: Arc::new(new_block) };
 
-            // let _ = import_handle.send_block(msg, reth_network_api::PeerId::default());
+        // If the block import sender is available, forward the block to the import service
+        if let Some(sender) = get_block_import_sender() {
+            // Wrap into IncomingBlock tuple (BlockMsg, PeerId)
+            let peer_id = PeerId::default(); // `None` for self-originated blocks
+            let incoming: crate::node::network::block_import::service::IncomingBlock = (msg, peer_id);
+            if sender.send(incoming).is_err() {
+                warn!("Failed to send mined block to import service: channel closed");
+            }
         } else {
-            warn!("ImportHandle not initialised; block not imported");
+            warn!("Block import sender not initialised; mined block not imported");
         }
 
         Ok(())

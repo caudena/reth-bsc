@@ -132,10 +132,8 @@ where
         let sealed_block;
         match &self.to_seal {
             Some(to_seal) => {
-                // `seal` takes ownership; clone to avoid moving out of `&SealBlock`
-                let to_seal_owned = to_seal.clone();
                 sealed_block =
-                    to_seal_owned.seal(block).map_err(|_| PayloadError::InvalidVersionedHashes)?;
+                    to_seal.seal(block).map_err(|_| PayloadError::InvalidVersionedHashes)?;
             }
             None => {
                 sealed_block = block.seal_slow();

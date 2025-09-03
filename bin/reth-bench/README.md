@@ -7,10 +7,8 @@ BSC-compatible benchmarking tool for Ethereum nodes, based on reth-bench.
 - **BSC Network Support**: Automatically detects BSC Mainnet (Chain ID: 56) and BSC Testnet (Chain ID: 97)
 - **Independent Operation**: Works standalone without affecting the parent reth-bsc repository
 - **Compatible APIs**: Same interface as original reth-bench but with BSC-specific optimizations
-- **Multiple Benchmark Modes**: 
-  - `new-payload-fcu`: Calls `newPayload` followed by `forkchoiceUpdated`
-  - `new-payload-only`: Only calls `newPayload` without forkchoice updates
-  - `send-payload`: Generates and sends `engine_newPayload` requests
+- **Benchmark Mode**: 
+  - `forkchoice-only`: Only calls subsequent `forkchoiceUpdated` calls
 
 ## Building
 
@@ -26,14 +24,8 @@ cargo build --release
 # Show help
 ./target/debug/reth-bench-bsc --help
 
-# Benchmark with new-payload-fcu mode
-./target/debug/reth-bench-bsc new-payload-fcu \
-  --rpc-url <RPC_URL> \
-  --engine-rpc-url <ENGINE_RPC_URL> \
-  --jwt-secret <JWT_SECRET_PATH>
-
-# Benchmark with new-payload-only mode  
-./target/debug/reth-bench-bsc new-payload-only \
+# Benchmark with forkchoice-only mode
+./target/debug/reth-bench-bsc forkchoice-only \
   --rpc-url <RPC_URL> \
   --engine-rpc-url <ENGINE_RPC_URL> \
   --jwt-secret <JWT_SECRET_PATH>
@@ -43,13 +35,13 @@ cargo build --release
 
 ```bash
 # Benchmark against BSC Mainnet
-./target/debug/reth-bench-bsc new-payload-fcu \
+./target/debug/reth-bench-bsc forkchoice-only \
   --rpc-url https://bsc-dataseed.bnbchain.org \
   --engine-rpc-url http://localhost:8551 \
   --jwt-secret ./jwt.hex
 
 # Benchmark against BSC Testnet
-./target/debug/reth-bench-bsc new-payload-only \
+./target/debug/reth-bench-bsc forkchoice-only \
   --rpc-url https://data-seed-prebsc-1-s1.bnbchain.org:8545 \
   --engine-rpc-url http://localhost:8551 \
   --jwt-secret ./jwt.hex

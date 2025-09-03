@@ -207,7 +207,7 @@ dependencies = [
  "alloy-sol-types",
  "auto_impl",
  "derive_more",
- "op-alloy-consensus 0.18.14",
+ "op-alloy-consensus",
  "op-revm",
  "revm",
  "thiserror 2.0.16",
@@ -3999,24 +3999,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "op-alloy-consensus"
-version = "0.19.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9ade20c592484ba1ea538006e0454284174447a3adf9bb59fa99ed512f95493"
-dependencies = [
- "alloy-consensus",
- "alloy-eips",
- "alloy-network",
- "alloy-primitives",
- "alloy-rlp",
- "alloy-rpc-types-eth",
- "alloy-serde",
- "derive_more",
- "serde",
- "thiserror 2.0.16",
-]
-
-[[package]]
 name = "op-alloy-rpc-types-engine"
 version = "0.18.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4030,28 +4012,7 @@ dependencies = [
  "derive_more",
  "ethereum_ssz",
  "ethereum_ssz_derive",
- "op-alloy-consensus 0.18.14",
- "snap",
- "thiserror 2.0.16",
-]
-
-[[package]]
-name = "op-alloy-rpc-types-engine"
-version = "0.19.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4256b1eda5766a9fa7de5874e54515994500bef632afda41e940aed015f9455"
-dependencies = [
- "alloy-consensus",
- "alloy-eips",
- "alloy-primitives",
- "alloy-rlp",
- "alloy-rpc-types-engine",
- "alloy-serde",
- "derive_more",
- "ethereum_ssz",
- "ethereum_ssz_derive",
- "op-alloy-consensus 0.19.1",
- "serde",
+ "op-alloy-consensus",
  "snap",
  "thiserror 2.0.16",
 ]
@@ -4813,19 +4774,14 @@ dependencies = [
  "csv",
  "eyre",
  "futures",
- "humantime",
- "op-alloy-consensus 0.19.1",
- "op-alloy-rpc-types-engine 0.19.1",
  "reqwest",
  "reth-cli-runner",
  "reth-cli-util",
- "reth-fs-util",
  "reth-node-api",
  "reth-node-core",
  "reth-primitives-traits",
  "reth-tracing",
  "serde",
- "serde_json",
  "thiserror 1.0.69",
  "tokio",
  "tower",
@@ -4922,7 +4878,7 @@ dependencies = [
  "alloy-trie",
  "bytes",
  "modular-bitfield",
- "op-alloy-consensus 0.18.14",
+ "op-alloy-consensus",
  "reth-codecs-derive",
  "reth-zstd-compressors",
  "serde",
@@ -5690,7 +5646,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rpc-types-engine",
  "auto_impl",
- "op-alloy-rpc-types-engine 0.18.14",
+ "op-alloy-rpc-types-engine",
  "reth-chain-state",
  "reth-chainspec",
  "reth-errors",
@@ -5718,7 +5674,7 @@ dependencies = [
  "derive_more",
  "modular-bitfield",
  "once_cell",
- "op-alloy-consensus 0.18.14",
+ "op-alloy-consensus",
  "rayon",
  "reth-codecs",
  "revm-bytecode",

@@ -27,8 +27,10 @@ pub(crate) struct BenchContext {
     /// The next block to fetch.
     pub(crate) next_block: u64,
     /// Whether the chain is an OP rollup.
+    #[allow(dead_code)]
     pub(crate) is_optimism: bool,
     /// The chain ID.
+    #[allow(dead_code)]
     pub(crate) chain_id: u64,
 }
 

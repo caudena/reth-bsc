@@ -155,16 +155,21 @@ where
 
     /// Add a new block import task to the pending imports
     fn on_new_block(&mut self, block: BlockMsg, peer_id: PeerId) {
-        return
-        // if self.processed_blocks.contains(&block.hash) {
-        //     return;
-        // }
+        // When bench-test feature is enabled, skip block import processing
+        #[cfg(feature = "bench-test")]
+        {
+            return;
+        }
+        
+        if self.processed_blocks.contains(&block.hash) {
+            return;
+        }
 
-        // let payload_fut = self.new_payload(block.clone(), peer_id);
-        // self.pending_imports.push(payload_fut);
+        let payload_fut = self.new_payload(block.clone(), peer_id);
+        self.pending_imports.push(payload_fut);
 
-        // let fcu_fut = self.update_fork_choice(block, peer_id);
-        // self.pending_imports.push(fcu_fut);
+        let fcu_fut = self.update_fork_choice(block, peer_id);
+        self.pending_imports.push(fcu_fut);
     }
 }
 

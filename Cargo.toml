@@ -155,6 +155,9 @@ client = [
     "reth-rpc-eth-api/client",
 ]
 
+# Enable bench testing support (engine_forkchoiceUpdatedV1)
+bench-test = []
+
 # Use the `--profile profiling` flag to show symbols in release mode.
 # e.g. `cargo build --profile profiling`
 [profile.profiling]

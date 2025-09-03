@@ -69,7 +69,7 @@ impl BenchContext {
             .is_empty();
 
         // If neither `--from` nor `--to` are provided, we will run the benchmark continuously,
-        // starting at the latest block.
+        // starting at the latest block from the local node.
         let mut benchmark_mode = BenchMode::new(bench_args.from, bench_args.to)?;
 
         // construct the authenticated provider
@@ -95,8 +95,8 @@ impl BenchContext {
 
         let first_block = match benchmark_mode {
             BenchMode::Continuous => {
-                // fetch Latest block
-                block_provider.get_block_by_number(BlockNumberOrTag::Latest).full().await?.unwrap()
+                // fetch Latest block from local node (Engine API) instead of external RPC
+                auth_provider.get_block_by_number(BlockNumberOrTag::Latest).full().await?.unwrap()
             }
             BenchMode::Range(ref mut range) => {
                 match range.next() {

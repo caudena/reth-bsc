@@ -288,12 +288,14 @@ where
             self.signing_key.clone().ok_or("No signing key available for block sealing")?;
 
         // SealBlock init
-        let seal_block =
-            SealBlock::new(self.snapshot_provider.clone(), self.chain_spec.clone(), signing_key);
+        let sealed_block =
+            SealBlock::new(self.snapshot_provider.clone(), self.chain_spec.clone(), signing_key)
+                .seal(block.clone())
+                .map_err(|e| format!("Seal error: {:?}", e))?;
 
         let exec_payload = BscExecutionData(block);
 
-        let validator = BscEngineValidator::new(self.chain_spec.clone(), Some(seal_block));
+        let validator = BscEngineValidator::new(self.chain_spec.clone(), Some(sealed_block));
 
         let block = match validator.ensure_well_formed_payload(exec_payload) {
             Ok(block) => block,
@@ -441,7 +443,7 @@ where
                         return;
                     }
 
-                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    tokio::time::sleep(Duration::from_millis(100)).await;
                 };
 
                 info!("Snapshot provider available, starting BSC mining service");

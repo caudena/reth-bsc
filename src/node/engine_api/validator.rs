@@ -1,5 +1,4 @@
 use super::payload::BscPayloadTypes;
-use crate::consensus::parlia::seal::SealBlock;
 use crate::{chainspec::BscChainSpec, hardforks::BscHardforks, BscBlock, BscPrimitives};
 use alloy_consensus::BlockHeader;
 use alloy_eips::eip4895::Withdrawal;
@@ -50,8 +49,8 @@ pub struct BscEngineValidator {
 
 impl BscEngineValidator {
     /// Instantiates a new validator.
-    pub fn new(chain_spec: Arc<BscChainSpec>, to_seal: Option<SealBlock>) -> Self {
-        Self { inner: BscExecutionPayloadValidator { inner: chain_spec, to_seal } }
+    pub fn new(chain_spec: Arc<BscChainSpec>, sealed_block: Option<SealedBlock<BscBlock>>) -> Self {
+        Self { inner: BscExecutionPayloadValidator { inner: chain_spec, sealed_block } }
     }
 }
 
@@ -115,7 +114,7 @@ pub struct BscExecutionPayloadValidator<ChainSpec> {
     /// Chain spec to validate against.
     #[allow(unused)]
     inner: Arc<ChainSpec>,
-    to_seal: Option<SealBlock>,
+    sealed_block: Option<SealedBlock<BscBlock>>,
 }
 
 impl<ChainSpec> BscExecutionPayloadValidator<ChainSpec>
@@ -130,10 +129,9 @@ where
 
         let expected_hash = block.header.hash_slow();
         let sealed_block;
-        match &self.to_seal {
-            Some(to_seal) => {
-                sealed_block =
-                    to_seal.seal(block).map_err(|_| PayloadError::InvalidVersionedHashes)?;
+        match &self.sealed_block {
+            Some(to_sealed) => {
+                sealed_block = to_sealed.clone();
             }
             None => {
                 sealed_block = block.seal_slow();

@@ -10,13 +10,14 @@ use alloy_consensus::{BlockHeader, Header};
 use alloy_primitives::{
     keccak256,
     map::foldhash::{HashSet, HashSetExt},
-    Bytes, B256,
+    Bytes, B256, hex,
 };
 use blst::min_pk::{AggregateSignature, Signature as blsSignature};
 use bytes::BytesMut;
 use k256::ecdsa::{signature::Signer, Signature, SigningKey};
 use rand::Rng;
 use reth::consensus::ConsensusError;
+use secp256k1::{Message, SECP256K1, ecdsa::{RecoveryId as Secp256k1RecoveryId, RecoverableSignature}};
 use reth_chainspec::EthChainSpec;
 use reth_primitives::SealedBlock;
 use reth_primitives_traits::{Block, SealedHeader};
@@ -213,6 +214,45 @@ impl SealBlock {
     fn sign_fn(&self, data: &[u8]) -> Result<Vec<u8>, ConsensusError> {
         let hash = keccak256(data);
         let sig_result: Signature = self.signing_key.sign(hash.as_slice());
-        Ok(sig_result.to_bytes().to_vec())
+        let mut sig_bytes = sig_result.to_bytes().to_vec(); // 64 bytes (r + s)
+        
+        // Calculate recovery ID by trying both possible values
+        let recovery_id = self.calculate_recovery_id(hash.as_slice(), &sig_result)?;
+        tracing::debug!(target: "parlia::seal", "Calculated recovery_id: {}", recovery_id);
+        sig_bytes.push(recovery_id); // 1 byte recovery ID
+        
+        Ok(sig_bytes)
+    }
+    
+    fn calculate_recovery_id(&self, hash: &[u8], sig: &Signature) -> Result<u8, ConsensusError> {
+        use alloy_primitives::Address;
+        
+        let expected_address = Address::from_slice(&keccak256(&self.signing_key.verifying_key().to_encoded_point(false).as_bytes()[1..])[12..]);
+        let sig_bytes = sig.to_bytes();
+        
+        let message = Message::from_digest_slice(hash)
+            .map_err(|_| ConsensusError::Other("Invalid message hash".into()))?;
+        
+        tracing::debug!(target: "parlia::seal", "Calculating recovery ID for expected address: {:?}", expected_address);
+        tracing::debug!(target: "parlia::seal", "Hash being signed: 0x{}", hex::encode(hash));
+        
+        // Try recovery IDs 0-3 (though typically only 0-1 are used)
+        for recovery_id in 0..4u8 {
+            if let Ok(recovery_id_obj) = Secp256k1RecoveryId::try_from(recovery_id as i32) {
+                if let Ok(recoverable_sig) = RecoverableSignature::from_compact(&sig_bytes, recovery_id_obj) {
+                    if let Ok(public_key) = SECP256K1.recover_ecdsa(&message, &recoverable_sig) {
+                        let recovered_address = Address::from_slice(&keccak256(&public_key.serialize_uncompressed()[1..])[12..]);
+                        tracing::debug!(target: "parlia::seal", "Recovery ID {} -> address: {:?}", recovery_id, recovered_address);
+                        if recovered_address == expected_address {
+                            tracing::debug!(target: "parlia::seal", "Found matching recovery ID: {}", recovery_id);
+                            return Ok(recovery_id);
+                        }
+                    }
+                }
+            }
+        }
+        
+        tracing::error!(target: "parlia::seal", "Failed to find matching recovery ID for expected address: {:?}", expected_address);
+        Err(ConsensusError::Other("Failed to determine recovery ID".into()))
     }
 }

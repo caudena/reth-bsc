@@ -52,10 +52,10 @@ impl Command {
 
                 let head_block_hash = header.hash;
                 let safe_block_hash =
-                    block_provider.get_block_by_number(header.number.saturating_sub(32).into());
+                    block_provider.get_block_by_number(header.number.saturating_sub(16).into());
 
                 let finalized_block_hash =
-                    block_provider.get_block_by_number(header.number.saturating_sub(64).into());
+                    block_provider.get_block_by_number(header.number.saturating_sub(32).into());
 
                 let (safe, finalized) = tokio::join!(safe_block_hash, finalized_block_hash,);
 

@@ -64,7 +64,8 @@ impl Command {
                     finalized.unwrap().expect("finalized block exists").header.hash;
 
                 next_block += 1;
-                sender
+                // 检查receiver是否仍然活跃
+                if sender
                     .send((
                         header,
                         head_block_hash,
@@ -72,7 +73,12 @@ impl Command {
                         finalized_block_hash,
                     ))
                     .await
-                    .unwrap();
+                    .is_err()
+                {
+                    // Receiver已关闭，退出任务
+                    tracing::info!("Receiver closed, stopping block producer task");
+                    break;
+                }
             }
         });
 
@@ -113,10 +119,11 @@ impl Command {
                     Err(e) => {
                         let error_msg = format!("{:?}", e);
                         if error_msg.contains("SYNCING") {
-                            tracing::warn!("Node is syncing, waiting 200ms before retry...");
+                            tracing::debug!("Node is syncing, waiting 200ms before retry...");
                             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                             continue;
                         } else {
+                            tracing::error!("Engine API error: {}", error_msg);
                             return Err(e.into());
                         }
                     }

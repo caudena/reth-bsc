@@ -64,7 +64,7 @@ where
                 panic!("Invalid forkchoiceUpdatedV1: {status:?}");
             }
             if status.is_syncing() {
-                tracing::warn!("Node is syncing, waiting 200ms before retry...");
+                tracing::debug!("Node is syncing, waiting 200ms before retry...");
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 // Continue the loop to retry
             }
@@ -94,7 +94,7 @@ where
                 panic!("Invalid forkchoiceUpdatedV2: {status:?}");
             }
             if status.is_syncing() {
-                tracing::warn!("Node is syncing, waiting 200ms before retry...");
+                tracing::debug!("Node is syncing, waiting 200ms before retry...");
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 // Continue the loop to retry
             }
@@ -124,7 +124,7 @@ where
                 panic!("Invalid forkchoiceUpdatedV3: {status:?}");
             }
             if status.is_syncing() {
-                tracing::warn!("Node is syncing, waiting 200ms before retry...");
+                tracing::debug!("Node is syncing, waiting 200ms before retry...");
                 tokio::time::sleep(std::time::Duration::from_millis(200)).await;
                 // Continue the loop to retry
             }

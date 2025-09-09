@@ -19,7 +19,7 @@ maxperf: ## Builds `reth-bsc` with the most aggressive optimisations.
 
 .PHONY: bench-test
 bench-test: ## Builds `reth-bsc` with the bench-test feature.
-	RUSTFLAGS="-C target-cpu=native" cargo build --features bench-test --profile maxperf --features jemalloc,asm-keccak,bench-test
+	RUSTFLAGS="-C target-cpu=native" cargo build --profile maxperf --features jemalloc,asm-keccak,bench-test
 
 .PHONY: reth-bench
 reth-bench: ## Build the reth-bench binary into the `target` directory.

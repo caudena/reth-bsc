@@ -21,6 +21,7 @@ pub enum ParliaConsensusErr {
 }
 
 /// Parlia consensus implementation
+#[derive(Debug, Clone)]
 pub struct ParliaConsensus<P> {
     /// The provider for reading block information
     pub provider: P,

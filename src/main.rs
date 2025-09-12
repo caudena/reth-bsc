@@ -55,7 +55,7 @@ fn main() -> eyre::Result<()> {
         |spec| (BscEvmConfig::new(spec.clone()), BscConsensus::new(spec)),
         async move |builder, args| {
             // Set genesis hash override if provided
-            if let Err(e) = genesis_override::set_genesis_hash_override(args.genesis_hash.clone()) {
+            if let Err(e) = genesis_override::set_genesis_hash_override(args.genesis_hash) {
                 tracing::error!("Failed to set genesis hash override: {}", e);
                 return Err(e);
             }

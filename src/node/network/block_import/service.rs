@@ -155,6 +155,12 @@ where
 
     /// Add a new block import task to the pending imports
     fn on_new_block(&mut self, block: BlockMsg, peer_id: PeerId) {
+        // When bench-test feature is enabled, skip block import processing
+        #[cfg(feature = "bench-test")]
+        {
+            return;
+        }
+        
         if self.processed_blocks.contains(&block.hash) {
             return;
         }

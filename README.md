@@ -20,7 +20,16 @@ This project aims to bring Reth's high-performance Ethereum client capabilities 
 
 ## Getting Started
 
-Refer to the [Reth documentation](https://reth.rs/) for general guidance on running a node. Note that some BSC-specific configurations may be required.
+Refer to the [Reth documentation](https://reth.rs/) for general guidance on running a node and be sure to
+add these 2 cli required to start reth-bsc:     
+```bash
+--chain bsc \
+--db.max-size 7TB
+```
+
+## Snapshot
+
+Refer to the [SNAPSHOT.md](https://github.com/bnb-chain/reth-bsc/blob/main/SNAPSHOT.md) for snapshot information
 
 ## Contributing
 

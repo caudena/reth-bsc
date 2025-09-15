@@ -15,6 +15,8 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
           - target: x86_64-apple-darwin
             os: macos-latest
     runs-on: ${{ matrix.os }}
@@ -29,10 +31,21 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
+      - name: Install MUSL toolchain (Ubuntu)
+        if: matrix.target == 'x86_64-unknown-linux-musl' && startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Configure MUSL environment
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          echo "CC_x86_64_unknown_linux_musl=musl-gcc" >> $GITHUB_ENV
+          echo "AR_x86_64_unknown_linux_musl=ar" >> $GITHUB_ENV
+          echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc" >> $GITHUB_ENV
+
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --profile maxperf --features jemalloc,asm-keccak --target ${{ matrix.target }}
         env:
-          RUSTFLAGS: -C strip=symbols
+          RUSTFLAGS: ${{ matrix.target == 'x86_64-unknown-linux-gnu' && '-C strip=symbols -C target-cpu=native' || matrix.target == 'x86_64-unknown-linux-musl' && '-C strip=symbols -C target-feature=+crt-static -C default-linker-libraries -Clink-arg=-static-libgcc' || '-C strip=symbols' }}
 
       - name: Prepare artifact
         run: |
@@ -41,7 +54,7 @@ jobs:
           tag_name="${{ github.ref_name }}"
           asset_name="${bin_name}-${tag_name}-${{ matrix.target }}"
           mkdir -p "${asset_name}"
-          cp "target/${{ matrix.target }}/release/${bin_name}" "${asset_name}/"
+          cp "target/${{ matrix.target }}/maxperf/${bin_name}" "${asset_name}/"
           tar -czvf "${asset_name}.tar.gz" "${asset_name}"
           echo "ASSET_NAME=${asset_name}.tar.gz" >> $GITHUB_ENV
 

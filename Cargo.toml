@@ -123,11 +123,7 @@ libc = "0.2"
 [features]
 default = ["jemalloc"]
 jemalloc = ["dep:tikv-jemallocator"]
-dev = [
-    "reth-cli-commands/arbitrary",
-    "reth/dev",
-    "revm/dev",
-]
+dev = ["reth-cli-commands/arbitrary", "reth/dev", "revm/dev"]
 
 asm-keccak = [
     "reth-node-core/asm-keccak",
@@ -163,6 +159,9 @@ client = [
     "jsonrpsee/async-client",
     "reth-rpc-eth-api/client",
 ]
+
+# Enable bench testing support (engine_forkchoiceUpdatedV1)
+bench-test = []
 
 # Use the `--profile profiling` flag to show symbols in release mode.
 # e.g. `cargo build --profile profiling`

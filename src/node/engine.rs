@@ -1,18 +1,18 @@
-use crate::consensus::parlia::util::calculate_millisecond_timestamp;
-use crate::node::engine_api::validator::{BscEngineValidator, BscExecutionData};
 use crate::node::evm::util::HEADER_CACHE_READER;
 use crate::{
-    consensus::parlia::{provider::SnapshotProvider, seal::SealBlock},
+    consensus::parlia::provider::SnapshotProvider,
     node::{
         engine_api::payload::BscPayloadTypes,
+        evm::config::BscEvmConfig,
+        miner::{payload_builder::BscPayloadBuilder, util::prepare_new_attributes},
         mining_config::{keystore, MiningConfig},
         BscNode,
     },
     BscBlock, BscPrimitives,
 };
-use alloy_consensus::{BlockHeader, Transaction};
+use alloy_consensus::BlockHeader;
 use alloy_eips::eip7685::Requests;
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, U256};
 use k256::ecdsa::SigningKey;
 use reth::transaction_pool::PoolTransaction;
 use reth::{
@@ -22,20 +22,25 @@ use reth::{
     transaction_pool::TransactionPool,
 };
 use reth_chainspec::EthChainSpec;
-use reth_engine_primitives::PayloadValidator;
 use reth_evm::ConfigureEvm;
 use reth_payload_primitives::BuiltPayload;
+use reth_ethereum_payload_builder::EthereumBuilderConfig;
 use reth_primitives::{SealedBlock, TransactionSigned};
 use reth_provider::{BlockNumReader, HeaderProvider};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use tokio::sync::{broadcast, mpsc};
 use tokio::time::interval;
 use tracing::{debug, error, info, warn};
+use reth_basic_payload_builder::{BuildArguments, PayloadConfig};
+use reth::payload::EthPayloadBuilderAttributes;
+use reth_revm::cancelled::CancelOnDrop;
+use crate::node::miner::signer::init_global_signer;
+use alloy_primitives::B256;
 
 /// Built payload for BSC. This is similar to [`EthBuiltPayload`] but without sidecars as those
 /// included into [`BscBlock`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BscBuiltPayload {
     /// The built block
     pub(crate) block: Arc<SealedBlock<BscBlock>>,
@@ -66,6 +71,7 @@ impl BuiltPayload for BscBuiltPayload {
 pub struct BscPayloadServiceBuilder;
 
 /// Mining Service that handles block production for BSC
+/// todo: move to miner/miner.rs
 pub struct BscMiner<Pool, Provider> {
     pool: Pool,
     provider: Provider,
@@ -75,6 +81,8 @@ pub struct BscMiner<Pool, Provider> {
     parlia: Arc<crate::consensus::parlia::Parlia<crate::chainspec::BscChainSpec>>,
     signing_key: Option<SigningKey>,
     mining_config: MiningConfig,
+
+    // todo: add more eventloop for performance like bsc miner.
 }
 
 impl<Pool, Provider> BscMiner<Pool, Provider>
@@ -84,6 +92,7 @@ where
         + 'static,
     Provider: HeaderProvider<Header = alloy_consensus::Header>
         + BlockNumReader
+        + reth_provider::StateProviderFactory
         + Clone
         + Send
         + Sync
@@ -151,6 +160,19 @@ where
             return Ok(());
         }
 
+        if let Some(ref signing_key) = self.signing_key {
+            let private_key_bytes = signing_key.as_nonzero_scalar().to_bytes();
+            let private_key = B256::from_slice(&private_key_bytes);
+            
+            if let Err(e) = init_global_signer(private_key) {
+                warn!("Failed to initialize global signer: {}", e);
+            } else {
+                info!("Succeed to initialize global signer");
+            }
+        } else {
+            warn!("No signing key available, global signer not initialized");
+        }
+
         // Ensure the genesis block header is cached so that the snapshot provider can create the genesis snapshot
         {
             let mut cache = HEADER_CACHE_READER.lock().unwrap();
@@ -190,18 +212,13 @@ where
     async fn try_mine_block(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Get current head block from chain state
         let current_block_number = self.provider.best_block_number()?;
-        let head_header = self
+        let parent_header = self
             .provider
-            .header_by_number(current_block_number)?
+            .sealed_header(current_block_number)?
             .ok_or("Head block header not found")?;
 
-        // Create sealed header for the current head block
-        use alloy_primitives::keccak256;
-        let head_hash = keccak256(alloy_rlp::encode(&head_header));
-        let head = reth_primitives::SealedHeader::new(head_header, head_hash);
-
-        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        let parent_number = head.number();
+        // let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+        let parent_number = parent_header.number();
 
         // Get snapshot for parent block to check authorization
         let snapshot = self
@@ -219,162 +236,21 @@ where
             return Err("Signed recently, must wait for others".into());
         }
 
-        // Calculate when we should mine based on turn and backoff
-        let next_block_time = self.calculate_next_block_time(&head, &snapshot, current_time)?;
+        let attributes = prepare_new_attributes(self.parlia.clone(), &snapshot, &parent_header, self.validator_address);
+        let evm_config = BscEvmConfig::new(self.chain_spec.clone());
+        let payload_builder = BscPayloadBuilder::new(self.provider.clone(), self.pool.clone(), evm_config, EthereumBuilderConfig::new());
+        let payload = payload_builder.build_payload(BuildArguments::<EthPayloadBuilderAttributes, BscBuiltPayload>::new(
+            reth_revm::cached::CachedReads::default(),
+            PayloadConfig::new(Arc::new(parent_header.clone()), attributes),
+            CancelOnDrop::default(),
+            None,
+        ))?;
 
-        if current_time < next_block_time {
-            return Err(format!("Too early to mine, wait until {next_block_time}").into());
-        }
-
-        info!("Mining new block on top of block {}", parent_number);
-
-        // Build and seal the block
-        self.mine_block_now(&head).await
-    }
-
-    /// Calculate the optimal time to mine the next block
-    fn calculate_next_block_time(
-        &self,
-        parent: &reth_primitives::SealedHeader,
-        snapshot: &crate::consensus::parlia::Snapshot,
-        _current_time: u64,
-    ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-        use crate::consensus::parlia::constants::DIFF_NOTURN;
-
-        // Scheduled next time in ms: parent time (ms) + period (ms)
-        let parent_ts_ms = calculate_millisecond_timestamp(parent.header());
-        let period_ms = snapshot.block_interval;
-        let scheduled_ms = parent_ts_ms + period_ms;
-
-        // Candidate header for backoff calculation
-        let candidate = alloy_consensus::Header { 
-            number: parent.number() + 1, 
-            timestamp: scheduled_ms / 1000, 
-            beneficiary: self.validator_address, 
-            difficulty: U256::from(DIFF_NOTURN), 
-            ..Default::default() };
-
-        // Compute final delay using Parlia helper (ms)
-        let left_over_ms: u64 = 0; // reserved time for finalize
-        let delay_ms = self.parlia.compute_delay_with_backoff(
-            snapshot,
-            parent.header(),
-            &candidate,
-            left_over_ms,
-        );
-
-        // Final time in seconds (ceil ms)
-        let target_ms = scheduled_ms + delay_ms;
-        let target_secs = target_ms.div_ceil(1000);
-        Ok(target_secs)
-    }
-
-    /// Mine a block immediately
-    async fn mine_block_now(
-        &self,
-        parent: &reth_primitives::SealedHeader,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Build block header
-        let mut header = alloy_consensus::Header {
-            parent_hash: parent.hash(),
-            number: parent.number() + 1,
-            timestamp: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
-            beneficiary: self.validator_address,
-            gas_limit: parent.gas_limit(),
-            extra_data: Bytes::from(vec![0u8; 32 + 65]), // Vanity + seal placeholder
-            difficulty: self.calculate_difficulty(parent)?,
-            ..Default::default()
-        };
-
-        // Collect transactions from the pool
-        let transactions = self.collect_transactions(&header).await?;
-
-        // Calculate gas used and other header fields
-        header.gas_used = transactions.iter().map(|tx| tx.gas_limit()).sum();
-        // TODO: Calculate proper transaction root
-        header.transactions_root = alloy_primitives::keccak256(alloy_rlp::encode(&transactions));
-
-        // Create block body
-        let body = crate::BscBlockBody {
-            inner: reth_primitives::BlockBody {
-                transactions,
-                ommers: Vec::new(),
-                withdrawals: None,
-            },
-            sidecars: None,
-        };
-
-        // Create unsealed block
-        let block = BscBlock { header, body };
-
-        // Seal the block using Parlia consensus
-        let signing_key: SigningKey =
-            self.signing_key.clone().ok_or("No signing key available for block sealing")?;
-
-        // SealBlock init
-        let sealed_block =
-            SealBlock::new(self.snapshot_provider.clone(), self.chain_spec.clone(), signing_key)
-                .seal(block.clone())
-                .map_err(|e| format!("Seal error: {:?}", e))?;
-
-        let exec_payload = BscExecutionData(block);
-
-        let validator = BscEngineValidator::new(self.chain_spec.clone(), Some(sealed_block));
-
-        let block = match validator.ensure_well_formed_payload(exec_payload) {
-            Ok(block) => block,
-            Err(e) => {
-                error!("Payload invalid: {e}");
-                return Err(e.into());
-            }
-        };
-
-        self.submit_block(block.sealed_block()).await?;
+        // queue to engine-api for memory tree and broadcast it block_import channel.
+        // todo: check it.
+        self.submit_block(payload.block()).await?;
 
         Ok(())
-    }
-
-    /// Calculate difficulty for the new block
-    fn calculate_difficulty(
-        &self,
-        parent: &reth_primitives::SealedHeader,
-    ) -> Result<U256, Box<dyn std::error::Error + Send + Sync>> {
-        use crate::consensus::parlia::constants::{DIFF_INTURN, DIFF_NOTURN};
-
-        let snapshot =
-            self.snapshot_provider.snapshot(parent.number()).ok_or("No snapshot available")?;
-
-        let difficulty =
-            if snapshot.is_inturn(self.validator_address) { DIFF_INTURN } else { DIFF_NOTURN };
-
-        Ok(U256::from(difficulty))
-    }
-
-    /// Collect transactions from the transaction pool
-    async fn collect_transactions(
-        &self,
-        header: &alloy_consensus::Header,
-    ) -> Result<Vec<TransactionSigned>, Box<dyn std::error::Error + Send + Sync>> {
-        let mut transactions: Vec<TransactionSigned> = Vec::new();
-        let mut gas_used = 0u64;
-        let gas_limit = header.gas_limit();
-
-        // Get best transactions from pool
-        let best_txs = self.pool.best_transactions();
-
-        // Collect transactions until we hit gas limit
-        for pooled_tx in best_txs {
-            let recovered = pooled_tx.to_consensus();
-            if gas_used + recovered.gas_limit() > gas_limit {
-                break;
-            }
-            gas_used += recovered.gas_limit();
-
-            transactions.push(recovered.into_inner());
-        }
-
-        debug!("Collected {} transactions for block, gas used: {}", transactions.len(), gas_used);
-        Ok(transactions)
     }
 
     /// Submit the sealed block (placeholder for now)
@@ -492,7 +368,6 @@ where
         // Handle payload service commands (keep minimal compatibility)
         ctx.task_executor().spawn_critical("payload-service-handler", async move {
             let mut subscriptions = Vec::new();
-
             while let Some(message) = rx.recv().await {
                 match message {
                     PayloadServiceCommand::Subscribe(tx) => {
@@ -592,45 +467,5 @@ mod tests {
         println!("✓ BscMiner struct properly includes provider field");
         println!("✓ Constructor accepts provider parameter");
         println!("✓ Proper trait bounds are enforced");
-    }
-
-    #[test]
-    fn test_mining_flow_structure() {
-        // Test the logical flow of the mining process
-        let source_code = include_str!("engine.rs");
-
-        // Verify the mining flow is correct:
-        // 1. Get current block number
-        // 2. Get header by number
-        // 3. Create sealed header
-        // 4. Continue with existing mining logic
-
-        let try_mine_block_start =
-            source_code.find("async fn try_mine_block").expect("Function should exist");
-        let try_mine_block_section = &source_code[try_mine_block_start..];
-        let next_function_start =
-            try_mine_block_section.find("\n    /// ").unwrap_or(try_mine_block_section.len());
-        let try_mine_block_code = &try_mine_block_section[..next_function_start];
-
-        // Check the order of operations
-        let best_block_pos =
-            try_mine_block_code.find("best_block_number()").expect("Should call best_block_number");
-        let header_by_number_pos = try_mine_block_code
-            .find("header_by_number(current_block_number)")
-            .expect("Should call header_by_number");
-        let sealed_header_pos =
-            try_mine_block_code.find("SealedHeader::new").expect("Should create SealedHeader");
-
-        assert!(
-            best_block_pos < header_by_number_pos,
-            "Should get block number before getting header"
-        );
-        assert!(
-            header_by_number_pos < sealed_header_pos,
-            "Should get header before creating sealed header"
-        );
-
-        println!("✓ Mining flow follows correct order: block_number → header → sealed_header");
-        println!("✓ All necessary provider calls are present");
     }
 }

@@ -112,7 +112,7 @@ where
         tracing::trace!("Succeed to new block executor, header: {:?}", ctx.header);
         if let Some(ref header) = ctx.header {
             crate::node::evm::util::HEADER_CACHE_READER.lock().unwrap().insert_header_to_cache(header.clone());
-        } else {
+        } else if !ctx.is_miner { // miner has no current header.
             tracing::warn!("No header found in the context, block_number: {:?}", evm.block().number.to::<u64>());
         }
 
@@ -148,8 +148,7 @@ where
             &self.spec,
             self.evm.block().number.to(),
             self.evm.block().timestamp.to(),
-            self.evm.block().timestamp.to::<u64>() - 3, /* TODO: how to get parent block
-                                                             * timestamp? */
+            self.inner_ctx.parent_header.as_ref().unwrap().timestamp,
         )
         .map_err(|_| BlockExecutionError::msg("Failed to get upgrade system contracts"))?;
 
@@ -252,8 +251,12 @@ where
     fn apply_pre_execution_changes(&mut self) -> Result<(), BlockExecutionError> {
         // pre check and prepare some intermediate data for commit parlia snapshot in finish function.
         let block_env = self.evm.block().clone();
-        self.check_new_block(&block_env)?;
-
+        if self.ctx.is_miner {
+            self.prepare_new_block(&block_env)?;
+        } else {
+            self.check_new_block(&block_env)?;
+        }
+        
         // set state clear flag if the block is after the Spurious Dragon hardfork.
         let state_clear_flag = self.spec.is_spurious_dragon_active_at_block(self.evm.block().number.to());
         self.evm.db_mut().set_state_clear_flag(state_clear_flag);
@@ -356,7 +359,11 @@ where
             self.initialize_feynman_contracts(self.evm.block().beneficiary)?;
         }
 
-        self.finalize_new_block(&self.evm.block().clone())?;
+        if self.ctx.is_miner {
+            self.finalize_new_block(&self.evm.block().clone())?;
+        } else {
+            self.post_check_new_block(&self.evm.block().clone())?;
+        }
 
         Ok((
             self.evm,
@@ -368,8 +375,8 @@ where
         ))
     }
 
-    fn set_state_hook(&mut self, _hook: Option<Box<dyn OnStateHook>>) {
-        self.system_caller.with_state_hook(_hook);
+    fn set_state_hook(&mut self, hook: Option<Box<dyn OnStateHook>>) {
+        self.system_caller.with_state_hook(hook);
     }
 
     fn evm_mut(&mut self) -> &mut Self::Evm {

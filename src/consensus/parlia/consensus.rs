@@ -19,6 +19,7 @@ use super::{
     },
     hash_with_chain_id,
     provider::ValidatorsInfo,
+    util::set_millisecond_part_of_timestamp,
     BACKOFF_TIME_OF_INITIAL, BACKOFF_TIME_OF_WIGGLE, DEFAULT_TURN_LENGTH,LORENTZ_BACKOFF_TIME_OF_INITIAL,
 };
 use crate::consensus::parlia::go_rng::{RngSource, Shuffle};
@@ -467,6 +468,73 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
 
         delay_ms
+    }
+
+    pub fn prepare_timestamp(&self, parent_snap: &Snapshot, parent_header: &Header, new_header: &mut Header) {
+        let millisecond_timestamp = self.block_time_for_ramanujan_fork(parent_snap, parent_header, new_header);
+        new_header.timestamp = millisecond_timestamp / 1000;
+        if self.spec.is_lorentz_active_at_timestamp(new_header.number, new_header.timestamp) {
+            set_millisecond_part_of_timestamp(millisecond_timestamp, new_header);
+        } else {
+            new_header.mix_hash = B256::ZERO;
+        }
+    }
+
+    pub fn prepare_validators(&self, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
+        let epoch_length = self.get_epoch_length(new_header);
+        if (new_header.number) % epoch_length != 0 {
+            return;
+        }
+        let Some((mut new_validators, vote_address_map)) = validators else {
+            return;
+        };
+
+        new_validators.sort();
+        let is_luban_active = self.spec.is_luban_active_at_block(new_header.number);
+        let mut extra_data = new_header.extra_data.to_vec();
+        if !is_luban_active {
+            // Pre-Luban: append validator addresses directly to extra data
+            for validator in &new_validators {
+                extra_data.extend_from_slice(validator.as_slice());
+            }
+        } else {
+            // Luban active: append validator count first, then validators with vote addresses
+            extra_data.push(new_validators.len() as u8);
+            let mut vote_map = std::collections::HashMap::new();
+            let is_on_luban = self.spec.is_luban_active_at_block(new_header.number) && 
+                !self.spec.is_luban_active_at_block(new_header.number - 1);
+            if is_on_luban {
+                let zero_bls_key = VoteAddress::ZERO;
+                for validator in &new_validators {
+                    vote_map.insert(*validator, zero_bls_key);
+                }
+            } else {
+                for (i, validator) in new_validators.iter().enumerate() {
+                    if i < vote_address_map.len() {
+                        vote_map.insert(*validator, vote_address_map[i]);
+                    } else {
+                        vote_map.insert(*validator, VoteAddress::ZERO);
+                    }
+                }
+            }
+            for validator in &new_validators {
+                extra_data.extend_from_slice(validator.as_slice());
+                if let Some(vote_addr) = vote_map.get(validator) {
+                    extra_data.extend_from_slice(vote_addr.as_slice());
+                }
+            }
+        }
+        new_header.extra_data = alloy_primitives::Bytes::from(extra_data);
+    }
+
+    pub fn prepare_turn_length(&self, parent_snap: &Snapshot, turn_length: Option<u8>, new_header: &mut Header) {
+        let epoch_length = parent_snap.epoch_num;
+        if new_header.number % epoch_length != 0 || !self.spec.is_bohr_active_at_timestamp(new_header.number, new_header.timestamp) {
+            return;
+        }
+        let mut extra_data = new_header.extra_data.to_vec();
+        extra_data.push(turn_length.unwrap_or(DEFAULT_TURN_LENGTH));
+        new_header.extra_data = alloy_primitives::Bytes::from(extra_data);
     }
 
 }

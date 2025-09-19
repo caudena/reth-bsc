@@ -272,6 +272,13 @@ where
         let network = NetworkManager::builder(network_config).await?;
         let handle = ctx.start_network(network, pool);
         info!(target: "reth::cli", enode=%handle.local_node_record(), "P2P networking initialized");
+        
+        let local_peer_id = handle.peer_id();
+        if crate::shared::set_local_peer_id(*local_peer_id).is_err() {
+            warn!(target: "reth::cli", "Failed to set global local peer ID - already set");
+        } else {
+            info!(target: "reth::cli", peer_id=%local_peer_id, "Local peer ID set globally");
+        }
 
         Ok(handle)
     }

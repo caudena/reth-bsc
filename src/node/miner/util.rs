@@ -3,7 +3,7 @@ use alloy_consensus::Header;
 use alloy_primitives::{Address, Bytes};
 use crate::consensus::parlia::Snapshot;
 use crate::consensus::parlia::consensus::Parlia;
-use crate::consensus::parlia::util::calculate_difficulty;
+use crate::consensus::parlia::util::{calculate_difficulty, debug_header};
 use crate::chainspec::BscChainSpec;
 use crate::consensus::parlia::{EXTRA_VANITY_LEN, EXTRA_SEAL_LEN};
 use reth::payload::EthPayloadBuilderAttributes;
@@ -55,7 +55,7 @@ where
 
     {   // prepare validators
         let epoch_length = parlia.get_epoch_length(new_header);
-        if (new_header.number)% epoch_length == 0 {
+        if (new_header.number).is_multiple_of(epoch_length) {
             let mut validators: Option<(Vec<Address>, Vec<crate::consensus::parlia::VoteAddress>)> = None;
             let mut cache = VALIDATOR_CACHE.lock().unwrap();
             if let Some(cached_result) = cache.get(&parent_header.number) {
@@ -83,6 +83,8 @@ where
         let start = extra_data.len() - EXTRA_SEAL_LEN;
         extra_data[start..].copy_from_slice(&seal_data);
         new_header.extra_data = Bytes::from(extra_data);
+
+        debug_header(new_header, parlia.spec.chain().id(), "finalize_new_header");
     }
 
     Ok(())

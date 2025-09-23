@@ -33,7 +33,7 @@ Refer to the [SNAPSHOT.md](https://github.com/bnb-chain/reth-bsc/blob/main/SNAPS
 
 ## Contributing
 
-We welcome community contributions! Whether you're interested in helping with historical sync implementation, BSC Pectra support, or live sync functionality, your help is valuable. Please feel free to open issues or submit pull requests. You can reach out to me on [Telegram](https://t.me/loocapro).
+We welcome community contributions! Please feel free to open issues or submit pull requests. You can reach out to me us TODO - add discord/TG.
 
 ## Disclaimer
 
@@ -44,6 +44,7 @@ This project is experimental and under active development. Use at your own risk.
 This project is inspired by and builds upon the work of:
 
 - [BNB Chain Reth](https://github.com/bnb-chain/reth) - The original BSC implementation of Reth
+- The first contributor of community version [@loocapro](https://github.com/loocapro)
 - The Reth team, especially [@mattsse](https://github.com/mattsse) for their invaluable contributions to the Reth ecosystem
 
 ## Acknowledgements from BNBChain team

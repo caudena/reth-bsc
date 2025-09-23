@@ -33,7 +33,7 @@ Refer to the [SNAPSHOT.md](https://github.com/bnb-chain/reth-bsc/blob/main/SNAPS
 
 ## Contributing
 
-We welcome community contributions! Please feel free to open issues or submit pull requests. You can reach out to me us TODO - add discord/TG.
+We welcome community contributions! Please feel free to open issues or submit pull requests.
 
 ## Disclaimer
 

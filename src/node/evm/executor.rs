@@ -277,7 +277,9 @@ where
 
     fn execute_transaction_with_commit_condition(
         &mut self,
-        _tx: impl ExecutableTx<Self>,
+        _tx: impl ExecutableTx<Self>
+            + IntoTxEnv<<E as alloy_evm::Evm>::Tx>
+            + RecoveredTx<TransactionSigned>,
         _f: impl FnOnce(&ExecutionResult<<Self::Evm as Evm>::HaltReason>) -> CommitChanges,
     ) -> Result<Option<u64>, BlockExecutionError> {
         unimplemented!();

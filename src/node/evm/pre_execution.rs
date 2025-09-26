@@ -293,6 +293,30 @@ where
                     }
                 ).into());
             }
+
+            let mut is_match = false;
+            let mut ancestor = parent.clone();
+            for _ in 0..self.get_ancestor_generation_depth(header) {
+                if ancestor.number() == target_block {
+                    is_match = true;
+                    break;
+                }
+                ancestor = crate::node::evm::util::HEADER_CACHE_READER
+                    .lock()
+                    .unwrap()
+                    .get_header_by_hash(&ancestor.parent_hash())
+                    .ok_or_else(|| BscBlockExecutionError::UnknownHeader { block_hash: ancestor.parent_hash() })?;
+            }
+
+            if !is_match {
+                return Err(BscBlockExecutionError::Validation(
+                    BscBlockValidationError::InvalidAttestationTarget {
+                    block_number: GotExpected { got: target_block, expected: parent.number() },
+                    block_hash: GotExpected { got: target_hash, expected: parent.hash_slow() }
+                        .into(),
+                    }
+                ).into());
+            }
     
             // the attestation source block should be the highest justified block.
             let source_block = attestation.data.source_number;

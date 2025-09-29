@@ -35,8 +35,15 @@ use revm::{
 use tracing::debug;
 use alloy_eips::eip2935::{HISTORY_STORAGE_ADDRESS, HISTORY_STORAGE_CODE};
 use alloy_primitives::keccak256;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, cell::RefCell};
 use crate::consensus::parlia::SnapshotProvider;
+
+/// Type alias for system transactions to reduce complexity
+type SystemTxs = Vec<reth_primitives_traits::Recovered<reth_primitives_traits::TxTy<crate::BscPrimitives>>>;
+
+thread_local! {
+    pub static ASSEMBLED_SYSTEM_TXS: RefCell<SystemTxs> = const { RefCell::new(Vec::new()) };
+}
 
 /// Helper type for the input of post execution.
 #[allow(clippy::type_complexity)]
@@ -80,6 +87,8 @@ where
     pub(crate) parlia: Arc<Parlia<Spec>>,
     /// Inner execution context.
     pub(super) inner_ctx: InnerExecutionContext,
+    /// assembled system txs.
+    pub(crate) assembled_system_txs: SystemTxs,
 }
 
 impl<'a, DB, EVM, Spec, R: ReceiptBuilder> BscBlockExecutor<'a, EVM, Spec, R>
@@ -99,7 +108,7 @@ where
     R::Transaction: Into<TransactionSigned>,
 {
     /// Creates a new BscBlockExecutor.
-    pub fn new(
+    pub(crate) fn new(
         evm: EVM,
         ctx: BscBlockExecutionCtx<'a>,
         spec: Spec,
@@ -139,6 +148,7 @@ where
                 header: None,
                 parent_header: None,
             },
+            assembled_system_txs: vec![],
         }
     }
 
@@ -424,6 +434,10 @@ where
             self.post_check_new_block(&self.evm.block().clone())?;
         }
 
+        ASSEMBLED_SYSTEM_TXS.with(|txs| {
+            *txs.borrow_mut() = self.assembled_system_txs.clone();
+        });
+
         Ok((
             self.evm,
             BlockExecutionResult {
@@ -446,4 +460,20 @@ where
         &self.evm
     }
 
+}
+
+impl<'a, EVM, Spec, R: ReceiptBuilder> BscBlockExecutor<'a, EVM, Spec, R>
+where
+    Spec: EthChainSpec + EthereumHardforks + BscHardforks + Hardforks + Clone,
+    EVM: alloy_evm::Evm,
+{
+    // miner BscBlockBuilder use this method to fetch system txs.
+    pub(crate) fn finish_with_system_txs<F, T>(self, finish_fn: F) -> Result<(T, SystemTxs), BlockExecutionError>
+    where
+        F: FnOnce(Self) -> Result<T, BlockExecutionError>,
+    {
+        let result = finish_fn(self)?;
+        let system_txs = ASSEMBLED_SYSTEM_TXS.with(|txs| txs.borrow().clone());
+        Ok((result, system_txs))
+    }
 }

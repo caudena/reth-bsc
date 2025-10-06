@@ -24,7 +24,7 @@ Refer to the [Reth documentation](https://reth.rs/) for general guidance on runn
 add these 2 cli required to start reth-bsc:     
 ```bash
 --chain bsc \
---db.max-size 7TB
+--db.max-size 13TB
 ```
 
 ## Snapshot

@@ -177,7 +177,5 @@ pub enum BscBlockExecutionError {
 }
 
 impl From<BscBlockExecutionError> for BlockExecutionError {
-    fn from(err: BscBlockExecutionError) -> Self {
-        Self::other(err)
-    }
+    fn from(err: BscBlockExecutionError) -> Self { BlockExecutionError::other(err) }
 }

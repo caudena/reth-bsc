@@ -168,6 +168,7 @@ pub struct MainWorkWorker<Pool, Provider> {
     provider: Provider,
     chain_spec: Arc<crate::chainspec::BscChainSpec>,
     parlia: Arc<crate::consensus::parlia::Parlia<crate::chainspec::BscChainSpec>>,
+    snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
     mining_queue_rx: mpsc::UnboundedReceiver<MiningContext>,
 }
 
@@ -191,6 +192,7 @@ where
         provider: Provider,
         chain_spec: Arc<crate::chainspec::BscChainSpec>,
         parlia: Arc<crate::consensus::parlia::Parlia<crate::chainspec::BscChainSpec>>,
+        snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
         mining_queue_rx: mpsc::UnboundedReceiver<MiningContext>,
     ) -> Self {
         Self {
@@ -199,6 +201,7 @@ where
             chain_spec,
             parlia,
             validator_address,
+            snapshot_provider,
             mining_queue_rx,
         }
     }
@@ -210,9 +213,9 @@ where
             let next_block = mining_ctx.parent_header.number() + 1;
             debug!("Received mining context, next_block: {}", next_block);
 
-             match self.try_mine_block(mining_ctx).await {
+            match self.try_mine_block(mining_ctx).await {
                 Ok(()) => {
-                    debug!("Succeed to mine block, next_block: {}", next_block);
+                    debug!("Succeed to mine block or skipped gracefully, next_block: {}", next_block);
                 }
                 Err(e) => {
                     error!("Failed to mine block due to {}, next_block: {}", e, next_block);
@@ -241,13 +244,29 @@ where
             evm_config, 
             EthereumBuilderConfig::new()
         );
-        let payload = payload_builder.build_payload(
+        let payload = match payload_builder.build_payload(
             BuildArguments::<EthPayloadBuilderAttributes, BscBuiltPayload>::new(
                 reth_revm::cached::CachedReads::default(),
                 PayloadConfig::new(Arc::new(mining_ctx.parent_header.clone()), attributes),
                 CancelOnDrop::default(),
                 None,)
-        )?;
+        ) {
+            Ok(p) => p,
+            Err(e) => {
+                let msg = e.to_string();
+                // Gracefully skip if parent state is not (yet) available; this can happen
+                // during rapid reorgs or concurrent imports timing.
+                if msg.contains("no state found for block") {
+                    debug!(
+                        "Skip mining attempt due to missing parent state: {} (parent: 0x{:x})",
+                        msg,
+                        mining_ctx.parent_header.hash()
+                    );
+                    return Ok(());
+                }
+                return Err(e);
+            }
+        };
         info!("Start to submit block: {} (hash: 0x{:x}, txs: {})", 
             payload.block().header().number(),
             payload.block().hash(),
@@ -265,6 +284,50 @@ where
         sealed_block: &SealedBlock<BscBlock>,
         mining_ctx: MiningContext,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Validate the parent is still canonical and we're still eligible before submission.
+        let parent_number = mining_ctx.parent_header.number();
+        if let Ok(Some(latest_parent)) = self.provider.sealed_header(parent_number) {
+            if latest_parent.hash_slow() != mining_ctx.parent_header.hash_slow() {
+                tracing::debug!(
+                    target: "bsc::miner",
+                    expected_parent = %format!("0x{:x}", mining_ctx.parent_header.hash_slow()),
+                    current_parent = %format!("0x{:x}", latest_parent.hash_slow()),
+                    "Parent header changed before submission, dropping block"
+                );
+                return Ok(());
+            }
+        }
+
+        if let Some(snap) = self.snapshot_provider.snapshot(parent_number) {
+            // Drop if we're no longer authorized or over the recent-sign limit.
+            if !snap.validators.contains(&self.validator_address) {
+                tracing::debug!(
+                    target: "bsc::miner",
+                    validator = %format!("0x{:x}", self.validator_address),
+                    "Not authorized anymore at parent, dropping block"
+                );
+                return Ok(());
+            }
+            if snap.sign_recently(self.validator_address) {
+                tracing::debug!(
+                    target: "bsc::miner",
+                    validator = %format!("0x{:x}", self.validator_address),
+                    block_number = parent_number + 1,
+                    "Validator signed recently; dropping block to avoid over-limit"
+                );
+                return Ok(());
+            }
+            if !snap.is_inturn(self.validator_address) {
+                tracing::debug!(
+                    target: "bsc::miner",
+                    validator = %format!("0x{:x}", self.validator_address),
+                    block_number = parent_number + 1,
+                    "No longer in turn; dropping block"
+                );
+                return Ok(());
+            }
+        }
+
         // now is focus on the basic workflow.
         // TODO: refine it later. https://github.com/bnb-chain/bsc/blob/master/consensus/parlia/parlia.go#L1702.
         let present_timestamp = self.parlia.present_timestamp();
@@ -284,9 +347,33 @@ where
                 block_number = sealed_block.header().number,
                 "Finished waiting, proceeding with block submission"
             );
+
+            // Re-validate after waiting since head/snapshot may have changed.
+            if let Ok(Some(latest_parent)) = self.provider.sealed_header(parent_number) {
+                if latest_parent.hash_slow() != mining_ctx.parent_header.hash_slow() {
+                    tracing::debug!(
+                        target: "bsc::miner",
+                        expected_parent = %format!("0x{:x}", mining_ctx.parent_header.hash_slow()),
+                        current_parent = %format!("0x{:x}", latest_parent.hash_slow()),
+                        "Parent header changed during wait, dropping block"
+                    );
+                    return Ok(());
+                }
+            }
+
+            if let Some(snap) = self.snapshot_provider.snapshot(parent_number) {
+                if snap.sign_recently(self.validator_address) || !snap.is_inturn(self.validator_address) {
+                    tracing::debug!(
+                        target: "bsc::miner",
+                        validator = %format!("0x{:x}", self.validator_address),
+                        block_number = parent_number + 1,
+                        "Eligibility changed during wait; dropping block"
+                    );
+                    return Ok(());
+                }
+            }
         }
 
-        let parent_number = mining_ctx.parent_header.number();
         let parent_td = self.provider.header_td_by_number(parent_number)
             .map_err(|e| format!("Failed to get parent total difficulty due to {}", e))?
             .unwrap_or_default();
@@ -387,6 +474,7 @@ where
             provider.clone(),
             chain_spec.clone(),
             Arc::new(crate::consensus::parlia::Parlia::new(chain_spec.clone(), 200)),
+            snapshot_provider.clone(),
             mining_queue_rx,
         );
         

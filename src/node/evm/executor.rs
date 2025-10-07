@@ -204,6 +204,19 @@ where
         let account =
             self.evm.db_mut().load_cache_account(address).map_err(BlockExecutionError::other)?;
 
+        // Avoid implicitly creating system contract accounts during fork upgrades.
+        // If the account does not yet exist on this chain (common on custom/test chains),
+        // skip the upgrade to preserve consensus with chains that expect on-chain tx-based
+        // deployments instead of implicit code injections.
+        if account.account.is_none() {
+            tracing::debug!(
+                target: "bsc::executor",
+                "Skip system contract upgrade because account does not exist: {:?}",
+                address
+            );
+            return Ok(());
+        }
+
         let mut info = account.account_info().unwrap_or_default();
         info.code_hash = code.hash_slow();
         info.code = Some(code);
@@ -278,16 +291,25 @@ where
         let state_clear_flag = self.spec.is_spurious_dragon_active_at_block(self.evm.block().number.to());
         self.evm.db_mut().set_state_clear_flag(state_clear_flag);
 
-        if !self.spec.is_feynman_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>() - 3) {
+        if !self.spec.is_feynman_active_at_timestamp(
+            self.evm.block().number.to::<u64>(),
+            self.evm.block().timestamp.to::<u64>() - 3,
+        )
+        {
             self.upgrade_contracts()?;
         }
-     
-        // enable BEP-440/EIP-2935 for historical block hashes from state
-        if self.spec.is_pascal_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>()) &&
-            !self.spec.is_pascal_active_at_timestamp(self.evm.block().number.to::<u64>() - 1, self.evm.block().timestamp.to::<u64>() - 3) {
+
+        // Enable BEP-440/EIP-2935 for historical block hashes from state. This is consensus-
+        // critical and must run in both verification and mining contexts.
+        if self.spec.is_london_active_at_block(self.evm.block().number.to::<u64>())
+            && self.spec.is_pascal_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>())
+            && !self.spec.is_pascal_active_at_timestamp(self.evm.block().number.to::<u64>() - 1, self.evm.block().timestamp.to::<u64>() - 3)
+        {
                 self.apply_history_storage_account(self.evm.block().number.to::<u64>())?;
         }
-        if self.spec.is_pascal_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>()) {
+        if self.spec.is_london_active_at_block(self.evm.block().number.to::<u64>())
+            && self.spec.is_pascal_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>())
+        {
             self.system_caller
                 .apply_blockhashes_contract_call(self.ctx.base.parent_hash, &mut self.evm)?;
         }
@@ -411,19 +433,33 @@ where
             "Start to finish"
         );
 
-        // If first block deploy genesis contracts
-        if self.evm.block().number == uint!(1U256) {
+        // If first block deploy genesis contracts.
+        // Do this only when mining, or when verifying a block that actually
+        // contains the signed system transactions to consume (i.e. replay mode).
+        if self.evm.block().number == uint!(1U256)
+            && (self.ctx.is_miner || !self.system_txs.is_empty())
+        {
             self.deploy_genesis_contracts(self.evm.block().beneficiary)?;
         }
 
-        if self.spec.is_feynman_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>() - 3) {
+        if self.spec.is_london_active_at_block(self.evm.block().number.to::<u64>())
+            && self.spec.is_feynman_active_at_timestamp(
+                self.evm.block().number.to::<u64>(),
+                self.evm.block().timestamp.to::<u64>() - 3,
+            )
+        {
             self.upgrade_contracts()?;
         }
 
-        if self.spec.is_feynman_active_at_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to()) &&
-            !self
-                .spec
-                .is_feynman_active_at_timestamp(self.evm.block().number.to::<u64>() - 1, self.evm.block().timestamp.to::<u64>() - 3)
+        if self.spec.is_london_active_at_block(self.evm.block().number.to::<u64>())
+            && self.spec.is_feynman_active_at_timestamp(
+                self.evm.block().number.to::<u64>(),
+                self.evm.block().timestamp.to(),
+            )
+            && !self.spec.is_feynman_active_at_timestamp(
+                self.evm.block().number.to::<u64>() - 1,
+                self.evm.block().timestamp.to::<u64>() - 3,
+            )
         {
             self.initialize_feynman_contracts(self.evm.block().beneficiary)?;
         }

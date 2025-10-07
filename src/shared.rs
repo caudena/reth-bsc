@@ -1,4 +1,5 @@
 use crate::consensus::parlia::SnapshotProvider;
+use crate::node::consensus::BscConsensus;
 use std::sync::{Arc, OnceLock};
 use alloy_consensus::Header;
 use alloy_primitives::B256;
@@ -15,6 +16,9 @@ type HeaderByNumberFn = Arc<dyn Fn(u64) -> Option<Header> + Send + Sync>;
 
 /// Global shared access to the snapshot provider for RPC
 static SNAPSHOT_PROVIDER: OnceLock<Arc<dyn SnapshotProvider + Send + Sync>> = OnceLock::new();
+
+/// Global BSC consensus instance for fork choice decisions
+static BSC_CONSENSUS: OnceLock<Arc<BscConsensus<crate::chainspec::BscChainSpec>>> = OnceLock::new();
 
 /// Global header provider function - HeaderProvider::header() by hash
 static HEADER_BY_HASH_PROVIDER: OnceLock<HeaderByHashFn> = OnceLock::new();
@@ -36,6 +40,16 @@ pub fn set_snapshot_provider(provider: Arc<dyn SnapshotProvider + Send + Sync>) 
 /// Get the global snapshot provider
 pub fn get_snapshot_provider() -> Option<&'static Arc<dyn SnapshotProvider + Send + Sync>> {
     SNAPSHOT_PROVIDER.get()
+}
+
+/// Store the BSC consensus instance globally
+pub fn set_bsc_consensus(consensus: Arc<BscConsensus<crate::chainspec::BscChainSpec>>) -> Result<(), Arc<BscConsensus<crate::chainspec::BscChainSpec>>> {
+    BSC_CONSENSUS.set(consensus)
+}
+
+/// Get the global BSC consensus instance
+pub fn get_bsc_consensus() -> Option<&'static Arc<BscConsensus<crate::chainspec::BscChainSpec>>> {
+    BSC_CONSENSUS.get()
 }
 
 /// Store the header provider globally

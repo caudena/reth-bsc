@@ -191,7 +191,9 @@ where
 
     fn evm_env(&self, header: &Header) -> EvmEnv<BscHardfork> {
         let mut blob_params = None;
-        if BscHardforks::is_cancun_active_at_timestamp(self.chain_spec(), header.number, header.timestamp) {
+        if self.chain_spec().is_london_active_at_block(header.number)
+            && BscHardforks::is_cancun_active_at_timestamp(self.chain_spec(), header.number, header.timestamp)
+        {
             blob_params = self.chain_spec().blob_params_at_timestamp(header.timestamp);
         }
         let spec = revm_spec_by_timestamp_and_block_number(
@@ -271,6 +273,7 @@ where
             self.chain_spec().base_fee_params_at_timestamp(attributes.timestamp),
         );
 
+        // Start with the parent's gas limit; may adjust at London transition.
         let mut gas_limit = U256::from(parent.gas_limit);
 
         // If we are on the London fork boundary, we need to multiply the parent's gas limit by the
@@ -293,13 +296,14 @@ where
             basefee = Some(EIP1559_INITIAL_BASE_FEE)
         }
 
+        // Use the possibly adjusted gas limit (at London boundary) for the next block.
         let block_env = BlockEnv {
             number: U256::from(parent.number() + 1),
             beneficiary: attributes.suggested_fee_recipient,
             timestamp: U256::from(attributes.timestamp),
             difficulty: U256::ZERO,
             prevrandao: Some(attributes.prev_randao),
-            gas_limit: attributes.gas_limit,
+            gas_limit: gas_limit.to::<u64>(),
             // calculate basefee based on parent block's gas usage
             basefee: basefee.unwrap_or_default(),
             // calculate excess gas based on parent block's blob gas usage
@@ -409,41 +413,54 @@ where
 
 /// Map the latest active hardfork at the given timestamp or block number to a [`BscHardfork`].
 pub fn revm_spec_by_timestamp_and_block_number(
-    chain_spec: impl BscHardforks,
+    chain_spec: impl BscHardforks + reth_chainspec::EthereumHardforks + reth_chainspec::EthChainSpec,
     timestamp: u64,
     block_number: u64,
 ) -> BscHardfork {
-    if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Maxwell
-    } else if chain_spec.is_lorentz_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Lorentz
-    } else if chain_spec.is_pascal_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Pascal
-    } else if chain_spec.is_bohr_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Bohr
-    } else if chain_spec.is_haber_fix_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::HaberFix
-    } else if chain_spec.is_haber_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Haber
-    } else if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
-        BscHardfork::Cancun
-    } else if chain_spec.is_feynman_fix_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::FeynmanFix
-    } else if chain_spec.is_feynman_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Feynman
-    } else if chain_spec.is_kepler_active_at_timestamp(block_number, timestamp) {
-        BscHardfork::Kepler
-    } else if chain_spec.is_hertz_fix_active_at_block(block_number) {
-        BscHardfork::HertzFix
+    let london_active = chain_spec.is_london_active_at_block(block_number);
+    if london_active {
+        if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Maxwell;
+        } else if chain_spec.is_lorentz_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Lorentz;
+        } else if chain_spec.is_pascal_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Pascal;
+        } else if chain_spec.is_bohr_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Bohr;
+        } else if chain_spec.is_haber_fix_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::HaberFix;
+        } else if chain_spec.is_haber_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Haber;
+        } else if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
+            return BscHardfork::Cancun;
+        } else if chain_spec.is_feynman_fix_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::FeynmanFix;
+        } else if chain_spec.is_feynman_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Feynman;
+        } else if chain_spec.is_kepler_active_at_timestamp(block_number, timestamp) {
+            return BscHardfork::Kepler;
+        } else if chain_spec.is_shanghai_active_at_timestamp(timestamp) {
+            // Fallback: If Ethereum Shanghai is active but BSC Kepler is not explicitly configured,
+            // still apply Shanghai rules (Kepler mapping) once London is active.
+            return BscHardfork::Kepler;
+        }
+        // If London is active but no timestamp-based fork matched, fall through to block-based checks below.
+    }
+
+    // Block-based forks (apply regardless of London activation)
+    if chain_spec.is_hertz_fix_active_at_block(block_number) {
+        return BscHardfork::HertzFix;
     } else if chain_spec.is_hertz_active_at_block(block_number) {
-        BscHardfork::Hertz
+        return BscHardfork::Hertz;
     } else if chain_spec.is_plato_active_at_block(block_number) {
-        BscHardfork::Plato
+        return BscHardfork::Plato;
     } else if chain_spec.is_luban_active_at_block(block_number) {
-        BscHardfork::Luban
+        return BscHardfork::Luban;
     } else if chain_spec.is_planck_active_at_block(block_number) {
-        BscHardfork::Planck
-    } else {
+        return BscHardfork::Planck;
+    }
+
+    {
         // Dynamically determine the order for Moran, Nano, Gibbs for the current chain
         fn get_activation_block(fc: &reth_chainspec::ForkCondition) -> Option<u64> {
             match fc {
@@ -467,17 +484,17 @@ pub fn revm_spec_by_timestamp_and_block_number(
             }
         }
         if chain_spec.is_euler_active_at_block(block_number) {
-            BscHardfork::Euler
+            return BscHardfork::Euler;
         } else if chain_spec.is_bruno_active_at_block(block_number) {
-            BscHardfork::Bruno
+            return BscHardfork::Bruno;
         } else if chain_spec.is_mirror_sync_active_at_block(block_number) {
-            BscHardfork::MirrorSync
+            return BscHardfork::MirrorSync;
         } else if chain_spec.is_niels_active_at_block(block_number) {
-            BscHardfork::Niels
+            return BscHardfork::Niels;
         } else if chain_spec.is_ramanujan_active_at_block(block_number) {
-            BscHardfork::Ramanujan
+            return BscHardfork::Ramanujan;
         } else {
-            BscHardfork::Frontier
+            return BscHardfork::Frontier;
         }
     }
 }

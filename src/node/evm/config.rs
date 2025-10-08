@@ -196,7 +196,7 @@ where
         {
             blob_params = self.chain_spec().blob_params_at_timestamp(header.timestamp);
         }
-        let spec = revm_spec_by_timestamp_and_block_number(
+        let bhf = revm_spec_by_timestamp_and_block_number(
             self.chain_spec().clone(),
             header.timestamp(),
             header.number(),
@@ -204,7 +204,7 @@ where
 
         // configure evm env based on parent block
         let mut cfg_env =
-            CfgEnv::new().with_chain_id(self.chain_spec().chain().id()).with_spec(spec);
+            CfgEnv::new().with_chain_id(self.chain_spec().chain().id()).with_spec(bhf);
 
         if let Some(blob_params) = &blob_params {
             cfg_env.set_max_blobs_per_tx(blob_params.max_blobs_per_tx);
@@ -218,7 +218,31 @@ where
                 BlobExcessGasAndPrice { excess_blob_gas, blob_gasprice }
             });
 
-        let eth_spec = SpecId::from(spec);
+        let eth_spec = SpecId::from(bhf);
+
+        if std::env::var("RETH_BSC_DEBUG_SPEC").unwrap_or_default() == "1" {
+            let cs = self.chain_spec();
+            let num = header.number();
+            let ts = header.timestamp();
+            let london = cs.is_london_active_at_block(num);
+            let cancun = BscHardforks::is_cancun_active_at_timestamp(cs, num, ts);
+            let prague = cs.is_prague_active_at_timestamp(ts);
+            let lorentz = cs.is_lorentz_active_at_timestamp(num, ts);
+            let maxwell = cs.is_maxwell_active_at_timestamp(num, ts);
+            tracing::debug!(
+                target: "reth_bsc::evm::spec",
+                block = num,
+                timestamp = ts,
+                london,
+                cancun,
+                prague,
+                lorentz,
+                maxwell,
+                chosen_bsc = ?bhf,
+                chosen_eth = ?eth_spec,
+                "EVM spec selection"
+            );
+        }
 
         let block_env = BlockEnv {
             number: U256::from(header.number()),
@@ -419,7 +443,10 @@ pub fn revm_spec_by_timestamp_and_block_number(
 ) -> BscHardfork {
     let london_active = chain_spec.is_london_active_at_block(block_number);
     if london_active {
-        if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
+        // Prefer Cancun over later timestamp forks to match geth ordering for EVM changes.
+        if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
+            return BscHardfork::Cancun;
+        } else if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::Maxwell;
         } else if chain_spec.is_lorentz_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::Lorentz;
@@ -431,8 +458,6 @@ pub fn revm_spec_by_timestamp_and_block_number(
             return BscHardfork::HaberFix;
         } else if chain_spec.is_haber_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::Haber;
-        } else if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
-            return BscHardfork::Cancun;
         } else if chain_spec.is_feynman_fix_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::FeynmanFix;
         } else if chain_spec.is_feynman_active_at_timestamp(block_number, timestamp) {

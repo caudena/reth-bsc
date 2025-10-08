@@ -554,23 +554,26 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
     ) -> bool {
         use crate::consensus::parlia::fork_choice::BscForkChoice;
         
-        // Get snapshots for both headers to access justified block information
-        let current_snap = if current.number > 0 {
-            crate::shared::get_snapshot_provider()
-                .and_then(|sp| sp.snapshot(current.number - 1))
-        } else {
-            None
+        // Get snapshots for both headers to access justified block information.
+        // Match BSC behavior by enabling justification per-header based on Plato activation.
+        let (current_snap, incoming_snap) = {
+            let sp = crate::shared::get_snapshot_provider();
+            let current_snap = if current.number > 0 && self.spec.is_plato_active_at_block(current.number) {
+                sp.and_then(|sp| sp.snapshot(current.number - 1))
+            } else {
+                None
+            };
+            let incoming_snap = if incoming.number > 0 && self.spec.is_plato_active_at_block(incoming.number) {
+                sp.and_then(|sp| sp.snapshot(incoming.number - 1))
+            } else {
+                None
+            };
+            (current_snap, incoming_snap)
         };
         
-        let incoming_snap = if incoming.number > 0 {
-            crate::shared::get_snapshot_provider()
-                .and_then(|sp| sp.snapshot(incoming.number - 1))
-        } else {
-            None
-        };
-        
-        // Check if Plato hard fork (fast finality) is active for this block
-        let is_plato_active = self.spec.is_plato_active_at_block(incoming.number.max(current.number));
+        // Check if Plato hard fork (fast finality) is active for at least one of the compared headers
+        let is_plato_active = self.spec.is_plato_active_at_block(incoming.number) ||
+            self.spec.is_plato_active_at_block(current.number);
         
         BscForkChoice::reorg_needed_with_fast_finality(
             current,

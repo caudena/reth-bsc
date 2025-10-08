@@ -5,7 +5,7 @@ use crate::evm::{
     blacklist,
 };
 
-use alloy_primitives::{address, Address, U256};
+use alloy_primitives::{U256};
 use reth_evm::Database;
 use revm::{bytecode::Bytecode, primitives::eip7702};
 
@@ -19,11 +19,12 @@ use revm::{
     context_interface::{transaction::eip7702::AuthorizationTr, JournalTr},
     handler::{EthFrame, EvmTr, FrameResult, Handler, MainnetHandler},
     inspector::{Inspector, InspectorHandler},
-    interpreter::{interpreter::EthInterpreter, Host, InitialAndFloorGas, SuccessOrHalt},
+    interpreter::{interpreter::EthInterpreter, Host, SuccessOrHalt},
     primitives::hardfork::SpecId,
 };
 
-const SYSTEM_ADDRESS: Address = address!("fffffffffffffffffffffffffffffffffffffffe");
+// Use the canonical system address defined in consensus module
+use crate::consensus::SYSTEM_ADDRESS;
 
 pub struct BscHandler<DB: revm::database::Database, INSP> {
     pub mainnet: MainnetHandler<BscEvm<DB, INSP>, EVMError<DB::Error>, EthFrame>,
@@ -143,13 +144,8 @@ impl<DB: Database, INSP> Handler for BscHandler<DB, INSP> {
         &self,
         evm: &Self::Evm,
     ) -> Result<revm::interpreter::InitialAndFloorGas, Self::Error> {
-        let ctx = evm.ctx_ref();
-        let tx = ctx.tx();
-
-        if tx.is_system_transaction {
-            return Ok(InitialAndFloorGas { initial_gas: 0, floor_gas: 0 });
-        }
-
+        // BSC system transactions should calculate intrinsic gas normally,
+        // then subtract it afterward (like geth does).
         self.mainnet.validate_initial_tx_gas(evm)
     }
 
@@ -194,9 +190,49 @@ impl<DB: Database, INSP> Handler for BscHandler<DB, INSP> {
         }
 
         // used gas with refund calculated.
-        let gas_refunded =
-            if evm.ctx().tx().is_system_transaction { 0 } else { result.gas().refunded() as u64 };
-        let final_gas_used = result.gas().spent() - gas_refunded;
+        let gas_spent = result.gas().spent();
+        // For BSC system transactions, refunds are not applied (matches geth Parlia path).
+        let gas_refunded = if evm.ctx().tx().is_system_transaction {
+            0
+        } else {
+            result.gas().refunded() as u64
+        };
+
+        // Start from spent minus refund, then subtract intrinsic for system tx (geth parity).
+        let mut final_gas_used = gas_spent.saturating_sub(gas_refunded);
+        if evm.ctx().tx().is_system_transaction {
+            // Reuse the same intrinsic calculation as normal txs to avoid drift across forks.
+            let intrinsic = self.validate_initial_tx_gas(evm)?.initial_gas;
+            final_gas_used = final_gas_used.saturating_sub(intrinsic);
+        }
+
+        // Optional debug: dump gas accounting for each tx when RETH_BSC_DEBUG_GAS=1
+        if std::env::var("RETH_BSC_DEBUG_GAS").unwrap_or_default() == "1" {
+            let ctx = evm.ctx();
+            let tx = ctx.tx();
+            let spec = revm::primitives::hardfork::SpecId::from(ctx.cfg().spec());
+            // Try to gather a few basic tx fields; avoid panics if not available.
+            let is_system = tx.is_system_transaction;
+            let gas_limit = tx.gas_limit();
+            let caller = tx.caller();
+            let kind = tx.kind();
+            let to_addr = match kind {
+                revm::primitives::TxKind::Call(a) => Some(a),
+                _ => None,
+            };
+            tracing::debug!(
+                target: "reth_bsc::evm::gas_debug",
+                %spec,
+                is_system,
+                gas_limit,
+                caller = %format!("0x{:x}", caller),
+                to = to_addr.map(|a| format!("0x{:x}", a)).unwrap_or_else(|| "<create>".into()),
+                gas_spent,
+                gas_refunded,
+                final_gas_used,
+                "Tx gas breakdown"
+            );
+        }
         let output = result.output();
         let instruction_result = result.into_interpreter_result();
 

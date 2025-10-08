@@ -35,6 +35,7 @@ use crate::node::network::BscNewBlock;
 use crate::shared::{get_block_import_sender, get_local_peer_id_or_default};
 use alloy_primitives::U128;
 use reth_network::message::NewBlockMessage;
+// use reth_chainspec::EthChainSpec; // no longer needed here
 
 pub struct MiningContext {
     parent_header: reth_primitives::SealedHeader,
@@ -47,6 +48,7 @@ pub struct NewWorkWorker<Provider> {
     provider: Provider,
     snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
     mining_queue_tx: mpsc::UnboundedSender<MiningContext>,
+    chain_spec: Arc<crate::chainspec::BscChainSpec>,
 }
 
 impl<Provider> NewWorkWorker<Provider> 
@@ -66,12 +68,14 @@ where
         provider: Provider,
         snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
         mining_queue_tx: mpsc::UnboundedSender<MiningContext>,
+        chain_spec: Arc<crate::chainspec::BscChainSpec>,
     ) -> Self {
         Self {
             validator_address,
             provider,
             snapshot_provider,
             mining_queue_tx,
+            chain_spec,
         }
     }
 
@@ -142,7 +146,6 @@ where
             return;
         }
         
-        // TODO: remove it later, now just for easy to debug.
         if !parent_snapshot.is_inturn(self.validator_address) {
             debug!("Skip to produce due to is not inturn, validator: {}, tip: {}", self.validator_address, tip.number());
             return;
@@ -317,7 +320,18 @@ where
                 );
                 return Ok(());
             }
-            if !snap.is_inturn(self.validator_address) {
+            // Recompute in-turn using turn_length parsed from parent header when available.
+            let epoch_len = self.parlia.get_epoch_length(mining_ctx.parent_header.header());
+            let parsed_tl = self
+                .parlia
+                .get_turn_length_from_header(mining_ctx.parent_header.header(), epoch_len)
+                .ok()
+                .flatten()
+                .unwrap_or(snap.turn_length.unwrap_or(crate::consensus::parlia::snapshot::DEFAULT_TURN_LENGTH));
+            let tl = u64::from(parsed_tl);
+            let offset = ((snap.block_number + 1) / tl) as usize % snap.validators.len();
+            let inturn_validator = snap.validators[offset];
+            if inturn_validator != self.validator_address {
                 tracing::debug!(
                     target: "bsc::miner",
                     validator = %format!("0x{:x}", self.validator_address),
@@ -328,46 +342,68 @@ where
             }
         }
 
-        // now is focus on the basic workflow.
-        // TODO: refine it later. https://github.com/bnb-chain/bsc/blob/master/consensus/parlia/parlia.go#L1702.
-        let present_timestamp = self.parlia.present_timestamp();
-        if sealed_block.header().timestamp > present_timestamp {
-            let delay_ms = (sealed_block.header().timestamp - present_timestamp) * 1000;
-            tracing::info!(
-                target: "bsc::miner",
-                block_number = sealed_block.header().number,
-                block_timestamp = sealed_block.header().timestamp,
-                present_timestamp = present_timestamp,
-                delay_ms = delay_ms,
-                "Block timestamp is in the future, waiting before submission"
-            );
-            tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
-            tracing::debug!(
-                target: "bsc::miner",
-                block_number = sealed_block.header().number,
-                "Finished waiting, proceeding with block submission"
-            );
-
-            // Re-validate after waiting since head/snapshot may have changed.
-            if let Ok(Some(latest_parent)) = self.provider.sealed_header(parent_number) {
-                if latest_parent.hash_slow() != mining_ctx.parent_header.hash_slow() {
-                    tracing::debug!(
-                        target: "bsc::miner",
-                        expected_parent = %format!("0x{:x}", mining_ctx.parent_header.hash_slow()),
-                        current_parent = %format!("0x{:x}", latest_parent.hash_slow()),
-                        "Parent header changed during wait, dropping block"
-                    );
-                    return Ok(());
-                }
+        // Scheduling and timestamp sanity checks before submission.
+        // 1) If the header's timestamp is in the future relative to our clock, wait.
+        // 2) Enforce monotonicity and Parlia backoff constraints; drop the block if violated
+        //    to avoid submitting an invalid payload.
+        {
+            let present_timestamp = self.parlia.present_timestamp();
+            let header_ts = sealed_block.header().timestamp;
+            
+            // If block timestamp is in the future, wait until it becomes valid.
+            if header_ts > present_timestamp {
+                let delay_ms = (header_ts - present_timestamp) * 1000;
+                tracing::info!(
+                    target: "bsc::miner",
+                    block_number = sealed_block.header().number,
+                    block_timestamp = header_ts,
+                    present_timestamp = present_timestamp,
+                    delay_ms = delay_ms,
+                    "Block timestamp is in the future, waiting before submission"
+                );
+                tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
+                // After waiting, we will re-run all checks against the latest parent header below.
             }
 
-            if let Some(snap) = self.snapshot_provider.snapshot(parent_number) {
-                if snap.sign_recently(self.validator_address) || !snap.is_inturn(self.validator_address) {
+            // Fetch the latest parent header (in case head advanced) and snapshot.
+            let latest_parent = self
+                .provider
+                .sealed_header(parent_number)
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| mining_ctx.parent_header.clone());
+            let snap_opt = self.snapshot_provider.snapshot(parent_number);
+
+            // Ensure header timestamp is not earlier than parent per consensus rules.
+            if header_ts < latest_parent.timestamp() {
+                tracing::debug!(
+                    target: "bsc::miner",
+                    parent_ts = latest_parent.timestamp(),
+                    header_ts = header_ts,
+                    "Dropping block: header timestamp earlier than parent"
+                );
+                return Ok(());
+            }
+
+            // Enforce Parlia's minimal delay: parent_ms + period + computed backoff
+            if let Some(snap) = snap_opt {
+                use crate::consensus::parlia::util::calculate_millisecond_timestamp;
+                let parent_ms = calculate_millisecond_timestamp(latest_parent.header());
+                let block_ms = calculate_millisecond_timestamp(sealed_block.header());
+                // Compute backoff using the snapshot and latest parent header.
+                let backoff_ms = self
+                    .parlia
+                    .back_off_time(&snap, latest_parent.header(), sealed_block.header());
+                let required_ms = parent_ms + snap.block_interval + backoff_ms;
+                if block_ms < required_ms {
                     tracing::debug!(
                         target: "bsc::miner",
-                        validator = %format!("0x{:x}", self.validator_address),
-                        block_number = parent_number + 1,
-                        "Eligibility changed during wait; dropping block"
+                        block_ms = block_ms,
+                        required_ms = required_ms,
+                        parent_ms = parent_ms,
+                        block_interval = snap.block_interval,
+                        backoff_ms = backoff_ms,
+                        "Dropping block: timestamp below required Parlia delay"
                     );
                     return Ok(());
                 }
@@ -467,6 +503,7 @@ where
             provider.clone(),
             snapshot_provider.clone(),
             mining_queue_tx.clone(),
+            chain_spec.clone(),
         );
         let main_work_worker = MainWorkWorker::new(
             validator_address,

@@ -443,10 +443,7 @@ pub fn revm_spec_by_timestamp_and_block_number(
 ) -> BscHardfork {
     let london_active = chain_spec.is_london_active_at_block(block_number);
     if london_active {
-        // Prefer Cancun over later timestamp forks to match geth ordering for EVM changes.
-        if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
-            return BscHardfork::Cancun;
-        } else if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
+        if chain_spec.is_maxwell_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::Maxwell;
         } else if chain_spec.is_lorentz_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::Lorentz;
@@ -458,6 +455,8 @@ pub fn revm_spec_by_timestamp_and_block_number(
             return BscHardfork::HaberFix;
         } else if chain_spec.is_haber_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::Haber;
+        } else if BscHardforks::is_cancun_active_at_timestamp(&chain_spec, block_number, timestamp) {
+            return BscHardfork::Cancun;
         } else if chain_spec.is_feynman_fix_active_at_timestamp(block_number, timestamp) {
             return BscHardfork::FeynmanFix;
         } else if chain_spec.is_feynman_active_at_timestamp(block_number, timestamp) {

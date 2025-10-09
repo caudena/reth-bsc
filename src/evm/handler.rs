@@ -5,7 +5,7 @@ use crate::evm::{
     blacklist,
 };
 
-use alloy_primitives::{U256};
+use alloy_primitives::U256;
 use reth_evm::Database;
 use revm::{bytecode::Bytecode, primitives::eip7702};
 
@@ -19,7 +19,7 @@ use revm::{
     context_interface::{transaction::eip7702::AuthorizationTr, JournalTr},
     handler::{EthFrame, EvmTr, FrameResult, Handler, MainnetHandler},
     inspector::{Inspector, InspectorHandler},
-    interpreter::{interpreter::EthInterpreter, Host, SuccessOrHalt},
+    interpreter::{interpreter::EthInterpreter, Host, InitialAndFloorGas, SuccessOrHalt},
     primitives::hardfork::SpecId,
 };
 
@@ -144,8 +144,13 @@ impl<DB: Database, INSP> Handler for BscHandler<DB, INSP> {
         &self,
         evm: &Self::Evm,
     ) -> Result<revm::interpreter::InitialAndFloorGas, Self::Error> {
-        // BSC system transactions should calculate intrinsic gas normally,
-        // then subtract it afterward (like geth does).
+        let ctx = evm.ctx_ref();
+        let tx = ctx.tx();
+
+        if tx.is_system_transaction {
+            return Ok(InitialAndFloorGas { initial_gas: 0, floor_gas: 0 });
+        }
+
         self.mainnet.validate_initial_tx_gas(evm)
     }
 

@@ -8,7 +8,7 @@ use crate::chainspec::BscChainSpec;
 use crate::consensus::parlia::{EXTRA_VANITY_LEN, EXTRA_SEAL_LEN};
 use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
-use reth_chainspec::{EthChainSpec, EthereumHardforks};
+use reth_chainspec::{EthChainSpec};
 use crate::node::evm::pre_execution::VALIDATOR_CACHE;
 use crate::node::miner::signer::seal_header_with_global_signer;
 
@@ -21,9 +21,7 @@ pub fn prepare_new_attributes(parlia: Arc<Parlia<BscChainSpec>>, parent_snap: &S
         prev_randao: new_header.mix_hash,
         ..Default::default()
     };
-    if parlia.spec.is_london_active_at_block(new_header.number)
-        && BscHardforks::is_bohr_active_at_timestamp(&parlia.spec, new_header.number, new_header.timestamp)
-    {
+    if BscHardforks::is_bohr_active_at_timestamp(&parlia.spec, new_header.number, new_header.timestamp) {
         attributes.parent_beacon_block_root = Some(B256::default());
     }
     attributes

@@ -48,7 +48,6 @@ pub struct NewWorkWorker<Provider> {
     provider: Provider,
     snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
     mining_queue_tx: mpsc::UnboundedSender<MiningContext>,
-    chain_spec: Arc<crate::chainspec::BscChainSpec>,
 }
 
 impl<Provider> NewWorkWorker<Provider> 
@@ -68,14 +67,12 @@ where
         provider: Provider,
         snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
         mining_queue_tx: mpsc::UnboundedSender<MiningContext>,
-        chain_spec: Arc<crate::chainspec::BscChainSpec>,
     ) -> Self {
         Self {
             validator_address,
             provider,
             snapshot_provider,
             mining_queue_tx,
-            chain_spec,
         }
     }
 
@@ -411,7 +408,7 @@ where
         }
 
         let parent_td = self.provider.header_td_by_number(parent_number)
-            .map_err(|e| format!("Failed to get parent total difficulty due to {}", e))?
+            .map_err(|e| format!("Failed to get parent total difficulty due to {e}"))?
             .unwrap_or_default();
         let current_difficulty = sealed_block.header().difficulty();
         let new_td = parent_td + current_difficulty;
@@ -503,7 +500,6 @@ where
             provider.clone(),
             snapshot_provider.clone(),
             mining_queue_tx.clone(),
-            chain_spec.clone(),
         );
         let main_work_worker = MainWorkWorker::new(
             validator_address,
@@ -530,7 +526,7 @@ where
         let private_key_bytes = self.signing_key.as_nonzero_scalar().to_bytes();
         let private_key = B256::from_slice(&private_key_bytes);
         if let Err(e) = init_global_signer(private_key) {
-            return Err(format!("Failed to initialize global signer due to {}", e).into());
+            return Err(format!("Failed to initialize global signer due to {e}").into());
         } else {
             info!("Succeed to initialize global signer");
         }

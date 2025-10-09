@@ -437,7 +437,7 @@ where
 
 /// Map the latest active hardfork at the given timestamp or block number to a [`BscHardfork`].
 pub fn revm_spec_by_timestamp_and_block_number(
-    chain_spec: impl BscHardforks + reth_chainspec::EthereumHardforks + reth_chainspec::EthChainSpec,
+    chain_spec: impl BscHardforks + reth_chainspec::EthChainSpec,
     timestamp: u64,
     block_number: u64,
 ) -> BscHardfork {

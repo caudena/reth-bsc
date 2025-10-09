@@ -336,7 +336,7 @@ impl Snapshot {
         if let Some(&times) = counts.get(&validator) {
             let allowed = u64::from(self.turn_length.unwrap_or(1));
             // Allow up to `allowed` times within the recent window; flag only when exceeding.
-            if u64::from(times) > allowed {
+            if u64::from(times) >= allowed {
                 tracing::warn!("Recently signed, validator: {:?}, block_number: {:?}, times: {:?}, allowed: {:?}", validator, self.block_number, times, allowed);
                 return true;
             }

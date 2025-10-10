@@ -208,12 +208,23 @@ pub trait BscHardforks: EthereumHardforks {
         self.is_london_active_at_block(block_number) &&
         self.bsc_fork_activation(BscHardfork::Bohr).active_at_timestamp(timestamp)
     }
+    /// Convenience method to check if [`EthereumHardfork::Prague`] is active at a given block
+    /// and timestamp.
+    fn is_prague_active_at_block_and_timestamp(&self, block_number: u64, timestamp: u64) -> bool {
+        self.is_london_active_at_block(block_number)
+            && reth_chainspec::EthereumHardforks::is_prague_active_at_timestamp(self, timestamp)
+    }
 
     /// Convenience method to check if [`EthereumHardfork::Prague`] is firstly active at a given
-    /// timestamp and parent timestamp.
-    fn is_prague_transition_at_timestamp(&self, timestamp: u64, parent_timestamp: u64) -> bool {
-        self.is_prague_active_at_timestamp(timestamp) &&
-            !self.is_prague_active_at_timestamp(parent_timestamp)
+    /// block/timestamp and its parent block/timestamp.
+    fn is_prague_transition_at_block_and_timestamp(
+        &self,
+        block_number: u64,
+        timestamp: u64,
+        parent_timestamp: u64,
+    ) -> bool {
+        self.is_prague_active_at_block_and_timestamp(block_number, timestamp)
+            && !self.is_prague_active_at_block_and_timestamp(block_number - 1, parent_timestamp)
     }
 
     /// Convenience method to check if [`BscHardfork::Pascal`] is active at a given timestamp.

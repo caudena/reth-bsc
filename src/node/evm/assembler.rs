@@ -91,23 +91,24 @@ where
         let transactions_root = proofs::calculate_transaction_root(&transactions);
         let receipts_root = Receipt::calculate_receipt_root_no_memo(receipts);
         let logs_bloom = logs_bloom(receipts.iter().flat_map(|r| &r.logs));
+        let block_number = evm_env.block_env.number.saturating_to();
 
         let withdrawals = self
             .chain_spec
             .is_shanghai_active_at_timestamp(timestamp)
             .then(|| eth_ctx.withdrawals.clone().map(|w| w.into_owned()).unwrap_or_default());
 
+        
         let withdrawals_root =
             withdrawals.as_deref().map(|w| proofs::calculate_withdrawals_root(w));
         let requests_hash = self
             .chain_spec
-            .is_prague_active_at_timestamp(timestamp)
+            .is_prague_active_at_block_and_timestamp(block_number, timestamp)
             .then(|| requests.requests_hash());
 
         let mut excess_blob_gas = None;
         let mut blob_gas_used = None;
 
-        let block_number = evm_env.block_env.number.saturating_to();
         if BscHardforks::is_cancun_active_at_timestamp(&*self.chain_spec, block_number, timestamp) {
             blob_gas_used =
                 Some(transactions.iter().map(|tx| tx.blob_gas_used().unwrap_or_default()).sum());
@@ -216,6 +217,7 @@ where
         let transactions_root = proofs::calculate_transaction_root(&transactions);
         let receipts_root = Receipt::calculate_receipt_root_no_memo(receipts);
         let logs_bloom = logs_bloom(receipts.iter().flat_map(|r| &r.logs));
+        let block_number = evm_env.block_env.number.saturating_to();
 
         let withdrawals = self
             .chain_spec
@@ -226,13 +228,13 @@ where
             withdrawals.as_deref().map(|w| proofs::calculate_withdrawals_root(w));
         let requests_hash = self
             .chain_spec
-            .is_prague_active_at_timestamp(timestamp)
+            .is_prague_active_at_block_and_timestamp(block_number, timestamp)
             .then(|| requests.requests_hash());
 
         let mut excess_blob_gas = None;
         let mut blob_gas_used = None;
 
-        let block_number = evm_env.block_env.number.saturating_to();
+        
         if BscHardforks::is_cancun_active_at_timestamp(&*self.chain_spec, block_number, timestamp) {
             blob_gas_used =
                 Some(transactions.iter().map(|tx| tx.blob_gas_used().unwrap_or_default()).sum());

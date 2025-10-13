@@ -91,6 +91,7 @@ where
         let base_fee = builder.evm_mut().block().basefee;
         // check: now only filter out blob tx by none blob fee for simple test.
         let mut best_tx_list = self.pool.best_transactions_with_attributes(BestTransactionsAttributes::new(base_fee, None));
+        
         while let Some(pool_tx) = best_tx_list.next() {
             // ensure we still have capacity for this transaction
             if cumulative_gas_used + pool_tx.gas_limit() > block_gas_limit {

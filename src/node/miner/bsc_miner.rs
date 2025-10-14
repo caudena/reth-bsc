@@ -239,7 +239,8 @@ where
             self.provider.clone(), 
             self.pool.clone(), 
             evm_config, 
-            EthereumBuilderConfig::new()
+            EthereumBuilderConfig::new(),
+            self.chain_spec.clone(),
         );
         let payload = payload_builder.build_payload(
             BuildArguments::<EthPayloadBuilderAttributes, BscBuiltPayload>::new(

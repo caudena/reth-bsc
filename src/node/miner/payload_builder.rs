@@ -101,11 +101,9 @@ where
 
         let mut block_blob_count = 0;
         // todo: calc blob fee.
-       // let blob_fee = builder.evm_mut().block().blob_gasprice().map(|gasprice| gasprice as u64);
 
         let blob_params = self.chain_spec.blob_params_at_timestamp(attributes.timestamp());
         let max_blob_count = blob_params.as_ref().map(|params| params.max_blob_count).unwrap_or_default();
-        debug!("debug payload_builder, max_blob_count: {:?}", max_blob_count);
         // check: now only filter out blob tx by none blob fee for simple test.
         let mut best_tx_list = self.pool.best_transactions_with_attributes(BestTransactionsAttributes::new(base_fee, None));
         while let Some(pool_tx) = best_tx_list.next() {
@@ -144,7 +142,6 @@ where
                     );
                     continue
                 }
-                debug!("debug payload_builder, blob tx: {:?}", tx.hash());
 
                 let blob_sidecar_result = 'sidecar: {
                     let Some(sidecar) =
@@ -165,7 +162,7 @@ where
                         Err(Eip4844PoolTransactionError::UnexpectedEip7594SidecarBeforeOsaka)
                     }
                 };
-                debug!("debug payload_builder, blob_sidecar_result: {:?}", blob_sidecar_result);
+                debug!("debug payload_builder,tx hash: {:?}, blob_sidecar_result: {:?}", tx.hash(), blob_sidecar_result);
 
                 blob_tx_sidecar = match blob_sidecar_result {
                     Ok(sidecar) => Some(sidecar),
@@ -174,7 +171,7 @@ where
                         continue
                     }
                 };
-                debug!("debug payload_builder, blob_tx_sidecar: {:?}", blob_tx_sidecar);
+                debug!("debug payload_builder, tx hash: {:?}, blob_tx_sidecar: {:?}", tx.hash(), blob_tx_sidecar);
             }
             
             let gas_used = match builder.execute_transaction(tx.clone()) {

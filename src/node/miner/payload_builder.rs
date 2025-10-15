@@ -31,7 +31,7 @@ use reth_chainspec::EthereumHardforks;
 
 /// BSC payload builder, used to build payload for bsc miner.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BscPayloadBuilder<Pool, Client, EvmConfig> {
+pub struct BscPayloadBuilder<Pool, Client, EvmConfig = BscEvmConfig> {
     /// Client providing access to node state.
     client: Client,
     /// Transaction pool.

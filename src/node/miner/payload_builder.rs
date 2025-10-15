@@ -21,7 +21,7 @@ use reth_basic_payload_builder::{BuildArguments, PayloadConfig};
 use reth::payload::EthPayloadBuilderAttributes;
 use reth_payload_primitives::PayloadBuilderAttributes;
 use alloy_consensus::{Transaction, BlockHeader};
-use reth_primitives_traits::{SignedTransaction, SignerRecoverable};
+use reth_primitives_traits::SignerRecoverable;
 use tracing::warn;
 use crate::chainspec::{BscChainSpec};
 use reth::transaction_pool::error::Eip4844PoolTransactionError;
@@ -63,7 +63,7 @@ where
     }
 
     // todo: check more and refine it later.
-    pub fn build_payload(mut self, args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>) -> Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn build_payload(self, args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>) -> Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>> {
         let BuildArguments { mut cached_reads, config, cancel: _cancel, best_payload: _best_payload } = args;
         let PayloadConfig { parent_header, attributes } = config;
 
@@ -105,7 +105,7 @@ where
 
         let blob_params = self.chain_spec.blob_params_at_timestamp(attributes.timestamp());
         let max_blob_count = blob_params.as_ref().map(|params| params.max_blob_count).unwrap_or_default();
-        tracing::trace!("debug payload_builder, max_blob_count: {:?}", max_blob_count);
+        debug!("debug payload_builder, max_blob_count: {:?}", max_blob_count);
         // check: now only filter out blob tx by none blob fee for simple test.
         let mut best_tx_list = self.pool.best_transactions_with_attributes(BestTransactionsAttributes::new(base_fee, None));
         while let Some(pool_tx) = best_tx_list.next() {
@@ -123,6 +123,7 @@ where
 
             let tx = pool_tx.to_consensus();
             let mut blob_tx_sidecar = None;
+            debug!("debug payload_builder, tx: {:?} is blob tx: {:?} tx type: {:?}", tx.hash(), tx.is_eip4844(), tx.tx_type());
             if let Some(blob_tx) = tx.as_eip4844() {
                 let tx_blob_count = blob_tx.tx().blob_versioned_hashes.len() as u64;
 
@@ -131,7 +132,7 @@ where
                     // invalid, which removes its dependent transactions from
                     // the iterator. This is similar to the gas limit condition
                     // for regular transactions above.
-                    tracing::trace!(target: "payload_builder", tx=?tx.hash(), ?block_blob_count, "skipping blob transaction because it would exceed the max blob count per block");
+                    debug!(target: "payload_builder", tx=?tx.hash(), ?block_blob_count, "skipping blob transaction because it would exceed the max blob count per block");
                     best_tx_list.mark_invalid(
                         &pool_tx,
                         InvalidPoolTransactionError::Eip4844(
@@ -143,6 +144,7 @@ where
                     );
                     continue
                 }
+                debug!("debug payload_builder, blob tx: {:?}", tx.hash());
 
                 let blob_sidecar_result = 'sidecar: {
                     let Some(sidecar) =
@@ -163,6 +165,7 @@ where
                         Err(Eip4844PoolTransactionError::UnexpectedEip7594SidecarBeforeOsaka)
                     }
                 };
+                debug!("debug payload_builder, blob_sidecar_result: {:?}", blob_sidecar_result);
 
                 blob_tx_sidecar = match blob_sidecar_result {
                     Ok(sidecar) => Some(sidecar),
@@ -171,6 +174,7 @@ where
                         continue
                     }
                 };
+                debug!("debug payload_builder, blob_tx_sidecar: {:?}", blob_tx_sidecar);
             }
             
             let gas_used = match builder.execute_transaction(tx.clone()) {

@@ -39,6 +39,12 @@ pub struct BscBuiltPayload {
     pub(crate) sidecars: Option<BlobSidecars>,
 }
 
+impl BscBuiltPayload {
+    pub fn sidecars(&self) -> Option<BlobSidecars> {
+        self.sidecars.clone()
+    }
+}
+
 impl BuiltPayload for BscBuiltPayload {
     type Primitives = BscPrimitives;
 

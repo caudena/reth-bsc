@@ -6,7 +6,7 @@ use crate::chainspec::BscChainSpec;
 
 use crate::consensus::parlia::{Parlia, VoteAddress};
 use crate::node::evm::error::{BscBlockExecutionError, BscBlockValidationError};
-use alloy_primitives::{Address, B256};
+use alloy_primitives::{Address};
 use alloy_primitives::{BlockNumber, BlockHash};
 
 /// Validator information extracted from header
@@ -110,7 +110,7 @@ impl<DB: Database + Clone> Clone for EnhancedDbSnapshotProvider<DB> {
 }
 
 impl<DB: Database> DbSnapshotProvider<DB> {
-    fn load_from_db(&self, block_number: u64) -> Option<Snapshot> {
+    fn load_from_db(&self, block_number: BlockNumber) -> Option<Snapshot> {
         let tx = self.db.tx().ok()?;
         
         // Try to get the exact snapshot for the requested block number
@@ -149,7 +149,7 @@ impl<DB: Database> DbSnapshotProvider<DB> {
         last
     }
 
-    fn query_db_by_hash(&self, block_hash: &B256) -> Option<Snapshot> {
+    fn query_db_by_hash(&self, block_hash: &BlockHash) -> Option<Snapshot> {
         let tx = self.db.tx().ok()?;
         if let Ok(Some(raw_blob)) = tx.get::<crate::consensus::parlia::db::ParliaSnapshotsByHash>(*block_hash) {
             let raw = &raw_blob.0;
@@ -172,7 +172,7 @@ impl<DB: Database> DbSnapshotProvider<DB> {
 }
 
 impl<DB: Database + 'static> SnapshotProvider for DbSnapshotProvider<DB> {
-    fn snapshot(&self, block_number: u64) -> Option<Snapshot> {
+    fn snapshot(&self, block_number: BlockNumber) -> Option<Snapshot> {
         { // fast path: cache
             let mut guard = self.cache.write();
             if let Some(snap) = guard.get(&block_number) {
@@ -186,7 +186,7 @@ impl<DB: Database + 'static> SnapshotProvider for DbSnapshotProvider<DB> {
         Some(snap)
     }
 
-    fn snapshot_by_hash(&self, block_hash: &B256) -> Option<Snapshot> {
+    fn snapshot_by_hash(&self, block_hash: &BlockHash) -> Option<Snapshot> {
         { // fast path: cache
             let mut guard = self.cache_by_hash.write();
             if let Some(snap) = guard.get(block_hash) {
@@ -214,7 +214,7 @@ impl<DB: Database + 'static> SnapshotProvider for DbSnapshotProvider<DB> {
         }
     }
     
-    fn get_header(&self, _block_number: u64) -> Option<alloy_consensus::Header> {
+    fn get_header(&self, _block_number: BlockNumber) -> Option<alloy_consensus::Header> {
         unimplemented!("DbSnapshotProvider doesn't have access to headers");
     }
 }
@@ -222,7 +222,7 @@ impl<DB: Database + 'static> SnapshotProvider for DbSnapshotProvider<DB> {
 // Simplified version based on reth-bsc-trail's approach - much faster and simpler
 impl<DB: Database + 'static> SnapshotProvider for EnhancedDbSnapshotProvider<DB>
 {
-    fn snapshot(&self, block_number: u64) -> Option<Snapshot> {
+    fn snapshot(&self, block_number: BlockNumber) -> Option<Snapshot> {
         { // fast path query.
             let mut cache_guard = self.base.cache.write();
             if let Some(cached_snap) = cache_guard.get(&block_number) {
@@ -313,13 +313,13 @@ impl<DB: Database + 'static> SnapshotProvider for EnhancedDbSnapshotProvider<DB>
         self.base.insert(snapshot);
     }
     
-    fn get_header(&self, block_number: u64) -> Option<alloy_consensus::Header> {
+    fn get_header(&self, block_number: BlockNumber) -> Option<alloy_consensus::Header> {
         let header = crate::node::evm::util::HEADER_CACHE_READER.lock().unwrap().get_header_by_number(block_number);
         tracing::debug!("Succeed to fetch header, is_none: {} for block {} in enhanced snapshot provider", header.is_none(), block_number);
         header
     }
 
-    fn get_header_by_hash(&self, block_hash: &B256) -> Option<alloy_consensus::Header> {
+    fn get_header_by_hash(&self, block_hash: &BlockHash) -> Option<alloy_consensus::Header> {
         let header = crate::node::evm::util::HEADER_CACHE_READER.lock().unwrap().get_header_by_hash(block_hash);
         tracing::debug!("Succeed to fetch header by hash, is_none: {} for hash {} in enhanced snapshot provider", header.is_none(), block_hash);
         header
@@ -348,10 +348,10 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
     }
 
     fn try_rebuild(&self, target_header: &alloy_consensus::Header) -> Option<Snapshot> {
-        let mut skip_block_hashes = Vec::new();
+        let mut rebuild_block_hashes = Vec::new();
          let base_snapshot = {
             let mut parent_block_hash = target_header.parent_hash;
-            skip_block_hashes.push(target_header.hash_slow());
+            rebuild_block_hashes.push(target_header.hash_slow());
             loop {
                 let parent_header = self.get_header_by_hash(&parent_block_hash);
                 if parent_header.is_none() {
@@ -364,7 +364,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                 if let Some(snap) = self.base.snapshot_by_hash(&parent_block_hash) {
                     break Some(snap);
                 }
-                skip_block_hashes.push(parent_block_hash);
+                rebuild_block_hashes.push(parent_block_hash);
                 tracing::debug!("Succeed to walk to parent block, parent_block_number: {}", parent_header.clone().unwrap().number);
                 parent_block_hash = parent_header.clone().unwrap().parent_hash;
             }
@@ -373,12 +373,12 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
             tracing::warn!("Failed to rebuild snapshot due to not found base snapshot");
             return None;
         }
-        tracing::debug!("try rebuild snapshot, from block: {}, to block: {}, skip block len: {:?}", 
-            base_snapshot.clone().unwrap().block_number, target_header.number, skip_block_hashes.len());
+        tracing::debug!("try rebuild snapshot, from_block: {}, to_block: {}, rebuild_block_len: {:?}", 
+            base_snapshot.clone().unwrap().block_number, target_header.number, rebuild_block_hashes.len());
 
-        skip_block_hashes.reverse();
+        rebuild_block_hashes.reverse();
         let mut working_snapshot = base_snapshot.clone().unwrap();
-        for block_hash in skip_block_hashes {
+        for block_hash in rebuild_block_hashes {
             let apply_header = self.get_header_by_hash(&block_hash);
             if apply_header.is_none() {
                 tracing::warn!("Failed to query snapshot by hash due to not found header, block_hash: {}", block_hash);
@@ -421,7 +421,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
             let new_validators = validators_info.consensus_addrs;
             let vote_addrs = validators_info.vote_addrs;
             let attestation = 
-                self.parlia.get_vote_attestation_from_header(header.as_ref(), working_snapshot.epoch_num).map_err(|err| {
+                self.parlia.get_vote_attestation_from_header(&header, working_snapshot.epoch_num).map_err(|err| {
                 tracing::error!("Failed to get vote attestation from header, block_number: {}, epoch_num: {}, error: {:?}", 
                     header.number, working_snapshot.epoch_num, err);
                 err
@@ -430,7 +430,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
             // Apply header to snapshot
             working_snapshot = match working_snapshot.apply(
                 header.beneficiary,
-                header.as_ref(),
+                &header,
                 new_validators,
                 vote_addrs,
                 attestation,
@@ -453,7 +453,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
     }
 
     /// Build snapshot incrementally to avoid OOM by processing headers in small chunks
-    fn build_snapshot_incrementally(&self, base_snapshot: Snapshot, target_block: u64) -> Option<Snapshot> {
+    fn build_snapshot_incrementally(&self, base_snapshot: Snapshot, target_block: BlockNumber) -> Option<Snapshot> {
         const CHUNK_SIZE: u64 = 1024; // Process headers in chunks to avoid OOM
         
         let mut working_snapshot = base_snapshot;

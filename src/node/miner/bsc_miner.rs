@@ -6,14 +6,14 @@ use crate::{
         miner::{
             payload_builder::BscPayloadBuilder, 
             util::prepare_new_attributes, 
-            signer::init_global_signer,
+            signer::init_global_signer_from_k256,
             config::{keystore, MiningConfig}
         },
     },
     BscBlock,
 };
 use alloy_consensus::BlockHeader;
-use alloy_primitives::{Address, B256, Sealable};
+use alloy_primitives::{Address, Sealable};
 use k256::ecdsa::SigningKey;
 use reth::transaction_pool::PoolTransaction;
 use reth::transaction_pool::TransactionPool;
@@ -422,9 +422,7 @@ where
     }
 
     pub async fn start(self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let private_key_bytes = self.signing_key.as_nonzero_scalar().to_bytes();
-        let private_key = B256::from_slice(&private_key_bytes);
-        if let Err(e) = init_global_signer(private_key) {
+        if let Err(e) = init_global_signer_from_k256(&self.signing_key) {
             return Err(format!("Failed to initialize global signer due to {}", e).into());
         } else {
             info!("Succeed to initialize global signer");

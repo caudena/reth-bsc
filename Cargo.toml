@@ -99,6 +99,14 @@ tokio-stream = "0.1"
 tracing = "0.1"
 bit-set = "0.5.3"
 rand = "0.9"
+zeroize = "1"
+# For EIP-2335 BLS keystore support
+aes = "0.8"
+ctr = "0.9"
+cipher = "0.4"
+sha2 = "0.10"
+pbkdf2 = "0.12"
+scrypt = "0.11"
 
 # precompiles deps
 bls_on_arkworks = "0.3.0"

@@ -11,6 +11,7 @@ pub mod db;
 pub mod seal;
 pub mod go_rng;
 pub mod ramanujan_fork;
+pub mod bls_signer;
 
 #[cfg(test)]     
 mod tests;  

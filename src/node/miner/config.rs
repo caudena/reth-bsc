@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use std::path::PathBuf;
 
 /// Mining configuration for BSC PoA
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct MiningConfig {
     /// Enable mining
     pub enabled: bool,
@@ -20,6 +20,26 @@ pub struct MiningConfig {
     pub gas_limit: Option<u64>,
     /// Mining interval in milliseconds
     pub mining_interval_ms: Option<u64>,
+}
+
+impl std::fmt::Debug for MiningConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MiningConfig")
+            .field("enabled", &self.enabled)
+            .field("validator_address", &self.validator_address)
+            .field("keystore_path", &self.keystore_path)
+            .field(
+                "keystore_password",
+                &self.keystore_password.as_ref().map(|_| "<redacted>")
+            )
+            .field(
+                "private_key_hex",
+                &self.private_key_hex.as_ref().map(|_| "<redacted>")
+            )
+            .field("gas_limit", &self.gas_limit)
+            .field("mining_interval_ms", &self.mining_interval_ms)
+            .finish()
+    }
 }
 
 impl Default for MiningConfig {
@@ -194,11 +214,14 @@ pub mod keystore {
         keystore_path: &Path,
         password: &str,
     ) -> Result<SigningKey, Box<dyn std::error::Error + Send + Sync>> {
-        let key_bytes = eth_keystore::decrypt_key(keystore_path, password)?; // Vec<u8>
+        let mut key_bytes = eth_keystore::decrypt_key(keystore_path, password)?; // Vec<u8>
         if key_bytes.len() != 32 {
             return Err("Decrypted private key must be 32 bytes".into());
         }
         let signing_key = SigningKey::from_slice(&key_bytes)?;
+        // Immediately zeroize the decrypted key material from heap memory
+        use zeroize::Zeroize;
+        key_bytes.zeroize();
         Ok(signing_key)
     }
 

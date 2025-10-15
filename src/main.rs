@@ -5,6 +5,7 @@ use reth_bsc::{
     chainspec::{parser::BscChainSpecParser, genesis_override},
     node::{evm::config::BscEvmConfig, BscNode},
 };
+use reth_bsc::consensus::parlia::bls_signer;
 use std::sync::Arc;
 use std::path::PathBuf;
 
@@ -49,6 +50,19 @@ pub struct BscCliArgs {
     /// Genesis hash override for chain validation
     #[arg(long = "genesis-hash")]
     pub genesis_hash: Option<String>,
+
+    // ---- BLS vote key management ----
+    /// Path to a BLS keystore JSON for vote signing (used for voting/attestations)
+    #[arg(long = "bls.keystore-path")]
+    pub bls_keystore_path: Option<PathBuf>,
+
+    /// Password for the BLS keystore file
+    #[arg(long = "bls.keystore-password")]
+    pub bls_keystore_password: Option<String>,
+
+    /// BLS private key for vote signing (hex; NOT RECOMMENDED for production)
+    #[arg(long = "bls.private-key")]
+    pub bls_private_key: Option<String>,
 }
 
 fn main() -> eyre::Result<()> {
@@ -107,6 +121,29 @@ fn main() -> eyre::Result<()> {
                 if let Err(_boxed_config) = mining_config::set_global_mining_config(mining_config) {
                     tracing::warn!("Mining config already set, ignoring new configuration");
                 }
+            }
+
+            // Initialize BLS signer from environment if provided
+            // Prefer CLI over env vars
+            if let Some(ref path) = args.bls_keystore_path {
+                let pass = args.bls_keystore_password.as_deref().unwrap_or("");
+                if let Err(e) = bls_signer::init_global_bls_signer_from_keystore(path, pass) {
+                    tracing::error!("Failed to init BLS signer from keystore: {}", e);
+                } else {
+                    tracing::info!("Initialized BLS signer from CLI keystore path");
+                }
+            } else if let Some(ref hex) = args.bls_private_key {
+                if let Err(e) = bls_signer::init_global_bls_signer_from_hex(hex) {
+                    tracing::error!("Failed to init BLS signer from hex: {}", e);
+                } else {
+                    tracing::warn!("Initialized BLS signer from CLI hex (dev only)");
+                }
+            }
+
+            // If not yet initialized, fall back to env-based initialization
+            if !bls_signer::is_bls_signer_initialized() {
+                tracing::debug!("BLS signer not initialized via CLI, attempting env vars");
+                bls_signer::init_from_env_if_present();
             }
 
             let (node, engine_handle_tx) = BscNode::new();

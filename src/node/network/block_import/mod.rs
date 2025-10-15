@@ -28,9 +28,14 @@ impl BscBlockImport {
 }
 
 impl BlockImport<BscNewBlock> for BscBlockImport {
-    fn on_new_block(&mut self, peer_id: PeerId, incoming_block: NewBlockEvent<BscNewBlock>) {
-        if let NewBlockEvent::Block(block) = incoming_block {
-            let _ = self.handle.send_block(block, peer_id);
+    fn on_new_block(&mut self, peer_id: PeerId, block_event: NewBlockEvent<BscNewBlock>) {
+        match block_event {
+            NewBlockEvent::Block(block) => {
+                let _ = self.handle.send_block(block, peer_id);
+            }
+            NewBlockEvent::Hashes(hashes) => {
+                let _ = self.handle.send_hashes(hashes, peer_id);
+            }
         }
     }
 

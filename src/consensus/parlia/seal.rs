@@ -134,7 +134,8 @@ impl SealBlock {
         let mut attestation = VoteAttestation::new_with_vote_data(VoteData {
             source_hash: justified_block_hash,
             source_number: justified_block_number,
-            target_hash: parent.mix_hash,
+            // Target attestation is the parent header itself (number/hash)
+            target_hash: parent.hash_slow(),
             target_number: parent.number,
         });
 

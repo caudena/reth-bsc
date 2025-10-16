@@ -13,39 +13,39 @@ name = "reth-bsc"
 path = "src/main.rs"
 
 [dependencies]
-reth = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-cli = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-cli-commands = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-basic-payload-builder = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-db = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-engine-local = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-chainspec = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-cli-util = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-discv4 = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2", features = ["test-utils"] }
-reth-engine-primitives = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-ethereum-forks = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2", features = ["serde"] }
-reth-ethereum-payload-builder = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-ethereum-primitives = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-eth-wire = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-eth-wire-types = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-evm = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-evm-ethereum = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-node-core = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-revm = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-network = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2", features = ["test-utils"] }
-reth-network-p2p = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-network-api = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-node-ethereum = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2", features = ["test-utils"] }
-reth-network-peers = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-payload-primitives = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-primitives = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-primitives-traits = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-provider = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2", features = ["test-utils"] }
-reth-rpc-eth-api = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-rpc-engine-api = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-tracing = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-trie-common = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
-reth-trie-db = { git = "https://github.com/bnb-chain/reth.git", tag = "v0.0.2" }
+reth = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-cli = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-cli-commands = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-basic-payload-builder = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-db = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-engine-local = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-chainspec = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-cli-util = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-discv4 = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc", features = ["test-utils"] }
+reth-engine-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-ethereum-forks = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc", features = ["serde"] }
+reth-ethereum-payload-builder = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-ethereum-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-eth-wire = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-eth-wire-types = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-evm = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-evm-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-node-core = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-revm = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-network = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc", features = ["test-utils"] }
+reth-network-p2p = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-network-api = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-node-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc", features = ["test-utils"] }
+reth-network-peers = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-payload-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-primitives-traits = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-provider = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc", features = ["test-utils"] }
+reth-rpc-eth-api = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-rpc-engine-api = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-tracing = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-trie-common = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
+reth-trie-db = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-rpc" }
 revm = "29.0.0"
 
 # alloy dependencies

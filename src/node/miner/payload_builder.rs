@@ -23,6 +23,11 @@ use reth_payload_primitives::PayloadBuilderAttributes;
 use alloy_consensus::{Transaction, BlockHeader};
 use reth_primitives_traits::SignerRecoverable;
 use tracing::warn;
+use crate::chainspec::{BscChainSpec};
+use reth::transaction_pool::error::Eip4844PoolTransactionError;
+use reth_ethereum_engine_primitives::BlobSidecars;
+use reth_chainspec::EthChainSpec;
+use reth_chainspec::EthereumHardforks;
 
 /// BSC payload builder, used to build payload for bsc miner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,6 +41,8 @@ pub struct BscPayloadBuilder<Pool, Client, EvmConfig = BscEvmConfig> {
     /// Payload builder configuration, now reuse eth builder config.
     builder_config: EthereumBuilderConfig,
     // todo: aborted build task by new header.
+
+    chain_spec: Arc<BscChainSpec>,
 }
 
 impl<Pool, Client, EvmConfig> BscPayloadBuilder<Pool, Client, EvmConfig> 
@@ -50,8 +57,9 @@ where
         pool: Pool,
         evm_config: EvmConfig,
         builder_config: EthereumBuilderConfig,
+        chain_spec: Arc<BscChainSpec>,
     ) -> Self {
-        Self { client, pool, evm_config, builder_config }
+        Self { client, pool, evm_config, builder_config, chain_spec }
     }
 
     // todo: check more and refine it later.
@@ -87,8 +95,15 @@ where
         let mut total_fees = U256::ZERO;
         let mut cumulative_gas_used = 0;
         let block_gas_limit: u64 = builder.evm_mut().block().gas_limit;
-
         let base_fee = builder.evm_mut().block().basefee;
+        
+        let mut blob_sidecars = BlobSidecars::Empty;
+
+        let mut block_blob_count = 0;
+        // todo: calc blob fee.
+
+        let blob_params = self.chain_spec.blob_params_at_timestamp(attributes.timestamp());
+        let max_blob_count = blob_params.as_ref().map(|params| params.max_blob_count).unwrap_or_default();
         // check: now only filter out blob tx by none blob fee for simple test.
         let mut best_tx_list = self.pool.best_transactions_with_attributes(BestTransactionsAttributes::new(base_fee, None));
         while let Some(pool_tx) = best_tx_list.next() {
@@ -105,9 +120,58 @@ where
             }
 
             let tx = pool_tx.to_consensus();
-            if let Some(_blob_tx) = tx.as_eip4844() {
-                // todo: skip blob tx for simple test.
-                continue
+            let mut blob_tx_sidecar = None;
+            debug!("debug payload_builder, tx: {:?} is blob tx: {:?} tx type: {:?}", tx.hash(), tx.is_eip4844(), tx.tx_type());
+            if let Some(blob_tx) = tx.as_eip4844() {
+                let tx_blob_count = blob_tx.tx().blob_versioned_hashes.len() as u64;
+
+                if block_blob_count + tx_blob_count > max_blob_count {
+                    // we can't fit this _blob_ transaction into the block, so we mark it as
+                    // invalid, which removes its dependent transactions from
+                    // the iterator. This is similar to the gas limit condition
+                    // for regular transactions above.
+                    debug!(target: "payload_builder", tx=?tx.hash(), ?block_blob_count, "skipping blob transaction because it would exceed the max blob count per block");
+                    best_tx_list.mark_invalid(
+                        &pool_tx,
+                        InvalidPoolTransactionError::Eip4844(
+                            Eip4844PoolTransactionError::TooManyEip4844Blobs {
+                                have: block_blob_count + tx_blob_count,
+                                permitted: max_blob_count,
+                            },
+                        ),
+                    );
+                    continue
+                }
+
+                let blob_sidecar_result = 'sidecar: {
+                    let Some(sidecar) =
+                        self.pool.get_blob(*tx.hash()).map_err(PayloadBuilderError::other)?
+                    else {
+                        break 'sidecar Err(Eip4844PoolTransactionError::MissingEip4844BlobSidecar)
+                    };
+
+                    if self.chain_spec.is_osaka_active_at_timestamp(attributes.timestamp()) {
+                        if sidecar.is_eip7594() {
+                            Ok(sidecar)
+                        } else {
+                            Err(Eip4844PoolTransactionError::UnexpectedEip4844SidecarAfterOsaka)
+                        }
+                    } else if sidecar.is_eip4844() {
+                        Ok(sidecar)
+                    } else {
+                        Err(Eip4844PoolTransactionError::UnexpectedEip7594SidecarBeforeOsaka)
+                    }
+                };
+                debug!("debug payload_builder,tx hash: {:?}, blob_sidecar_result: {:?}", tx.hash(), blob_sidecar_result);
+
+                blob_tx_sidecar = match blob_sidecar_result {
+                    Ok(sidecar) => Some(sidecar),
+                    Err(error) => {
+                        best_tx_list.mark_invalid(&pool_tx, InvalidPoolTransactionError::Eip4844(error));
+                        continue
+                    }
+                };
+                debug!("debug payload_builder, tx hash: {:?}, blob_tx_sidecar: {:?}", tx.hash(), blob_tx_sidecar);
             }
             
             let gas_used = match builder.execute_transaction(tx.clone()) {
@@ -134,10 +198,25 @@ where
                 // this is an error that we should treat as fatal for this attempt
                 Err(err) => return Err(Box::new(PayloadBuilderError::evm(err))),
             };
+
+             // add to the total blob gas used if the transaction successfully executed
+            if let Some(blob_tx) = tx.as_eip4844() {
+                block_blob_count += blob_tx.tx().blob_versioned_hashes.len() as u64;
+
+                // if we've reached the max blob count, we can skip blob txs entirely
+                if block_blob_count == max_blob_count {
+                    best_tx_list.skip_blobs();
+                }
+            }
             // update and add to total fees
             let miner_fee = tx.effective_tip_per_gas(base_fee).expect("fee is always valid; execution succeeded");
             total_fees += U256::from(miner_fee) * U256::from(gas_used);
             cumulative_gas_used += gas_used;
+
+            // Add blob tx sidecar to the payload.
+            if let Some(sidecar) = blob_tx_sidecar {
+                blob_sidecars.push_sidecar_variant(sidecar.as_ref().clone());
+            }
         }
 
         // add system txs to payload, need to rewrite finish.
@@ -165,6 +244,7 @@ where
             block: sealed_block,
             fees: total_fees,
             requests: Some(execution_result.requests),
+            sidecars: Some(blob_sidecars),
         };
         Ok(payload)
     }

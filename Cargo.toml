@@ -38,6 +38,7 @@ reth-network-api = { git = "https://github.com/bnb-chain/reth.git", branch = "va
 reth-node-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev", features = ["test-utils"] }
 reth-network-peers = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev" }
 reth-payload-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev" }
+reth-ethereum-engine-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev" }
 reth-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev" }
 reth-primitives-traits = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev" }
 reth-provider = { git = "https://github.com/bnb-chain/reth.git", branch = "validator-dev", features = ["test-utils"] }

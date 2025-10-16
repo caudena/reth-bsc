@@ -23,6 +23,7 @@ use std::time::Duration;
 use tokio::sync::{broadcast, mpsc};
 use tracing::{debug, error, info};
 use crate::BscBlock;
+use reth_ethereum_engine_primitives::BlobSidecars;
 
 /// Built payload for BSC. This is similar to [`EthBuiltPayload`] but without sidecars as those
 /// included into [`BscBlock`].
@@ -34,6 +35,14 @@ pub struct BscBuiltPayload {
     pub(crate) fees: U256,
     /// The requests of the payload
     pub(crate) requests: Option<Requests>,
+    /// The sidecars of the payload
+    pub(crate) sidecars: Option<BlobSidecars>,
+}
+
+impl BscBuiltPayload {
+    pub fn sidecars(&self) -> Option<BlobSidecars> {
+        self.sidecars.clone()
+    }
 }
 
 impl BuiltPayload for BscBuiltPayload {
@@ -55,7 +64,6 @@ impl BuiltPayload for BscBuiltPayload {
 #[derive(Debug, Clone, Copy, Default)]
 #[non_exhaustive]
 pub struct BscPayloadServiceBuilder;
-
 
 impl<Node, Pool, Evm> PayloadServiceBuilder<Node, Pool, Evm> for BscPayloadServiceBuilder
 where

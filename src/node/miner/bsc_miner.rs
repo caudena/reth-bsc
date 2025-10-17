@@ -317,6 +317,7 @@ where
         let td = U128::from(new_td.to::<u128>());
         let block_hash = sealed_block.hash();
         let new_block = BscNewBlock(reth_eth_wire::NewBlock { block: sealed_block.clone_block(), td });
+        debug!("debug submit_block, new_block: {:?} sidecar count: {:?}", new_block, new_block.0.block.body.sidecars.as_ref().map(|s| s.len()).unwrap_or(0));
         let msg = NewBlockMessage { hash: block_hash, block: Arc::new(new_block) };
 
         if let Some(sender) = get_block_import_sender() {

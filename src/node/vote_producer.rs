@@ -110,16 +110,11 @@ pub fn maybe_produce_and_broadcast_for_head(
     // Clamp to threshold to avoid unbounded growth
     BLOCKS_SINCE_MINING.store(threshold, Ordering::Relaxed);
 
-    // Parent snapshot is used to determine source (last justified)
-    let parent_number = match target_number.checked_sub(1) {
-        Some(n) => n,
-        None => return,
-    };
-
-    let snap = match snapshot_provider.snapshot(parent_number) {
+    // Use current header's snapshot to determine source (last justified)
+    let snap = match snapshot_provider.snapshot(target_number) {
         Some(s) => s,
         None => {
-            tracing::trace!(target: "bsc::vote", reason = "missing-snapshot", parent_number=parent_number, "skip vote production");
+            tracing::trace!(target: "bsc::vote", reason = "missing-snapshot", target_number=target_number, "skip vote production");
             return;
         }
     };
@@ -171,6 +166,8 @@ pub fn maybe_produce_and_broadcast_for_head(
         tracing::trace!(target: "bsc::vote", reason = "too-late", now_ms=now_ms, vote_assemble_ms=vote_assemble_ms, "skip vote production");
         return;
     }
+    
+    // TODO: add vote journal later to check vote rule, and avoid vote loss due to failure
 
     // Compose vote data: source = last justified from snapshot; target = head.hash/number
     let source_number = snap.vote_data.target_number;

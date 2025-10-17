@@ -36,6 +36,7 @@ pub mod miner;
 pub mod network;
 pub mod primitives;
 pub mod storage;
+pub mod vote_producer;
 
 /// Bsc addons configuring RPC types
 pub type BscNodeAddOns<N> = RpcAddOns<

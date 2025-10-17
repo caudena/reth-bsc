@@ -37,6 +37,7 @@ pub(crate) mod bsc_protocol {
         pub mod proto;
     }
     pub mod stream;
+    pub mod registry;
 }
 /// BSC `NewBlock` message value.
 #[derive(Debug, Clone, PartialEq, Eq)]

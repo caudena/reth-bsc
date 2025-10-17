@@ -6,6 +6,7 @@ use tokio::sync::mpsc;
 
 use super::proto::{BscProtoMessage};
 use crate::node::network::bsc_protocol::stream::{BscProtocolConnection};
+use crate::node::network::bsc_protocol::registry;
 
 #[derive(Clone, Debug, Default)]
 pub struct BscProtocolHandler;
@@ -45,9 +46,12 @@ impl ConnectionHandler for BscConnectionHandler {
         _peer_id: PeerId,
         conn: ProtocolConnection,
     ) -> Self::Connection {
-        let (_tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = mpsc::unbounded_channel();
+        // Save sender so other components can broadcast BSC messages
+        // Note: PeerId is not exposed directly here, so we rely on the local peer id for keying
+        // when available. However, reth passes `_peer_id` which we can use.
+        // Even if the connection drops, failed sends will lazily clean up entries.
+        registry::register_peer(_peer_id, tx);
         BscProtocolConnection::new(conn, rx, direction.is_outgoing())
     }
 }
-
-

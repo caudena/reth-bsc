@@ -63,6 +63,34 @@ pub struct BscCliArgs {
     /// BLS private key for vote signing (hex; NOT RECOMMENDED for production)
     #[arg(long = "bls.private-key")]
     pub bls_private_key: Option<String>,
+
+    /// Enable Enhanced Validator Network (EVN) features like disabling TX broadcast
+    /// to/from EVN peers. Validators and sentry nodes should enable this.
+    /// Can also be set via env var `BSC_EVN_ENABLED=true`.
+    #[arg(long = "evn.enabled")]
+    pub evn_enabled: bool,
+
+    /// Comma-separated devp2p NodeIDs (enode IDs) to whitelist as EVN peers.
+    /// Env alternative: `BSC_EVN_NODEIDS_WHITELIST` (comma-separated)
+    #[arg(long = "evn.whitelist-nodeids", value_delimiter = ',')]
+    pub evn_whitelist_nodeids: Vec<String>,
+
+    /// Comma-separated validator addresses that this node proxies (EVN behavior)
+    /// Env alternative: `BSC_EVN_PROXYED_VALIDATORS` (comma-separated, 0x-prefixed)
+    #[arg(long = "evn.proxyed-validator", value_delimiter = ',')]
+    pub evn_proxyed_validators: Vec<String>,
+
+    /// Comma-separated bytes32 NodeIDs to add in StakeHub (0x-prefixed)
+    #[arg(long = "evn.add-nodeid", value_delimiter = ',')]
+    pub evn_add_nodeids: Vec<String>,
+
+    /// Comma-separated bytes32 NodeIDs to remove in StakeHub (0x-prefixed)
+    #[arg(long = "evn.remove-nodeid", value_delimiter = ',')]
+    pub evn_remove_nodeids: Vec<String>,
+
+    /// Nonce to use when building add/remove NodeIDs transactions. If omitted, no tx is built.
+    #[arg(long = "evn.nodeids.nonce")]
+    pub evn_nodeids_nonce: Option<u64>,
 }
 
 fn main() -> eyre::Result<()> {
@@ -144,6 +172,71 @@ fn main() -> eyre::Result<()> {
             if !bls_signer::is_bls_signer_initialized() {
                 tracing::debug!("BLS signer not initialized via CLI, attempting env vars");
                 bls_signer::init_from_env_if_present();
+            }
+
+            // Initialize EVN configuration (CLI overrides env)
+            {
+                let enabled_from_env = std::env::var("BSC_EVN_ENABLED")
+                    .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE" | "True"))
+                    .unwrap_or(false);
+                let evn_enabled = args.evn_enabled || enabled_from_env;
+                // Collect whitelist node IDs
+                let whitelist_from_env = std::env::var("BSC_EVN_NODEIDS_WHITELIST")
+                    .ok()
+                    .map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect::<Vec<_>>())
+                    .unwrap_or_default();
+                let mut whitelist_nodeids = whitelist_from_env;
+                whitelist_nodeids.extend(args.evn_whitelist_nodeids.iter().cloned());
+
+                // Collect proxyed validators
+                let proxies_from_env = std::env::var("BSC_EVN_PROXYED_VALIDATORS")
+                    .ok()
+                    .map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect::<Vec<_>>())
+                    .unwrap_or_default();
+                let mut proxyed_validators = Vec::new();
+                proxyed_validators.extend(proxies_from_env);
+                proxyed_validators.extend(args.evn_proxyed_validators.iter().cloned());
+
+                let mut parsed_validators = Vec::new();
+                for addr_str in proxyed_validators {
+                    match addr_str.parse::<alloy_primitives::Address>() {
+                        Ok(addr) => parsed_validators.push(addr),
+                        Err(_) => tracing::warn!("Invalid evn.proxyed-validator address: {}", addr_str),
+                    }
+                }
+
+                // Parse EVN add/remove nodeids from CLI/env (optional)
+                let parse_nodeids = |items: Vec<String>| -> Vec<[u8;32]> {
+                    let mut out = Vec::new();
+                    for s in items {
+                        let s = s.trim();
+                        if s.is_empty() { continue; }
+                        let hex = s.strip_prefix("0x").unwrap_or(s);
+                        if let Ok(bytes) = alloy_primitives::hex::decode(hex) {
+                            if bytes.len() == 32 {
+                                let mut arr = [0u8; 32];
+                                arr.copy_from_slice(&bytes);
+                                out.push(arr);
+                            } else {
+                                tracing::warn!("Ignoring nodeID with invalid length (need 32 bytes): {}", s);
+                            }
+                        } else {
+                            tracing::warn!("Ignoring invalid hex nodeID: {}", s);
+                        }
+                    }
+                    out
+                };
+
+                let cfg = reth_bsc::node::network::evn::EvnConfig {
+                    enabled: evn_enabled,
+                    whitelist_nodeids,
+                    proxyed_validators: parsed_validators,
+                    nodeids_to_add: parse_nodeids(args.evn_add_nodeids.clone()),
+                    nodeids_to_remove: parse_nodeids(args.evn_remove_nodeids.clone()),
+                    nodeids_nonce: args.evn_nodeids_nonce,
+                };
+                let _ = reth_bsc::node::network::evn::set_global_evn_config(cfg);
+                if evn_enabled { tracing::info!("EVN features enabled (disable peer tx broadcast)"); }
             }
 
             let (node, engine_handle_tx) = BscNode::new();

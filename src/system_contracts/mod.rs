@@ -123,16 +123,21 @@ impl<Spec: EthChainSpec + crate::hardforks::BscHardforks> SystemContract<Spec> {
 
     /// Return system address and input which is used to query validator election info.
     pub fn get_validator_election_info(&self) -> (Address, Bytes) {
+        self.get_validator_election_info_with(U256::from(0), U256::from(0))
+    }
+
+    /// Return system address and input which is used to query validator election info with pagination.
+    /// Offset and limit follow the StakeHub contract's semantics.
+    pub fn get_validator_election_info_with(&self, offset: U256, limit: U256) -> (Address, Bytes) {
         let function =
             self.stake_hub_abi.function("getValidatorElectionInfo").unwrap().first().unwrap();
-
         (
             STAKE_HUB_CONTRACT,
             Bytes::from(
                 function
                     .abi_encode_input(&[
-                        DynSolValue::from(U256::from(0)),
-                        DynSolValue::from(U256::from(0)),
+                        DynSolValue::from(offset),
+                        DynSolValue::from(limit),
                     ])
                     .unwrap(),
             ),
@@ -176,6 +181,47 @@ impl<Spec: EthChainSpec + crate::hardforks::BscHardforks> SystemContract<Spec> {
         let output = function.abi_decode_output(data).unwrap();
 
         output[0].as_uint().unwrap().0
+    }
+
+    /// Return system address and input to query validator NodeIDs from StakeHub.
+    pub fn get_node_ids(&self, validators: Vec<Address>) -> (Address, Bytes) {
+        let function = self.stake_hub_abi.function("getNodeIDs").unwrap().first().unwrap();
+        let vals = validators.into_iter().map(DynSolValue::from).collect::<Vec<_>>();
+        let input = function.abi_encode_input(&[DynSolValue::Array(vals)]).unwrap();
+        (STAKE_HUB_CONTRACT, Bytes::from(input))
+    }
+
+    /// Unpack the data into (consensusAddresses, nodeIDsList)
+    pub fn unpack_data_into_node_ids(&self, data: &[u8]) -> (Vec<Address>, Vec<Vec<[u8; 32]>>) {
+        let function = self.stake_hub_abi.function("getNodeIDs").unwrap().first().unwrap();
+        let output = function.abi_decode_output(data).unwrap();
+
+        let consensus_addresses = output[0]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|val| val.as_address().unwrap())
+            .collect::<Vec<_>>();
+
+        let node_ids_list = output[1]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|arr| {
+                arr.as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| {
+                        let (b, _size) = v.as_fixed_bytes().unwrap();
+                        let mut out = [0u8; 32];
+                        out.copy_from_slice(b);
+                        out
+                    })
+                    .collect::<Vec<[u8; 32]>>()
+            })
+            .collect::<Vec<_>>();
+
+        (consensus_addresses, node_ids_list)
     }
 
     /// Return a transaction to slash a validator.
@@ -246,6 +292,63 @@ impl<Spec: EthChainSpec + crate::hardforks::BscHardforks> SystemContract<Spec> {
             value: U256::ZERO,
             input: Bytes::from(input),
             to: TxKind::Call(VALIDATOR_CONTRACT),
+        })
+    }
+
+    /// Creates a transaction to add NodeIDs for the validator in StakeHub.
+    /// Mirrors BSC's StakeHub.addNodeIDs(bytes32[] nodeIDs).
+    #[allow(dead_code)]
+    pub fn add_node_ids_tx(&self, node_ids: Vec<[u8; 32]>, nonce: u64) -> Transaction {
+        let function = self.stake_hub_abi.function("addNodeIDs").unwrap().first().unwrap();
+
+        // Encode bytes32[]
+        let node_ids_values: Vec<DynSolValue> = node_ids
+            .into_iter()
+            .map(|id| {
+                let fb: alloy_primitives::FixedBytes<32> = alloy_primitives::FixedBytes::from(id);
+                DynSolValue::FixedBytes(fb, 32)
+            })
+            .collect();
+        let input = function
+            .abi_encode_input(&[DynSolValue::Array(node_ids_values)])
+            .unwrap();
+
+        Transaction::Legacy(TxLegacy {
+            chain_id: Some(self.chain_spec.chain().id()),
+            nonce,
+            gas_limit: u64::MAX / 2,
+            gas_price: 0,
+            value: U256::ZERO,
+            input: Bytes::from(input),
+            to: TxKind::Call(STAKE_HUB_CONTRACT),
+        })
+    }
+
+    /// Creates a transaction to remove NodeIDs for the validator in StakeHub.
+    /// Mirrors BSC's StakeHub.removeNodeIDs(bytes32[] nodeIDs).
+    #[allow(dead_code)]
+    pub fn remove_node_ids_tx(&self, node_ids: Vec<[u8; 32]>, nonce: u64) -> Transaction {
+        let function = self.stake_hub_abi.function("removeNodeIDs").unwrap().first().unwrap();
+
+        let node_ids_values: Vec<DynSolValue> = node_ids
+            .into_iter()
+            .map(|id| {
+                let fb: alloy_primitives::FixedBytes<32> = alloy_primitives::FixedBytes::from(id);
+                DynSolValue::FixedBytes(fb, 32)
+            })
+            .collect();
+        let input = function
+            .abi_encode_input(&[DynSolValue::Array(node_ids_values)])
+            .unwrap();
+
+        Transaction::Legacy(TxLegacy {
+            chain_id: Some(self.chain_spec.chain().id()),
+            nonce,
+            gas_limit: u64::MAX / 2,
+            gas_price: 0,
+            value: U256::ZERO,
+            input: Bytes::from(input),
+            to: TxKind::Call(STAKE_HUB_CONTRACT),
         })
     }
 
@@ -346,6 +449,73 @@ impl<Spec: EthChainSpec + crate::hardforks::BscHardforks> SystemContract<Spec> {
             })
             .collect()
     }
+}
+
+#[cfg(test)]
+mod nodeids_call_tests {
+    use super::*;
+
+    #[test]
+    fn encode_add_remove_nodeids_call_roundtrip() {
+        // Prepare two dummy node IDs (bytes32)
+        let id1 = [0x11u8; 32];
+        let id2 = [0x22u8; 32];
+        let (to_add, data_add) = encode_add_node_ids_call(vec![id1, id2]);
+        assert_eq!(to_add, STAKE_HUB_CONTRACT);
+
+        // Decode using ABI to ensure encoding correctness
+        let abi: JsonAbi = serde_json::from_str(*STAKE_HUB_ABI).unwrap();
+        let func = abi.function("addNodeIDs").unwrap().first().unwrap();
+        let out = func.abi_decode_input(&data_add[4..]).unwrap();
+        assert_eq!(out.len(), 1);
+        let arr = out[0].as_array().unwrap();
+        assert_eq!(arr.len(), 2);
+        let got1 = arr[0].as_fixed_bytes().unwrap().0;
+        let got2 = arr[1].as_fixed_bytes().unwrap().0;
+        assert_eq!(got1, id1);
+        assert_eq!(got2, id2);
+
+        let (to_rm, data_rm) = encode_remove_node_ids_call(vec![id2]);
+        assert_eq!(to_rm, STAKE_HUB_CONTRACT);
+        let func_rm = abi.function("removeNodeIDs").unwrap().first().unwrap();
+        let out_rm = func_rm.abi_decode_input(&data_rm[4..]).unwrap();
+        let arr_rm = out_rm[0].as_array().unwrap();
+        let got_rm = arr_rm[0].as_fixed_bytes().unwrap().0;
+        assert_eq!(got_rm, id2);
+    }
+}
+/// Encode StakeHub.addNodeIDs call data and return (to, data).
+pub fn encode_add_node_ids_call(node_ids: Vec<[u8; 32]>) -> (Address, Bytes) {
+    let stake_hub_abi: JsonAbi = serde_json::from_str(*STAKE_HUB_ABI).unwrap();
+    let function = stake_hub_abi.function("addNodeIDs").unwrap().first().unwrap();
+    let node_ids_values: Vec<DynSolValue> = node_ids
+        .into_iter()
+        .map(|id| {
+            let fb: alloy_primitives::FixedBytes<32> = alloy_primitives::FixedBytes::from(id);
+            DynSolValue::FixedBytes(fb, 32)
+        })
+        .collect();
+    let input = function
+        .abi_encode_input(&[DynSolValue::Array(node_ids_values)])
+        .unwrap();
+    (STAKE_HUB_CONTRACT, Bytes::from(input))
+}
+
+/// Encode StakeHub.removeNodeIDs call data and return (to, data).
+pub fn encode_remove_node_ids_call(node_ids: Vec<[u8; 32]>) -> (Address, Bytes) {
+    let stake_hub_abi: JsonAbi = serde_json::from_str(*STAKE_HUB_ABI).unwrap();
+    let function = stake_hub_abi.function("removeNodeIDs").unwrap().first().unwrap();
+    let node_ids_values: Vec<DynSolValue> = node_ids
+        .into_iter()
+        .map(|id| {
+            let fb: alloy_primitives::FixedBytes<32> = alloy_primitives::FixedBytes::from(id);
+            DynSolValue::FixedBytes(fb, 32)
+        })
+        .collect();
+    let input = function
+        .abi_encode_input(&[DynSolValue::Array(node_ids_values)])
+        .unwrap();
+    (STAKE_HUB_CONTRACT, Bytes::from(input))
 }
 
 pub const VALIDATOR_CONTRACT: Address = address!("0x0000000000000000000000000000000000001000");

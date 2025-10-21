@@ -97,6 +97,14 @@ pub trait ParliaApi {
     /// Params: block number as hex string (e.g., "0x123132")
     #[method(name = "getSnapshot")]
     async fn get_snapshot(&self, block_number: String) -> RpcResult<Option<SnapshotResult>>;
+
+    /// Build call data for StakeHub.addNodeIDs(bytes32[] nodeIDs). Returns { to, data } as hex.
+    #[method(name = "buildAddNodeIDsCall")]
+    async fn build_add_node_ids_call(&self, node_ids: Vec<String>) -> RpcResult<ContractCall>;
+
+    /// Build call data for StakeHub.removeNodeIDs(bytes32[] nodeIDs). Returns { to, data } as hex.
+    #[method(name = "buildRemoveNodeIDsCall")]
+    async fn build_remove_node_ids_call(&self, node_ids: Vec<String>) -> RpcResult<ContractCall>;
 }
 
 /// Implementation of the Parlia snapshot RPC API
@@ -197,6 +205,42 @@ impl<P: SnapshotProvider + Send + Sync + 'static> ParliaApiServer for ParliaApiI
             }
         }
     }
+
+    async fn build_add_node_ids_call(&self, node_ids: Vec<String>) -> RpcResult<ContractCall> {
+        let ids = parse_node_ids(node_ids)?;
+        let (to, data) = crate::system_contracts::encode_add_node_ids_call(ids);
+        Ok(ContractCall { to: format!("0x{to:040x}"), data: format!("0x{}", alloy_primitives::hex::encode(data)) })
+    }
+
+    async fn build_remove_node_ids_call(&self, node_ids: Vec<String>) -> RpcResult<ContractCall> {
+        let ids = parse_node_ids(node_ids)?;
+        let (to, data) = crate::system_contracts::encode_remove_node_ids_call(ids);
+        Ok(ContractCall { to: format!("0x{to:040x}"), data: format!("0x{}", alloy_primitives::hex::encode(data)) })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContractCall {
+    pub to: String,
+    pub data: String,
+}
+
+fn parse_node_ids(input: Vec<String>) -> RpcResult<Vec<[u8; 32]>> {
+    let mut out = Vec::with_capacity(input.len());
+    for s in input {
+        let s = s.strip_prefix("0x").unwrap_or(&s);
+        let bytes = match alloy_primitives::hex::decode(s) {
+            Ok(b) => b,
+            Err(_) => return Err(ErrorObject::owned(-32602, "Invalid nodeID hex", None::<()>)),
+        };
+        if bytes.len() != 32 {
+            return Err(ErrorObject::owned(-32602, "NodeID must be 32 bytes", None::<()>));
+        }
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&bytes);
+        out.push(arr);
+    }
+    Ok(out)
 }
 
 #[cfg(test)]

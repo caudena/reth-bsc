@@ -6,7 +6,9 @@ pub const BSC_PROTOCOL_VERSION: u64 = 1;
 /// BSC protocol name
 pub const BSC_PROTOCOL_NAME: &str = "bsc";
 
-/// Number of message types supported (0x00, 0x01)
+/// Number of message types supported (strict parity subset)
+/// 0x00: Capability
+/// 0x01: Votes
 pub const BSC_MESSAGE_COUNT: u8 = 2;
 
 #[repr(u8)]
@@ -14,9 +16,6 @@ pub const BSC_MESSAGE_COUNT: u8 = 2;
 pub enum BscProtoMessageId {
     Capability = 0x00,
     Votes = 0x01,
-    // TODO: Add these back in when we have a use case for them
-    // GetBlocksByRange = 0x02,
-    // BlocksByRange = 0x03,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -118,6 +117,3 @@ mod tests {
         assert_eq!(with_msg_id, encoded_packet);
     }
 }
-
-
-

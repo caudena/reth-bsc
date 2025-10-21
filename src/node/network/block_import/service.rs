@@ -253,7 +253,7 @@ where
             if let Some(outcome) = outcome {
                 if let Ok(BlockValidation::ValidBlock { block }) = &outcome.result {
                     this.processed_blocks.insert(block.hash);
-                    
+                    // TODO(reth hook): If from proxied validators, target EVN peers with ETH broadcast.
                     // Prune old votes from the vote pool based on the new block number
                     let block_number = block.block.0.block.header.number();
                     vote_pool::prune(block_number);

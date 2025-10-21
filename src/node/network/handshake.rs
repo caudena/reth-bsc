@@ -25,9 +25,13 @@ impl BscHandshake {
         negotiated_status: UnifiedStatus,
     ) -> Result<UnifiedStatus, EthStreamError> {
         if negotiated_status.version > EthVersion::Eth66 {
-            // Send upgrade status message allowing peer to broadcast transactions
+            // Send upgrade status message. When EVN is enabled, we ask peers
+            // to NOT broadcast transactions to us (disable peer tx broadcast).
+            // This mirrors the BSC EVN behavior where validator/sentry nodes
+            // avoid mempool flooding between EVN peers.
+            let evn_enabled = crate::node::network::evn::is_evn_ready();
             let upgrade_msg = UpgradeStatus {
-                extension: UpgradeStatusExtension { disable_peer_tx_broadcast: false },
+                extension: UpgradeStatusExtension { disable_peer_tx_broadcast: evn_enabled },
             };
             unauth.start_send_unpin(upgrade_msg.into_rlpx())?;
 
@@ -46,8 +50,11 @@ impl BscHandshake {
                 debug!("Decode error in BSC handshake: msg={their_msg:x}");
                 EthStreamError::InvalidMessage(e.into())
             }) {
-                Ok(_) => {
-                    // Successful handshake
+                Ok(their_status) => {
+                    // Successful handshake; log remote's EVN preference
+                    if their_status.extension.disable_peer_tx_broadcast {
+                        debug!("Peer requests: disable TX broadcast towards them (EVN)");
+                    }
                     return Ok(negotiated_status);
                 }
                 Err(_) => {

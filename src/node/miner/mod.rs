@@ -1,4 +1,4 @@
-pub mod payload_builder;
+pub mod payload;
 pub mod util;
 pub mod signer;
 pub mod bsc_miner;

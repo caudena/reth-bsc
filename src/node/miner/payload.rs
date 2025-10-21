@@ -6,11 +6,11 @@ use reth_revm::{database::StateProviderDatabase, db::State};
 use reth_evm::{ConfigureEvm, NextBlockEnvAttributes};
 use reth_evm::execute::BlockBuilder;
 use alloy_evm::Evm;
-use reth_payload_primitives::PayloadBuilderError;
+use reth_payload_primitives::{PayloadBuilderError, BuiltPayload};
 use reth::transaction_pool::{TransactionPool, PoolTransaction};
 use reth_primitives::TransactionSigned;
 use reth::transaction_pool::BestTransactionsAttributes;
-use tracing::debug;
+use tracing::{debug, info};
 use reth_evm::block::{BlockExecutionError, BlockValidationError};
 use reth::transaction_pool::error::InvalidPoolTransactionError;
 use reth_primitives::InvalidTransactionError;
@@ -18,10 +18,12 @@ use reth_evm::execute::BlockBuilderOutcome;
 use reth_ethereum_payload_builder::EthereumBuilderConfig;
 use std::sync::Arc;
 use reth_basic_payload_builder::{BuildArguments, PayloadConfig};
+use reth_revm::cancelled::CancelOnDrop;
+use tokio::sync::{oneshot, mpsc};
 use reth::payload::EthPayloadBuilderAttributes;
 use reth_payload_primitives::PayloadBuilderAttributes;
 use alloy_consensus::{Transaction, BlockHeader};
-use reth_primitives_traits::SignerRecoverable;
+use reth_primitives_traits::{SignerRecoverable, BlockBody};
 use tracing::warn;
 use crate::chainspec::{BscChainSpec};
 use reth::transaction_pool::error::Eip4844PoolTransactionError;
@@ -41,17 +43,16 @@ pub struct BscPayloadBuilder<Pool, Client, EvmConfig = BscEvmConfig> {
     evm_config: EvmConfig,
     /// Payload builder configuration, now reuse eth builder config.
     builder_config: EthereumBuilderConfig,
-    // todo: aborted build task by new header.
-
+    /// Bsc chain spec.
     chain_spec: Arc<BscChainSpec>,
 }
 
 impl<Pool, Client, EvmConfig> BscPayloadBuilder<Pool, Client, EvmConfig> 
 where
-    Client: StateProviderFactory,
-    EvmConfig: ConfigureEvm<NextBlockEnvCtx = NextBlockEnvAttributes>,
+    Client: StateProviderFactory + 'static,
+    EvmConfig: ConfigureEvm<NextBlockEnvCtx = NextBlockEnvAttributes> + 'static,
     <EvmConfig as ConfigureEvm>::Primitives: reth_primitives_traits::NodePrimitives<BlockHeader = alloy_consensus::Header, SignedTx = alloy_consensus::EthereumTxEnvelope<alloy_consensus::TxEip4844>, Block = crate::node::primitives::BscBlock>,
-    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>>,
+    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>> + 'static,
 {
     pub const fn new(
         client: Client,
@@ -64,8 +65,8 @@ where
     }
 
     // todo: check more and refine it later.
-    pub fn build_payload(self, args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>) -> Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>> {
-        let BuildArguments { mut cached_reads, config, cancel: _cancel, best_payload: _best_payload } = args;
+    pub async fn build_payload(self, args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>) -> Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>> {
+        let BuildArguments { mut cached_reads, config, cancel, best_payload: _best_payload } = args;
         let PayloadConfig { parent_header, attributes } = config;
 
         let state_provider = self.client.state_by_block_hash(parent_header.hash_slow())?;
@@ -87,7 +88,6 @@ where
             )
             .map_err(PayloadBuilderError::other)?;
 
-        // check: rewrite in here.
         builder.apply_pre_execution_changes().map_err(|err| {
             warn!(target: "payload_builder", %err, "failed to apply pre-execution changes");
             PayloadBuilderError::Internal(err.into())
@@ -100,11 +100,10 @@ where
         
         let mut sidecars_map = HashMap::new();
         let mut block_blob_count = 0;
-        // todo: calc blob fee.
 
+        // todo: calc blob fee.
         let blob_params = self.chain_spec.blob_params_at_timestamp(attributes.timestamp());
         let max_blob_count = blob_params.as_ref().map(|params| params.max_blob_count).unwrap_or_default();
-        // check: now only filter out blob tx by none blob fee for simple test.
         let mut best_tx_list = self.pool.best_transactions_with_attributes(BestTransactionsAttributes::new(base_fee, None));
         while let Some(pool_tx) = best_tx_list.next() {
             // ensure we still have capacity for this transaction
@@ -119,9 +118,13 @@ where
                 continue
             }
 
+            if cancel.is_cancelled() {
+                break;
+            }
+
             let tx = pool_tx.to_consensus();
             let mut blob_tx_sidecar = None;
-            debug!("debug payload_builder, tx: {:?} is blob tx: {:?} tx type: {:?}", tx.hash(), tx.is_eip4844(), tx.tx_type());
+            debug!("debug payload_builder, tx: {:?} is_blob_tx: {:?} tx_type: {:?}", tx.hash(), tx.is_eip4844(), tx.tx_type());
             if let Some(blob_tx) = tx.as_eip4844() {
                 let tx_blob_count = blob_tx.tx().blob_versioned_hashes.len() as u64;
 
@@ -162,7 +165,7 @@ where
                         Err(Eip4844PoolTransactionError::UnexpectedEip7594SidecarBeforeOsaka)
                     }
                 };
-                debug!("debug payload_builder,tx hash: {:?}, blob_sidecar_result: {:?}", tx.hash(), blob_sidecar_result);
+                debug!("debug payload_builder, tx_hash: {:?}, blob_sidecar_result: {:?}", tx.hash(), blob_sidecar_result);
 
                 blob_tx_sidecar = match blob_sidecar_result {
                     Ok(sidecar) => Some(sidecar),
@@ -171,7 +174,7 @@ where
                         continue
                     }
                 };
-                debug!("debug payload_builder, tx hash: {:?}, blob_tx_sidecar: {:?}", tx.hash(), blob_tx_sidecar);
+                debug!("debug payload_builder, tx_hash: {:?}, blob_tx_sidecar: {:?}", tx.hash(), blob_tx_sidecar);
             }
             
             let gas_used = match builder.execute_transaction(tx.clone()) {
@@ -219,8 +222,7 @@ where
             }
         }
 
-        // add system txs to payload, need to rewrite finish.
-        // check: rewrite in here.
+        // add system txs to payload.
         let BlockBuilderOutcome { execution_result, block, .. } = builder.finish(&state_provider)?;
         let mut sealed_block = Arc::new(block.sealed_block().clone());
         
@@ -263,5 +265,116 @@ where
             requests: Some(execution_result.requests),
         };
         Ok(payload)
+    }
+}
+
+/// Handle for aborting a BscPayloadJob
+pub struct BscPayloadJobHandle {
+    abort_tx: oneshot::Sender<()>,
+}
+
+impl BscPayloadJobHandle {
+    // aborted by new head.
+    pub fn abort(self) {
+        let _ = self.abort_tx.send(());
+    }
+}
+
+/// BscPayloadJob is used to async build payloads to get best payload.
+pub struct BscPayloadJob<Pool, Client, EvmConfig = BscEvmConfig> {
+    /// The payload builder instance
+    builder: BscPayloadBuilder<Pool, Client, EvmConfig>,
+    /// Timeout for payload building
+    timeout: std::time::Duration,
+    /// Build arguments for the payload
+    args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>,
+    /// Cancel handle that automatically cancels the job when dropped
+    cancel: CancelOnDrop,
+    /// Abort receiver for external termination
+    abort_rx: oneshot::Receiver<()>,
+    /// Abort flag
+    is_aborted: bool,
+    /// Sender for payload results
+    result_tx: mpsc::UnboundedSender<BscBuiltPayload>,
+    // TODO: enrich retry, mev workflows.
+}
+
+impl<Pool, Client, EvmConfig> BscPayloadJob<Pool, Client, EvmConfig>
+where
+    Client: StateProviderFactory + 'static,
+    EvmConfig: ConfigureEvm<NextBlockEnvCtx = NextBlockEnvAttributes> + 'static,
+    <EvmConfig as ConfigureEvm>::Primitives: reth_primitives_traits::NodePrimitives<BlockHeader = alloy_consensus::Header, SignedTx = alloy_consensus::EthereumTxEnvelope<alloy_consensus::TxEip4844>, Block = crate::node::primitives::BscBlock>,
+    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>> + 'static,
+{
+    /// Creates a new BscPayloadJob and returns both the job and its handle
+    pub fn new(
+        builder: BscPayloadBuilder<Pool, Client, EvmConfig>,
+        args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>,
+        result_tx: mpsc::UnboundedSender<BscBuiltPayload>,
+    ) -> (Self, BscPayloadJobHandle) {
+        let (abort_tx, abort_rx) = oneshot::channel();
+        
+        let job = Self {
+            builder,
+            timeout: std::time::Duration::from_millis(500), // TODO: refine it more.
+            cancel: args.cancel.clone(),
+            args,
+            abort_rx,
+            is_aborted: false,
+            result_tx,
+        };
+        
+        let handle = BscPayloadJobHandle {
+            abort_tx,
+        };
+        
+        (job, handle)
+    }
+
+    /// Runs the payload job asynchronously with timeout support
+    pub async fn start(mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let start_time = std::time::Instant::now();
+        
+        tokio::select! {
+            result = self.builder.build_payload(self.args) => {
+                let elapsed = start_time.elapsed();
+                match result {
+                    Ok(payload) => {
+                        // TODO: retry and pick best one.
+                        info!("Start to submit block: {} (hash: 0x{:x}, txs: {}, cost_time: {:?})", 
+                            payload.block().header().number(),
+                            payload.block().hash(),
+                            payload.block().body().transaction_count(),
+                            elapsed
+                        );
+                        if let Err(err) = self.result_tx.send(payload) {
+                            warn!("Failed to send payload to result channel: {}", err);
+                        }
+                        Ok(())
+                    },
+                    Err(e) => {
+                        warn!("Payload building failed after {:?}: {}", elapsed, e);
+                        Err(e)
+                    },
+                }
+            }
+            
+            // normal finish by timer
+            _ = tokio::time::sleep(self.timeout) => {
+                let elapsed = start_time.elapsed();
+                warn!("Payload building timed out after {:?}", elapsed);
+                drop(self.cancel);
+                Ok(())
+            }
+            
+            // abort by new head
+            _ = &mut self.abort_rx => {
+                let elapsed = start_time.elapsed();
+                info!("Payload building aborted after {:?}", elapsed);
+                drop(self.cancel);
+                self.is_aborted = true;
+                Ok(())
+            }
+        }
     }
 }

@@ -2,7 +2,7 @@ use crate::consensus::parlia::SnapshotProvider;
 use std::sync::{Arc, OnceLock};
 use alloy_consensus::Header;
 use alloy_primitives::B256;
-use reth_provider::HeaderProvider;
+use reth_provider::{HeaderProvider, BlockNumReader};
 use crate::node::network::block_import::service::IncomingBlock;
 use tokio::sync::mpsc::UnboundedSender;
 use reth_network_api::PeerId;
@@ -21,6 +21,12 @@ static HEADER_BY_HASH_PROVIDER: OnceLock<HeaderByHashFn> = OnceLock::new();
 
 /// Global header provider function - HeaderProvider::header_by_number() by number  
 static HEADER_BY_NUMBER_PROVIDER: OnceLock<HeaderByNumberFn> = OnceLock::new();
+
+/// Function type for BlockNumReader::best_block_number()
+type BestBlockNumberFn = Arc<dyn Fn() -> Option<u64> + Send + Sync>;
+
+/// Global best block number function
+static BEST_BLOCK_NUMBER_PROVIDER: OnceLock<BestBlockNumberFn> = OnceLock::new();
 
 /// Global sender for submitting mined blocks to the import service
 static BLOCK_IMPORT_SENDER: OnceLock<UnboundedSender<IncomingBlock>> = OnceLock::new();
@@ -42,7 +48,7 @@ pub fn get_snapshot_provider() -> Option<&'static Arc<dyn SnapshotProvider + Sen
 /// Creates functions that directly call HeaderProvider::header() and HeaderProvider::header_by_number()
 pub fn set_header_provider<T>(provider: Arc<T>) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
 where
-    T: HeaderProvider<Header = Header> + Send + Sync + 'static,
+    T: HeaderProvider<Header = Header> + BlockNumReader + Send + Sync + 'static,
 {
     // Create function for header by hash
     let provider_clone = provider.clone();
@@ -65,6 +71,13 @@ where
     // Set both functions
     HEADER_BY_HASH_PROVIDER.set(header_by_hash_fn).map_err(|_| "Failed to set hash provider")?;
     HEADER_BY_NUMBER_PROVIDER.set(header_by_number_fn).map_err(|_| "Failed to set number provider")?;
+
+    // Create function for best block number
+    let provider_clone3 = provider.clone();
+    let best_block_number_fn = Arc::new(move || -> Option<u64> { provider_clone3.best_block_number().ok() });
+    BEST_BLOCK_NUMBER_PROVIDER
+        .set(best_block_number_fn)
+        .map_err(|_| "Failed to set best block number provider")?;
     
     Ok(())
 }
@@ -103,6 +116,11 @@ pub fn get_header_by_number(block_number: u64) -> Option<Header> {
     get_header_by_number_from_provider(block_number)
 }
 
+/// Get the best block number from the global provider if initialized
+pub fn get_best_block_number() -> Option<u64> {
+    BEST_BLOCK_NUMBER_PROVIDER.get().and_then(|f| f())
+}
+
 /// Store the block import sender globally. Returns an error if it was set before.
 pub fn set_block_import_sender(sender: UnboundedSender<IncomingBlock>) -> Result<(), UnboundedSender<IncomingBlock>> {
     BLOCK_IMPORT_SENDER.set(sender)
@@ -112,6 +130,7 @@ pub fn set_block_import_sender(sender: UnboundedSender<IncomingBlock>) -> Result
 pub fn get_block_import_sender() -> Option<&'static UnboundedSender<IncomingBlock>> {
     BLOCK_IMPORT_SENDER.get()
 }
+
 
 /// Store the local peer ID globally. Returns an error if it was set before.
 pub fn set_local_peer_id(peer_id: PeerId) -> Result<(), PeerId> {

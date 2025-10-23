@@ -24,11 +24,13 @@ use reth_network::{NetworkConfig, NetworkHandle, NetworkManager};
 use reth_network_api::PeersInfo;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::{mpsc, oneshot, Mutex};
-use tracing::{info, warn};
+use tracing::{info, warn, debug};
 
 pub mod block_import;
 pub mod bootnodes;
 pub mod handshake;
+pub mod evn;
+pub mod evn_peers;
 pub(crate) mod upgrade_status;
 pub(crate) mod votes;
 pub(crate) mod bsc_protocol {
@@ -283,6 +285,43 @@ where
             warn!(target: "reth::cli", "Failed to set global local peer ID - already set");
         } else {
             info!(target: "reth::cli", peer_id=%local_peer_id, "Local peer ID set globally");
+        }
+
+        // EVN sync watcher: arm EVN only once node is considered synced (by head timestamp lag)
+        {
+            // Only spawn if EVN is enabled; otherwise skip
+            if crate::node::network::evn::is_evn_enabled() {
+                let max_lag = std::env::var("BSC_EVN_SYNC_LAG_SECS")
+                    .ok()
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .unwrap_or(30);
+                // Placeholder: if needed later, capture provider/chain_spec here for extended EVN logic
+                ctx.task_executor().spawn_critical("evn-sync-watcher", async move {
+                    use std::time::{SystemTime, UNIX_EPOCH, Duration};
+                    use alloy_consensus::BlockHeader;
+                    loop {
+                        // If already armed, stop watcher
+                        if crate::node::network::evn::is_evn_synced() { break; }
+                        // Query latest header via global providers
+                        if let Some(n) = crate::shared::get_best_block_number() {
+                            if let Some(h) = crate::shared::get_header_by_number(n) {
+                                let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(u64::MAX);
+                                let ts = h.timestamp();
+                                if now >= ts && now.saturating_sub(ts) <= max_lag {
+                                    crate::node::network::evn::set_evn_synced(true);
+                                    info!(target: "bsc::evn", head=%n, head_ts=%ts, lag = now - ts, "EVN armed: node considered synced");
+                                    // Once EVN is armed, query on-chain StakeHub for validator NodeIDs and
+                                    // mark currently connected peers that match as EVN (on-chain reason).
+                                    break;
+                                } else {
+                                    debug!(target: "bsc::evn", head=%n, head_ts=%ts, lag = now.saturating_sub(ts), max_lag=%max_lag, "EVN not armed yet: syncing");
+                                }
+                            }
+                        }
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                    }
+                });
+            }
         }
 
         Ok(handle)

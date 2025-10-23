@@ -22,6 +22,16 @@ This project aims to bring Reth's high-performance Ethereum client capabilities 
 
 Refer to the [Reth documentation](https://reth.rs/) for general guidance on running a node. Note that some BSC-specific configurations may be required.
 
+### EVN Support
+
+This client implements the BSC upgrade-status handshake extension. When EVN is enabled, the node requests peers to disable transaction broadcast towards it, mirroring the Enhanced Validator Network behavior used by validator/sentry nodes.
+
+- Enable via CLI: `--evn.enabled`
+- Or via env var: `BSC_EVN_ENABLED=true`
+- EVN activates only after the node is synced (based on head timestamp lag). Override lag threshold via `BSC_EVN_SYNC_LAG_SECS` (default 30s). Existing peers are refreshed once EVN is armed.
+
+Note: This currently affects the outgoing handshake signaling. Further EVN behaviors (e.g., peer whitelists, conditional broadcast policies) can be added incrementally.
+
 ## Contributing
 
 We welcome community contributions! Whether you're interested in helping with historical sync implementation, BSC Pectra support, or live sync functionality, your help is valuable. Please feel free to open issues or submit pull requests. You can reach out to me on [Telegram](https://t.me/loocapro).

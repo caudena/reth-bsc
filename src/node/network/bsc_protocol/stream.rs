@@ -21,8 +21,8 @@ use super::protocol::proto::{BscProtoMessageId, BSC_PROTOCOL_VERSION};
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum BscCommand {
-    SendCapability { protocol_version: u64, extra: Bytes },
-    SendVotes(Arc<Vec<crate::consensus::parlia::vote::VoteEnvelope>>),
+    Capability { protocol_version: u64, extra: Bytes },
+    Votes(Arc<Vec<crate::consensus::parlia::vote::VoteEnvelope>>),
 }
 
 /// Stream that handles incoming BSC protocol messages and returns outgoing messages to send.
@@ -40,7 +40,7 @@ impl BscProtocolConnection {
         let handshake_deadline = Some(Box::pin(tokio::time::sleep(HANDSHAKE_TIMEOUT)));
         // Both sides should send initial capability in BSC protocol
         // BSC sends []byte{00} which in RLP is encoded as a single byte 0x00
-        let initial_capability = Some(BscCommand::SendCapability { 
+        let initial_capability = Some(BscCommand::Capability { 
             protocol_version: BSC_PROTOCOL_VERSION, 
             extra: Bytes::from_static(&[0x00u8]) // Raw RLP: single 0x00 byte represents []byte{00}
         });
@@ -65,7 +65,7 @@ impl BscProtocolConnection {
 
     fn encode_command(cmd: BscCommand) -> BytesMut {
         match cmd {
-            BscCommand::SendCapability { protocol_version, extra } => {
+            BscCommand::Capability { protocol_version, extra } => {
                 let mut buf = BytesMut::new();
                 let cap_packet = BscCapPacket { protocol_version, extra };
                 cap_packet.encode(&mut buf);
@@ -81,7 +81,7 @@ impl BscProtocolConnection {
                 
                 buf
             }
-            BscCommand::SendVotes(votes) => {
+            BscCommand::Votes(votes) => {
                 let mut buf = BytesMut::new();
                 let vote_count = votes.len();
                 // Zero-copy encode from slice (no Vec clone). Message ID + RLP list of envelopes.
@@ -178,7 +178,7 @@ impl BscProtocolConnection {
 
                 if !self.is_dialer {
                     // Responder sends capability response
-                    let response = Self::encode_command(BscCommand::SendCapability {
+                    let response = Self::encode_command(BscCommand::Capability {
                         protocol_version: BSC_PROTOCOL_VERSION,
                         extra: Bytes::from_static(&[0x00u8]) // Raw RLP: single 0x00 byte represents []byte{00}
                     });

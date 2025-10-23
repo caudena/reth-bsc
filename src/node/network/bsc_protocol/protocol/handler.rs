@@ -52,6 +52,11 @@ impl ConnectionHandler for BscConnectionHandler {
         // when available. However, reth passes `_peer_id` which we can use.
         // Even if the connection drops, failed sends will lazily clean up entries.
         registry::register_peer(_peer_id, tx);
+        // EVN: mark this peer if present in whitelist
+        crate::node::network::evn_peers::mark_evn_if_whitelisted(_peer_id);
+        // Ensure EVN refresh listener is running to handle post-sync EVN updates
+        // for existing peers.
+        crate::node::network::bsc_protocol::registry::spawn_evn_refresh_listener();
         BscProtocolConnection::new(conn, rx, direction.is_outgoing())
     }
 }

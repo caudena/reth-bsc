@@ -1,6 +1,7 @@
 use alloy_primitives::U256;
 use crate::node::engine::BscBuiltPayload;
 use crate::node::evm::config::BscEvmConfig;
+use crate::node::miner::bsc_miner::MiningContext;
 use reth_provider::StateProviderFactory;
 use reth_revm::{database::StateProviderDatabase, db::State};
 use reth_evm::{ConfigureEvm, NextBlockEnvAttributes};
@@ -31,6 +32,47 @@ use crate::node::primitives::BscBlobTransactionSidecar;
 use std::collections::HashMap;
 use reth_chainspec::EthChainSpec;
 use reth_chainspec::EthereumHardforks;
+
+
+/// Delay left over for mining calculation
+const DELAY_LEFT_OVER: u64 = 50;
+
+/// Time multiplier for retry condition check
+const TIME_MULTIPLIER: u32 = 2;
+
+/// Maximum number of retries for payload building
+const MAX_RETRIES: u32 = 3;
+
+/// Errors that can occur during payload job execution
+#[derive(Debug, thiserror::Error)]
+pub enum BscPayloadJobError {
+    #[error("Failed to send signal to build queue: {0}")]
+    BuildQueueSendError(String),
+    
+    #[error("Failed to send best payload to result channel: {0}")]
+    ResultChannelSendError(String),
+    
+    #[error("Payload building failed: {0}")]
+    PayloadBuildingError(String),
+    
+    #[error("Task execution failed: {0}")]
+    TaskExecutionError(String),
+    
+    #[error("Job was aborted")]
+    JobAborted,
+    
+    #[error("Timeout occurred during payload building")]
+    Timeout,
+    
+    #[error("No payloads available to select from")]
+    NoPayloadsAvailable,
+    
+    #[error("Build arguments are invalid: {0}")]
+    InvalidBuildArguments(String),
+    
+    #[error("Channel communication failed: {0}")]
+    ChannelCommunicationError(String),
+}
 
 /// BSC payload builder, used to build payload for bsc miner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -64,8 +106,22 @@ where
         Self { client, pool, evm_config, builder_config, chain_spec }
     }
 
-    // todo: check more and refine it later.
-    pub async fn build_payload(self, args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>) -> Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>> {
+    /// Builds a payload with the given arguments.
+    /// 
+    /// # Thread Safety
+    /// 
+    /// This method takes `&self` and may be called concurrently. The underlying fields
+    /// (such as `client`, `pool`, etc.) are designed to be thread-safe, but callers should
+    /// ensure that concurrent calls don't cause race conditions in shared state.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `args` - Build arguments containing cached reads, config, cancel token, and best payload
+    /// 
+    /// # Returns
+    /// 
+    /// Returns a `Result` containing the built payload or an error.
+    pub async fn build_payload(&self, args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>) -> Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>> {
         let BuildArguments { mut cached_reads, config, cancel, best_payload: _best_payload } = args;
         let PayloadConfig { parent_header, attributes } = config;
 
@@ -101,11 +157,15 @@ where
         let mut sidecars_map = HashMap::new();
         let mut block_blob_count = 0;
 
-        // todo: calc blob fee.
+        // TODO: Calculate blob fee.
         let blob_params = self.chain_spec.blob_params_at_timestamp(attributes.timestamp());
         let max_blob_count = blob_params.as_ref().map(|params| params.max_blob_count).unwrap_or_default();
         let mut best_tx_list = self.pool.best_transactions_with_attributes(BestTransactionsAttributes::new(base_fee, None));
         while let Some(pool_tx) = best_tx_list.next() {
+            if cancel.is_cancelled() {
+                break;
+            }
+
             // ensure we still have capacity for this transaction
             if cumulative_gas_used + pool_tx.gas_limit() > block_gas_limit {
                 // we can't fit this transaction into the block, so we need to mark it as invalid
@@ -118,13 +178,9 @@ where
                 continue
             }
 
-            if cancel.is_cancelled() {
-                break;
-            }
-
             let tx = pool_tx.to_consensus();
             let mut blob_tx_sidecar = None;
-            debug!("debug payload_builder, tx: {:?} is_blob_tx: {:?} tx_type: {:?}", tx.hash(), tx.is_eip4844(), tx.tx_type());
+            debug!("debug payload_builder, block_number: {}, tx: {:?}, is_blob_tx: {:?}, tx_type: {:?}", parent_header.number()+1, tx.hash(), tx.is_eip4844(), tx.tx_type());
             if let Some(blob_tx) = tx.as_eip4844() {
                 let tx_blob_count = blob_tx.tx().blob_versioned_hashes.len() as u64;
 
@@ -165,7 +221,7 @@ where
                         Err(Eip4844PoolTransactionError::UnexpectedEip7594SidecarBeforeOsaka)
                     }
                 };
-                debug!("debug payload_builder, tx_hash: {:?}, blob_sidecar_result: {:?}", tx.hash(), blob_sidecar_result);
+                debug!("debug payload_builder, block_number: {}, tx_hash: {:?}, blob_sidecar_result: {:?}", parent_header.number()+1, tx.hash(), blob_sidecar_result);
 
                 blob_tx_sidecar = match blob_sidecar_result {
                     Ok(sidecar) => Some(sidecar),
@@ -174,7 +230,7 @@ where
                         continue
                     }
                 };
-                debug!("debug payload_builder, tx_hash: {:?}, blob_tx_sidecar: {:?}", tx.hash(), blob_tx_sidecar);
+                debug!("debug payload_builder, block_number: {}, tx_hash: {:?}, blob_tx_sidecar: {:?}", parent_header.number()+1, tx.hash(), blob_tx_sidecar);
             }
             
             let gas_used = match builder.execute_transaction(tx.clone()) {
@@ -229,7 +285,7 @@ where
         // set sidecars to seal block
         let mut blob_sidecars:Vec<BscBlobTransactionSidecar>= Vec::new();
         let transactions = &sealed_block.body().inner.transactions;
-        debug!("debug payload_builder, block_number: {}, block_hash: {:?}, contains {} transactions:", sealed_block.number(), sealed_block.hash(), transactions.len());
+        debug!("debug payload_builder, block_number: {}, block_hash: {:?}, trx_len: {} , is_cancel: {}", sealed_block.number(), sealed_block.hash(), transactions.len(), cancel.is_cancelled());
         for (index, tx) in transactions.iter().enumerate() {
             debug!("debug payload_builder, transaction {}: hash={:?}, from={:?}, to={:?}, value={:?}, gas_limit={}, gas_price={:?}, nonce={}", 
                 index + 1,
@@ -258,7 +314,6 @@ where
         plain.body.sidecars = Some(blob_sidecars);
         sealed_block = Arc::new(plain.into());
     
-        debug!("debug payload_builder, sealed_block: {:?}", sealed_block);
         let payload = BscBuiltPayload {
             block: sealed_block,
             fees: total_fees,
@@ -274,7 +329,7 @@ pub struct BscPayloadJobHandle {
 }
 
 impl BscPayloadJobHandle {
-    // aborted by new head.
+    /// Abort the payload job by new head.
     pub fn abort(self) {
         let _ = self.abort_tx.send(());
     }
@@ -282,12 +337,18 @@ impl BscPayloadJobHandle {
 
 /// BscPayloadJob is used to async build payloads to get best payload.
 pub struct BscPayloadJob<Pool, Client, EvmConfig = BscEvmConfig> {
+    /// Parlia consensus engine
+    parlia: Arc<crate::consensus::parlia::Parlia<crate::chainspec::BscChainSpec>>,
+    /// Mining context
+    mining_ctx: MiningContext,
     /// The payload builder instance
-    builder: BscPayloadBuilder<Pool, Client, EvmConfig>,
+    builder: Arc<BscPayloadBuilder<Pool, Client, EvmConfig>>,
     /// Timeout for payload building
     timeout: std::time::Duration,
-    /// Build arguments for the payload
-    args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>,
+    /// Message queue for processing build arguments
+    try_build_rx: mpsc::UnboundedReceiver<()>,
+    /// Sender for sending arguments back to queue
+    try_build_tx: mpsc::UnboundedSender<()>,
     /// Cancel handle that automatically cancels the job when dropped
     cancel: CancelOnDrop,
     /// Abort receiver for external termination
@@ -296,7 +357,15 @@ pub struct BscPayloadJob<Pool, Client, EvmConfig = BscEvmConfig> {
     is_aborted: bool,
     /// Sender for payload results
     result_tx: mpsc::UnboundedSender<BscBuiltPayload>,
-    // TODO: enrich retry, mev workflows.
+    /// Potential payloads vector for selecting the best one
+    potential_payloads: Vec<BscBuiltPayload>,
+    /// Current build arguments
+    build_args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>,
+    /// Retry count for payload building
+    retries: u32,
+    /// JoinSet for managing build tasks
+    join_handle: tokio::task::JoinSet<Result<BscBuiltPayload, Box<dyn std::error::Error + Send + Sync>>>,
+    // TODO: enrich mev workflows.
 }
 
 impl<Pool, Client, EvmConfig> BscPayloadJob<Pool, Client, EvmConfig>
@@ -308,73 +377,198 @@ where
 {
     /// Creates a new BscPayloadJob and returns both the job and its handle
     pub fn new(
+        parlia: Arc<crate::consensus::parlia::Parlia<crate::chainspec::BscChainSpec>>,
+        mining_ctx: MiningContext,
         builder: BscPayloadBuilder<Pool, Client, EvmConfig>,
-        args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>,
+        build_args: BuildArguments<EthPayloadBuilderAttributes, BscBuiltPayload>,
         result_tx: mpsc::UnboundedSender<BscBuiltPayload>,
     ) -> (Self, BscPayloadJobHandle) {
         let (abort_tx, abort_rx) = oneshot::channel();
-        
+        let (try_build_tx, try_build_rx) = mpsc::unbounded_channel();
+        let cancel = build_args.cancel.clone();
+        let mining_delay = parlia.clone().delay_for_mining(
+            &mining_ctx.parent_snapshot, 
+            &mining_ctx.parent_header, 
+            mining_ctx.header.as_ref().unwrap(), 
+            DELAY_LEFT_OVER);
+
         let job = Self {
-            builder,
-            timeout: std::time::Duration::from_millis(500), // TODO: refine it more.
-            cancel: args.cancel.clone(),
-            args,
+            parlia,
+            mining_ctx,
+            builder: Arc::new(builder),
+            timeout: std::time::Duration::from_millis(mining_delay),
+            try_build_rx,
+            try_build_tx: try_build_tx.clone(),
+            cancel,
             abort_rx,
             is_aborted: false,
             result_tx,
+            potential_payloads: Vec::new(),
+            build_args,
+            retries: 0,
+            join_handle: tokio::task::JoinSet::new(),
         };
-        
         let handle = BscPayloadJobHandle {
             abort_tx,
         };
-        
+
+        debug!("Succeed to new payload job, block_number: {}, timeout: {:?}", job.mining_ctx.parent_header.number()+1, job.timeout);
         (job, handle)
     }
 
     /// Runs the payload job asynchronously with timeout support
     pub async fn start(mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let start_time = std::time::Instant::now();
-        
-        tokio::select! {
-            result = self.builder.build_payload(self.args) => {
-                let elapsed = start_time.elapsed();
-                match result {
-                    Ok(payload) => {
-                        // TODO: retry and pick best one.
-                        info!("Start to submit block: {} (hash: 0x{:x}, txs: {}, cost_time: {:?})", 
-                            payload.block().header().number(),
-                            payload.block().hash(),
-                            payload.block().body().transaction_count(),
-                            elapsed
-                        );
-                        if let Err(err) = self.result_tx.send(payload) {
-                            warn!("Failed to send payload to result channel: {}", err);
+        let mut start_time = std::time::Instant::now();
+        if let Err(err) = self.try_build_tx.send(()) {
+            warn!("Failed to send to first try build queue due to {}, block_number: {}", err, self.build_args.config.parent_header.number()+1);
+            return Err(Box::new(BscPayloadJobError::BuildQueueSendError(err.to_string())));
+        }
+
+        loop {
+            tokio::select! {
+                // Trigger the async build payload by queue.
+                args = self.try_build_rx.recv() => {
+                    match args {
+                        Some(_) => {
+                            self.retries += 1;
+                            start_time = std::time::Instant::now();
+                            debug!("Try new build, block_number: {}, retries: {}", 
+                                self.build_args.config.parent_header.number()+1, self.retries);
+                            
+                            let builder = self.builder.clone();
+                            let build_args = BuildArguments {
+                                cached_reads: self.build_args.cached_reads.clone(),
+                                config: self.build_args.config.clone(),
+                                best_payload: self.build_args.best_payload.clone(),
+                                cancel: self.build_args.cancel.clone(),
+                            };
+                            self.join_handle.spawn(async move {
+                                builder.build_payload(build_args).await
+                            });
                         }
-                        Ok(())
-                    },
-                    Err(e) => {
-                        warn!("Payload building failed after {:?}: {}", elapsed, e);
-                        Err(e)
-                    },
+                        None => {
+                            debug!("Exit payload job by queue closed");
+                            return Ok(());
+                        }
+                    }
+                }
+                
+                // Try to join the async payload build task.
+                result = self.join_handle.join_next() => {
+                    match result {
+                        Some(Ok(Ok(payload))) => {
+                            if self.is_aborted {
+                                return Err(Box::new(BscPayloadJobError::JobAborted));
+                            }
+                            let elapsed = start_time.elapsed();
+                            debug!("Succeed to try new build: {} (hash: 0x{:x}, txs: {}, fees: {}, cost_time: {:?}, retries: {})", 
+                                payload.block().header().number(),
+                                payload.block().hash(),
+                                payload.block().body().transaction_count(),
+                                payload.fees(),
+                                elapsed,
+                                self.retries
+                            );
+                            self.potential_payloads.push(payload);
+
+                            let mining_delay = self.parlia.delay_for_mining(
+                                &self.mining_ctx.parent_snapshot, 
+                                &self.mining_ctx.parent_header, 
+                                self.mining_ctx.header.as_ref().unwrap(), 
+                                DELAY_LEFT_OVER);
+                            // TODO: check more details and refine it later.
+                            // There is still plenty of time left and retry to build payload.
+                            if std::time::Duration::from_millis(mining_delay) > elapsed * TIME_MULTIPLIER && self.retries < MAX_RETRIES {
+                                if let Err(err) = self.try_build_tx.send(()) {
+                                    warn!("Failed to send to try build queue, block_number: {}, retries: {}, error: {:?}", 
+                                        self.build_args.config.parent_header.number()+1, self.retries, err);
+                                    return self.try_return_best_payload();
+                                }
+                                debug!("Succeed to send to try build queue, block_number: {}, retries: {}, last_cost_time: {:?}, new_mining_delay: {:?}", 
+                                    self.build_args.config.parent_header.number()+1, self.retries, elapsed, std::time::Duration::from_millis(mining_delay));
+                            } else {
+                                return self.try_return_best_payload();
+                            }
+                        },
+                        Some(Ok(Err(e))) => {
+                            let elapsed = start_time.elapsed();
+                            warn!("Failed to build payload task due to {}, cost_time: {:?}, block_number: {}, retries: {}", 
+                                e, elapsed, self.build_args.config.parent_header.number()+1, self.retries);
+                            return self.try_return_best_payload();
+                        },
+                        Some(Err(join_err)) => {
+                            let elapsed = start_time.elapsed();
+                            warn!("Failed to join payload build task due to {}, cost_time: {:?}, block_number: {}, retries: {}", 
+                                join_err, elapsed, self.build_args.config.parent_header.number()+1, self.retries);
+                            return self.try_return_best_payload();
+                        },
+                        None => {
+                            // No task completed, continue to next iteration
+                        },
+                    }
+                }
+                
+                // Finish timeout by timer.
+                _ = tokio::time::sleep(self.timeout) => {
+                    let elapsed = start_time.elapsed();
+                    info!("try return best payload due to has no time, cost_time: {:?}, block_number: {}, retries: {}", 
+                        elapsed, self.build_args.config.parent_header.number()+1, self.retries);
+                    drop(std::mem::take(&mut self.cancel));
+                    return self.try_return_best_payload();
+                }
+                
+                // Abort by new head.
+                _ = &mut self.abort_rx => {
+                    let elapsed = start_time.elapsed();
+                    info!("Abort payload building by new head, cost_time: {:?}, block_number: {}, retries: {}", 
+                        elapsed, self.build_args.config.parent_header.number()+1, self.retries);
+                    drop(std::mem::take(&mut self.cancel));
+                    self.is_aborted = true;
+                    return Err(Box::new(BscPayloadJobError::JobAborted));
                 }
             }
-            
-            // normal finish by timer
-            _ = tokio::time::sleep(self.timeout) => {
-                let elapsed = start_time.elapsed();
-                warn!("Payload building timed out after {:?}", elapsed);
-                drop(self.cancel);
-                Ok(())
-            }
-            
-            // abort by new head
-            _ = &mut self.abort_rx => {
-                let elapsed = start_time.elapsed();
-                info!("Payload building aborted after {:?}", elapsed);
-                drop(self.cancel);
-                self.is_aborted = true;
-                Ok(())
-            }
         }
+    }
+
+    /// Try to return the best payload to result channel
+    fn try_return_best_payload(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if let Some(best_payload) = self.pick_best_payload() {
+            if let Err(err) = self.result_tx.send(best_payload) {
+                warn!("Failed to send best payload to result channel: {}", err);
+                return Err(Box::new(BscPayloadJobError::ResultChannelSendError(err.to_string())));
+            }
+            Ok(())
+        } else {
+            warn!("No best payload available to send");
+            Err(Box::new(BscPayloadJobError::NoPayloadsAvailable))
+        }
+    }
+
+    /// Pick the best payload from potential payloads
+    fn pick_best_payload(&mut self) -> Option<BscBuiltPayload> {
+        if self.potential_payloads.is_empty() {
+            return None;
+        }
+
+        // pick the payload with the highest fees as best payload.
+        let best_index = self.potential_payloads
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, payload)| payload.fees())
+            .map(|(index, _)| index)?;
+
+        let total_len = self.potential_payloads.len();
+        let best_payload = self.potential_payloads.remove(best_index);
+        info!("Succeed to pick the best payload: {} (hash: 0x{:x}, txs: {}, fees: {}), pick_index: {}, total_len: {}", 
+            best_payload.block().header().number(),
+            best_payload.block().hash(),
+            best_payload.block().body().transaction_count(),
+            best_payload.fees(),
+            best_index,
+            total_len
+        );
+        
+        self.potential_payloads.clear();
+        Some(best_payload)
     }
 }

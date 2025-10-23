@@ -34,7 +34,7 @@ RUN cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-pat
 
 # Build application
 COPY --exclude=dist . .
-RUN cargo build --bin reth-bsc --features jemalloc,asm-keccak --profile release
+RUN cargo build --bin reth-bsc --profile $BUILD_PROFILE --features "$FEATURES"
 
 # ARG is not resolved in COPY so we have to hack around it by copying the
 # binary to a temporary location

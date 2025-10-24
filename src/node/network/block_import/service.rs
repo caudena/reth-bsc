@@ -5,6 +5,7 @@ use crate::{
     BscBlock, BscBlockBody,
 };
 use alloy_consensus::{BlockBody, Header};
+use alloy_eips::BlockNumberOrTag;
 use alloy_primitives::{B256, U128};
 use alloy_rpc_types::engine::{ForkchoiceState, PayloadStatusEnum};
 use futures::{future::Either, stream::FuturesUnordered, StreamExt};
@@ -19,7 +20,7 @@ use reth_node_ethereum::EthEngineTypes;
 use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion, PayloadTypes};
 use reth_primitives::NodePrimitives;
 use reth_primitives_traits::{AlloyBlockHeader, Block};
-use reth_provider::{BlockHashReader, BlockNumReader};
+use reth_provider::{BlockHashReader, BlockNumReader, BlockReaderIdExt, HeaderProvider};
 use reth_eth_wire_types::broadcast::NewBlockHashes;
 use reth_eth_wire::{GetBlockHeaders, BlockHashNumber};
 use reth_network::{NetworkHandle, message::{PeerResponse, BlockRequest}, FetchClient};
@@ -57,7 +58,7 @@ const LRU_PROCESSED_BLOCKS_SIZE: u32 = 100;
 /// import outcomes via `to_network` channel.
 pub struct ImportService<Provider>
 where
-    Provider: BlockNumReader + Clone,
+    Provider: BlockNumReader + HeaderProvider + Clone,
 {
     /// The handle to communicate with the engine service
     engine: BeaconConsensusEngineHandle<BscPayloadTypes>,
@@ -77,7 +78,7 @@ where
 
 impl<Provider> ImportService<Provider>
 where
-    Provider: BlockNumReader + Clone + 'static,
+    Provider: BlockNumReader + HeaderProvider<Header = Header> + Clone + 'static,
 {
     /// Create a new block import service
     pub fn new(
@@ -101,14 +102,21 @@ where
     /// Process a new payload and return the outcome
     fn new_payload(&self, block: BlockMsg, peer_id: PeerId) -> ImportFut {
         let engine = self.engine.clone();
+        let consensus = self.consensus.clone();
 
+        tracing::debug!(target: "bsc::block_import", "New payload: block = {:?}, peer_id = {:?}", block, peer_id);
         Box::pin(async move {
             let sealed_block = block.block.0.block.clone().seal();
+            let header = sealed_block.header().clone();
             let payload = BscPayloadTypes::block_to_payload(sealed_block);
-
             match engine.new_payload(payload).await {
                 Ok(payload_status) => match payload_status.status {
                     PayloadStatusEnum::Valid => {
+                        tracing::debug!(target: "bsc::block_import", "New payload is valid: block = {:?}, peer_id = {:?}", block, peer_id);
+                        // handle fork choice update with valid payload
+                        if let Err(e) = Self::update_fork_choice(engine, consensus, header).await {
+                            tracing::warn!(target: "bsc::block_import", "Failed to update fork choice: {}", e);
+                        }
                         Outcome { peer: peer_id, result: Ok(BlockValidation::ValidBlock { block }) }
                             .into()
                     }
@@ -124,43 +132,34 @@ where
         })
     }
 
-    /// Process a forkchoice update and return the outcome
-    fn update_fork_choice(&self, block: BlockMsg, peer_id: PeerId) -> ImportFut {
-        let engine = self.engine.clone();
-        let consensus = self.consensus.clone();
-        let sealed_block = block.block.0.block.clone().seal();
-        let hash = sealed_block.hash();
-        let number = sealed_block.number();
+    /// Process a forkchoice update and return the outcome  
+    async fn update_fork_choice(
+        engine: BeaconConsensusEngineHandle<BscPayloadTypes>, 
+        consensus: Arc<ParliaConsensus<Provider>>,
+        new_header: Header) -> Result<(), ParliaConsensusErr> {
+        let last_canonical_number = consensus.provider.last_block_number()?;
+        let current_head = consensus.provider.header_by_number(last_canonical_number)?.ok_or(ParliaConsensusErr::HeadHashNotFound)?;
+        let new_canonical_head = consensus.canonical_head(&new_header, &current_head)?;
+        // get safe block and finalized block with new canonical head
+        // ref: https://github.com/bnb-chain/bsc/blob/f70aaa8399ccee429804eecf3fc4c6fd8d9e6cab/eth/api_backend.go#L72
+        let (_, safe_block_hash) = consensus.get_justified_number_and_hash(new_canonical_head).unwrap_or((0, B256::ZERO));
+        let (_, finalized_block_hash) = consensus.get_finalized_number_and_hash(new_canonical_head).unwrap_or((0, B256::ZERO));
+        let state = ForkchoiceState {
+            head_block_hash: new_canonical_head.hash_slow(),
+            safe_block_hash,
+            finalized_block_hash,
+        };
 
-        Box::pin(async move {
-            let (head_block_hash, current_hash) = match consensus.canonical_head(hash, number) {
-                Ok(hash) => hash,
-                Err(_) => return None,
-            };
-
-            let state = ForkchoiceState {
-                head_block_hash,
-                safe_block_hash: head_block_hash,
-                finalized_block_hash: head_block_hash,
-            };
-
-            match engine.fork_choice_updated(state, None, EngineApiMessageVersion::default()).await
-            {
-                Ok(response) => match response.payload_status.status {
-                    PayloadStatusEnum::Valid => {
-                        Outcome { peer: peer_id, result: Ok(BlockValidation::ValidBlock { block }) }
-                            .into()
-                    }
-                    PayloadStatusEnum::Invalid { validation_error } => Outcome {
-                        peer: peer_id,
-                        result: Err(BlockImportError::Other(validation_error.into())),
-                    }
-                    .into(),
-                    _ => None,
-                },
-                Err(err) => None,
-            }
-        })
+        tracing::debug!(target: "parlia", "Fork choice updated: state = {:?}, new_canonical_head = {:?}, new_header = {:?}", state, new_canonical_head, new_header);
+        match engine.fork_choice_updated(state, None, EngineApiMessageVersion::default()).await
+        {
+            Ok(response) => match response.payload_status.status {
+                PayloadStatusEnum::Invalid { validation_error } => 
+                Err(ParliaConsensusErr::ForkChoiceUpdateError(validation_error)),
+                _ => Ok(()),
+            },
+            Err(err) => Err(ParliaConsensusErr::ForkChoiceUpdateError(err.to_string())),
+        }
     }
 
     /// Add a new block import task to the pending imports
@@ -171,9 +170,6 @@ where
 
         let payload_fut = self.new_payload(block.clone(), peer_id);
         self.pending_imports.push(payload_fut);
-
-        let fcu_fut = self.update_fork_choice(block, peer_id);
-        self.pending_imports.push(fcu_fut);
     }
 
     /// Handle incoming block hashes by using Reth engine-tree download mechanism
@@ -231,7 +227,7 @@ where
 
 impl<Provider> Future for ImportService<Provider>
 where
-    Provider: BlockNumReader + BlockHashReader + Clone + 'static + Unpin,
+    Provider: BlockNumReader + HeaderProvider<Header = Header> + Clone + 'static + Unpin,
 {
     type Output = Result<(), Box<dyn std::error::Error>>;
 
@@ -288,17 +284,16 @@ mod tests {
     use crate::chainspec::bsc::bsc_mainnet;
 
     use super::*;
-    use alloy_primitives::{B256, U128};
+    use alloy_primitives::{BlockHash, BlockNumber, B256, U128, U256};
     use alloy_rpc_types::engine::PayloadStatus;
     use reth_chainspec::ChainInfo;
     use reth_engine_primitives::{BeaconEngineMessage, OnForkChoiceUpdated};
     use reth_eth_wire::NewBlock;
     use reth_node_ethereum::EthEngineTypes;
-    use reth_primitives::Block;
+    use reth_primitives::{Block, SealedHeader};
     use reth_provider::ProviderError;
     use std::{
-        sync::Arc,
-        task::{Context, Poll},
+        collections::HashMap, sync::Arc, task::{Context, Poll}
     };
 
     #[tokio::test]
@@ -333,21 +328,22 @@ mod tests {
             .await;
     }
 
-    #[tokio::test]
-    async fn can_handle_invalid_fcu() {
-        let mut fixture = TestFixture::new(EngineResponses::invalid_fcu()).await;
-        fixture
-            .assert_block_import(|outcome| {
-                matches!(
-                    outcome,
-                    BlockImportEvent::Outcome(BlockImportOutcome {
-                        peer: _,
-                        result: Err(BlockImportError::Other(_))
-                    })
-                )
-            })
-            .await;
-    }
+    // FCU has been called after import payload is validated, skip this test now.
+    // #[tokio::test]
+    // async fn can_handle_invalid_fcu() {
+    //     let mut fixture = TestFixture::new(EngineResponses::invalid_fcu()).await;
+    //     fixture
+    //         .assert_block_import(|outcome| {
+    //             matches!(
+    //                 outcome,
+    //                 BlockImportEvent::Outcome(BlockImportOutcome {
+    //                     peer: _,
+    //                     result: Err(BlockImportError::Other(_))
+    //                 })
+    //             )
+    //         })
+    //         .await;
+    // }
 
     #[tokio::test]
     async fn deduplicates_blocks() {
@@ -367,7 +363,7 @@ mod tests {
         let mut outcomes = Vec::new();
 
         // Wait for both NewPayload and FCU outcomes from first block
-        while outcomes.len() < 2 {
+        while outcomes.is_empty() {
             match fixture.handle.poll_outcome(&mut cx) {
                 Poll::Ready(Some(outcome)) => {
                     outcomes.push(outcome);
@@ -394,41 +390,121 @@ mod tests {
         }
     }
 
+
     #[derive(Clone)]
-    struct MockProvider;
+    struct MockProvider {
+        headers_by_number: HashMap<BlockNumber, Header>,
+        headers_by_hash: HashMap<BlockHash, Header>,
+        td_by_hash: HashMap<BlockHash, U256>,
+        head_number: BlockNumber,
+        head_hash: BlockHash,
+    }
 
-    impl BlockNumReader for MockProvider {
-        fn chain_info(&self) -> Result<ChainInfo, ProviderError> {
-            unimplemented!()
+    impl MockProvider {
+        fn new() -> Self {
+            let headers_by_number = HashMap::new();
+            let headers_by_hash = HashMap::new();
+            let td_by_hash = HashMap::new();
+            Self { headers_by_number, headers_by_hash, td_by_hash, head_number: 0, head_hash: BlockHash::ZERO }
         }
 
-        fn best_block_number(&self) -> Result<u64, ProviderError> {
-            Ok(0)
-        }
-
-        fn last_block_number(&self) -> Result<u64, ProviderError> {
-            Ok(0)
-        }
-
-        fn block_number(&self, _hash: B256) -> Result<Option<u64>, ProviderError> {
-            Ok(None)
+        fn insert(&mut self, header: Header, td: U256) {
+            self.headers_by_number.insert(header.number, header.clone());
+            self.headers_by_hash.insert(header.hash_slow(), header.clone());
+            self.td_by_hash.insert(header.hash_slow(), td);
+            if header.number > self.head_number {
+                self.head_number = header.number;
+                self.head_hash = header.hash_slow();
+            }
         }
     }
 
     impl BlockHashReader for MockProvider {
-        fn block_hash(&self, _number: u64) -> Result<Option<B256>, ProviderError> {
-            Ok(Some(B256::ZERO))
+        fn block_hash(&self, number: BlockNumber) -> Result<Option<B256>, ProviderError> {
+            Ok(self.headers_by_number.get(&number).map(|h| h.hash_slow()))
         }
 
-        fn canonical_hashes_range(
-            &self,
-            _start: u64,
-            _end: u64,
-        ) -> Result<Vec<B256>, ProviderError> {
+        fn canonical_hashes_range(&self, _start: BlockNumber, _end: BlockNumber) -> Result<Vec<B256>, ProviderError> {
             Ok(vec![])
         }
     }
 
+    impl BlockNumReader for MockProvider {
+        fn chain_info(&self) -> Result<ChainInfo, ProviderError> {
+            Ok(ChainInfo { best_hash: self.head_hash, best_number: self.head_number })
+        }
+
+        fn best_block_number(&self) -> Result<BlockNumber, ProviderError> {
+            Ok(self.head_number)
+        }
+
+        fn last_block_number(&self) -> Result<BlockNumber, ProviderError> {
+            Ok(self.head_number)
+        }
+
+        fn block_number(&self, hash: B256) -> Result<Option<BlockNumber>, ProviderError> {
+            Ok(self.headers_by_hash.get(&hash).map(|h| h.number))
+        }
+    }
+
+    impl HeaderProvider for MockProvider {
+        type Header = Header;
+
+        fn header(&self, block_hash: &B256) -> Result<Option<Self::Header>, ProviderError> {
+            Ok(self.headers_by_hash.get(block_hash).cloned())
+        }
+
+        fn header_by_number(&self, num: u64) -> Result<Option<Self::Header>, ProviderError> {
+            Ok(self.headers_by_number.get(&num).cloned())
+        }
+
+        fn header_td(&self, hash: &B256) -> Result<Option<U256>, ProviderError> {
+            Ok(self.td_by_hash.get(hash).cloned())
+        }
+
+        fn header_td_by_number(&self, number: BlockNumber) -> Result<Option<U256>, ProviderError> {
+            if let Some(h) = self.headers_by_number.get(&number) {
+                Ok(self.td_by_hash.get(&h.hash_slow()).cloned())
+            } else {
+                Ok(None)
+            }
+        }
+
+        fn headers_range(
+            &self,
+            range: impl core::ops::RangeBounds<BlockNumber>,
+        ) -> Result<Vec<Self::Header>, ProviderError> {
+            use std::ops::Bound::*;
+            let start = match range.start_bound() { Included(&s) => s, Excluded(&s) => s + 1, Unbounded => 0 };
+            let end = match range.end_bound() { Included(&e) => e, Excluded(&e) => e - 1, Unbounded => self.head_number };
+            let mut out = Vec::new();
+            for n in start..=end {
+                if let Some(h) = self.headers_by_number.get(&n) {
+                    out.push(h.clone());
+                }
+            }
+            Ok(out)
+        }
+
+        fn sealed_header(&self, number: BlockNumber) -> Result<Option<SealedHeader<Self::Header>>, ProviderError> {
+            Ok(self.headers_by_number.get(&number).cloned().map(SealedHeader::seal_slow))
+        }
+
+        fn sealed_headers_while(
+            &self,
+            range: impl core::ops::RangeBounds<BlockNumber>,
+            mut predicate: impl FnMut(&SealedHeader<Self::Header>) -> bool,
+        ) -> Result<Vec<SealedHeader<Self::Header>>, ProviderError> {
+            let hs = self.headers_range(range)?;
+            let mut out = Vec::new();
+            for h in hs {
+                let sh = SealedHeader::seal_slow(h);
+                if !predicate(&sh) { break; }
+                out.push(sh);
+            }
+            Ok(out)
+        }
+    }
     /// Response configuration for engine messages
     struct EngineResponses {
         new_payload: PayloadStatusEnum,
@@ -465,7 +541,7 @@ mod tests {
         async fn new(responses: EngineResponses) -> Self {
             // Use mainnet chain spec for tests; it influences only fast-finality parsing.
             let consensus = Arc::new(ParliaConsensus { 
-                provider: MockProvider, 
+                provider: MockProvider::new(), 
                 chain_spec: Arc::new(crate::chainspec::BscChainSpec::from(crate::chainspec::bsc::bsc_mainnet())),
             });
             let (to_engine, from_engine) = mpsc::unbounded_channel();
@@ -506,7 +582,7 @@ mod tests {
             let mut outcomes = Vec::new();
 
             // Wait for both NewPayload and FCU outcomes
-            while outcomes.len() < 2 {
+            while outcomes.is_empty() {
                 match self.handle.poll_outcome(&mut cx) {
                     Poll::Ready(Some(outcome)) => {
                         outcomes.push(outcome);

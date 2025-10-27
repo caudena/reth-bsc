@@ -37,8 +37,6 @@ use alloy_primitives::U128;
 use reth_network::message::{NewBlockMessage, PeerMessage};
 use alloy_rlp::Encodable;
 use alloy_primitives::keccak256;
-use reth_eth_wire::BlockHashNumber;
-use reth_eth_wire_types::broadcast::NewBlockHashes;
 
 pub struct MiningContext {
     pub header: Option<reth_primitives::Header>, // tmp header for payload building.
@@ -449,12 +447,10 @@ where
         // Targeted ETH NewBlock/NewBlockHashes to EVN peers for full broadcast parity.
         if let Some(net) = crate::shared::get_network_handle() {
             let peers = crate::node::network::evn_peers::snapshot();
-            let hash_num = BlockHashNumber { hash: block_hash, number: sealed_block.header().number };
-            let hashes = NewBlockHashes(vec![hash_num]);
             let nb_msg = msg.clone();
             for (peer_id, info) in peers {
                 if info.is_evn {
-                    net.send_eth_message(peer_id, PeerMessage::NewBlockHashes(hashes.clone()));
+                    // Send full NewBlock to EVN peers
                     net.send_eth_message(peer_id, PeerMessage::NewBlock(nb_msg.clone()));
                 }
             }

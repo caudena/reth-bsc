@@ -260,11 +260,10 @@ where
                         if cfg.proxyed_validators.contains(&coinbase) {
                             if let Some(net) = crate::shared::get_network_handle() {
                                 let peers = crate::node::network::evn_peers::snapshot();
-                                let hn = BlockHashNumber { hash: block.hash, number: header_ref.number };
-                                let hashes = reth_eth_wire_types::broadcast::NewBlockHashes(vec![hn]);
                                 for (peer_id, info) in peers {
                                     if info.is_evn {
-                                        net.send_eth_message(peer_id, PeerMessage::NewBlockHashes(hashes.clone()));
+                                        // Send full NewBlock to EVN peers to avoid re-fetching.
+                                        net.send_eth_message(peer_id, PeerMessage::NewBlock(block.clone()));
                                     }
                                 }
                             }

@@ -1,12 +1,11 @@
 use alloy_consensus::Header;
 use rand::Rng;
-use crate::consensus::parlia::{Snapshot, DIFF_NOTURN, FIXED_BACKOFF_TIME_BEFORE_FORK_MILLIS, WIGGLE_TIME_BEFORE_FORK_MILLIS};
+use crate::consensus::parlia::{Snapshot, FIXED_BACKOFF_TIME_BEFORE_FORK_MILLIS, WIGGLE_TIME_BEFORE_FORK_MILLIS, MILLISECONDS_UNIT};
 use crate::consensus::parlia::util::calculate_millisecond_timestamp;
 use crate::consensus::parlia::consensus::Parlia;
+use crate::consensus::parlia::constants::DIFF_NOTURN;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
-
-const MILLISECONDS_UNIT: u64 = 250;
 
 impl<ChainSpec> Parlia<ChainSpec> 
 where ChainSpec: EthChainSpec + BscHardforks + 'static,
@@ -27,6 +26,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         new_block_ts
     }
     
+    /// Calculate delay for Ramanujan fork, return in milliseconds.
     pub fn delay_for_ramanujan_fork(&self, parent_snap: &Snapshot, header: &Header) -> u64 {
         let present_timestamp = self.present_millis_timestamp();
         let header_timestamp = calculate_millisecond_timestamp(header);

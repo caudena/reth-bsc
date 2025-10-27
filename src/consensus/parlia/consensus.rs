@@ -441,14 +441,12 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
     ///   otherwise 4/5 of the period.
     pub fn delay_for_mining(
         &self,
-        parent_snap: &Snapshot,
-        _parent: &Header,
+        snap: &Snapshot,
         header: &Header,
         left_over_ms: u64,
     ) -> u64 {
-        let period_ms = parent_snap.block_interval;
-        let mut delay_ms = self.delay_for_ramanujan_fork(parent_snap, header);
-
+        let period_ms = snap.block_interval;
+        let mut delay_ms = self.delay_for_ramanujan_fork(snap, header);
         if left_over_ms >= period_ms {
             warn!("Delay invalid argument: left_over_ms={}, period_ms={}", left_over_ms, period_ms);
         } else if left_over_ms >= delay_ms {
@@ -458,7 +456,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
 
         let mut time_for_mining_ms = period_ms / 2;
-        let last_block_in_turn = parent_snap.last_block_in_one_turn(header.number);
+        let last_block_in_turn = snap.last_block_in_one_turn(header.number);
         if !last_block_in_turn {
             time_for_mining_ms = period_ms * 4 / 5;
         }

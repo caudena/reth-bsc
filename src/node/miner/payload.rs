@@ -2,7 +2,7 @@ use alloy_primitives::U256;
 use crate::consensus::parlia::{Parlia, DEFAULT_MIN_GAS_TIP};
 use crate::node::engine::BscBuiltPayload;
 use crate::node::evm::config::BscEvmConfig;
-use crate::node::miner::bsc_miner::MiningContext;
+use crate::node::miner::bsc_miner::{MiningContext, SubmitContext};
 use reth_provider::StateProviderFactory;
 use reth_revm::{database::StateProviderDatabase, db::State};
 use reth_evm::{ConfigureEvm, NextBlockEnvAttributes};
@@ -381,7 +381,7 @@ pub struct BscPayloadJob<Pool, Client, EvmConfig = BscEvmConfig> {
     /// Abort flag
     is_aborted: bool,
     /// Sender for payload results
-    result_tx: mpsc::UnboundedSender<BscBuiltPayload>,
+    result_tx: mpsc::UnboundedSender<SubmitContext>,
     /// Potential payloads vector for selecting the best one
     potential_payloads: Vec<BscBuiltPayload>,
     /// Current build arguments
@@ -406,13 +406,12 @@ where
         mining_ctx: MiningContext,
         builder: BscPayloadBuilder<Pool, Client, EvmConfig>,
         build_args: BscBuildArguments<EthPayloadBuilderAttributes>,
-        result_tx: mpsc::UnboundedSender<BscBuiltPayload>,
+        result_tx: mpsc::UnboundedSender<SubmitContext>,
     ) -> (Self, BscPayloadJobHandle) {
         let (abort_tx, abort_rx) = oneshot::channel();
         let (try_build_tx, try_build_rx) = mpsc::unbounded_channel();
         let mining_delay = parlia.clone().delay_for_mining(
             &mining_ctx.parent_snapshot, 
-            &mining_ctx.parent_header, 
             mining_ctx.header.as_ref().unwrap(), 
             DELAY_LEFT_OVER);
 
@@ -491,10 +490,10 @@ where
 
                             let mining_delay = self.parlia.delay_for_mining(
                                 &self.mining_ctx.parent_snapshot, 
-                                &self.mining_ctx.parent_header, 
                                 self.mining_ctx.header.as_ref().unwrap(), 
                                 DELAY_LEFT_OVER);
-                            // TODO: check more details and refine it later.
+
+                            // TODO: check more details and refine it later, listen new trxs.
                             // There is still plenty of time left and retry to build payload.
                             if std::time::Duration::from_millis(mining_delay) > elapsed * TIME_MULTIPLIER && self.retries < MAX_RETRIES {
                                 if let Err(err) = self.try_build_tx.send(()) {
@@ -551,7 +550,11 @@ where
     /// Try to return the best payload to result channel
     fn try_return_best_payload(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(best_payload) = self.pick_best_payload() {
-            if let Err(err) = self.result_tx.send(best_payload) {
+            if let Err(err) = self.result_tx.send(SubmitContext {
+                mining_ctx: self.mining_ctx.clone(),
+                payload: best_payload,
+                cancel: self.build_args.cancel.clone(),
+            }) {
                 warn!("Failed to send best payload to result channel: {}", err);
                 return Err(Box::new(BscPayloadJobError::ResultChannelSendError(err.to_string())));
             }

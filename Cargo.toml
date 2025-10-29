@@ -13,40 +13,40 @@ name = "reth-bsc"
 path = "src/main.rs"
 
 [dependencies]
-reth = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-cli = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-cli-commands = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-basic-payload-builder = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-db = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-engine-local = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-chainspec = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-cli-util = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-discv4 = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc", features = ["test-utils"] }
-reth-engine-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-ethereum-forks = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc", features = ["serde"] }
-reth-ethereum-payload-builder = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-ethereum-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-eth-wire = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-eth-wire-types = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-evm = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-evm-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-node-core = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-revm = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-network = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc", features = ["test-utils"] }
-reth-network-p2p = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-network-api = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-node-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc", features = ["test-utils"] }
-reth-network-peers = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-payload-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-primitives-traits = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-provider = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc", features = ["test-utils"] }
-reth-rpc-eth-api = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-rpc-engine-api = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-tracing = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-trie-common = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-reth-trie-db = { git = "https://github.com/bnb-chain/reth.git", branch = "3f86efc3bb-bsc" }
-revm = "28.0.1"
+reth = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-cli = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-cli-commands = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-basic-payload-builder = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-db = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-engine-local = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-chainspec = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-cli-util = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-discv4 = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test", features = ["test-utils"] }
+reth-engine-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-ethereum-forks = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test", features = ["serde"] }
+reth-ethereum-payload-builder = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-ethereum-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-eth-wire = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-eth-wire-types = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-evm = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-evm-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-node-core = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-revm = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-network = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test", features = ["test-utils"] }
+reth-network-p2p = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-network-api = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-node-ethereum = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test", features = ["test-utils"] }
+reth-network-peers = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-payload-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-primitives = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-primitives-traits = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-provider = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test", features = ["test-utils"] }
+reth-rpc-eth-api = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-rpc-engine-api = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-tracing = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-trie-common = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+reth-trie-db = { git = "https://github.com/bnb-chain/reth.git", branch = "si_test" }
+revm = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
 
 # alloy dependencies
 alloy-evm = "0.18.2"
@@ -128,6 +128,9 @@ dev = [
     "revm/dev",
 ]
 
+# Enable superinstruction optimization for better EVM performance
+enable_superinst = []
+
 asm-keccak = [
     "reth-node-core/asm-keccak",
     "reth-primitives/asm-keccak",
@@ -162,6 +165,19 @@ client = [
     "jsonrpsee/async-client",
     "reth-rpc-eth-api/client",
 ]
+
+[patch.crates-io]
+revm = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-bytecode = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-context = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-context-interface = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-database = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-database-interface = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-handler = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-interpreter = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-precompile = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-primitives = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
+revm-state = { git = "https://github.com/bnb-chain/revm.git", branch = "si_test" }
 
 # Use the `--profile profiling` flag to show symbols in release mode.
 # e.g. `cargo build --profile profiling`

@@ -192,6 +192,12 @@ where
         // configure evm env based on parent block
         let mut cfg_env =
             CfgEnv::new().with_chain_id(self.chain_spec().chain().id()).with_spec(spec);
+            
+        #[cfg(feature = "enable_superinst")]
+        {
+            // Enable superinstruction optimization
+            cfg_env = cfg_env.with_superinstruction(true);
+        }
 
         if let Some(blob_params) = &blob_params {
             cfg_env.set_max_blobs_per_tx(blob_params.max_blobs_per_tx);
@@ -240,8 +246,15 @@ where
         );
 
         // configure evm env based on parent block
-        let cfg_env =
+        #[allow(unused_mut)]
+        let mut cfg_env =
             CfgEnv::new().with_chain_id(self.chain_spec().chain().id()).with_spec(spec_id);
+            
+        #[cfg(feature = "enable_superinst")]
+        {
+            // Enable superinstruction optimization
+            cfg_env = cfg_env.with_superinstruction(true);
+        }
 
         let blob_params = self.chain_spec().blob_params_at_timestamp(attributes.timestamp);
 

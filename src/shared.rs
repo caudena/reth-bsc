@@ -45,6 +45,28 @@ static LOCAL_PEER_ID: OnceLock<PeerId> = OnceLock::new();
 /// Global network handle to interact with P2P (reth).
 static NETWORK_HANDLE: OnceLock<NetworkHandle<BscNetworkPrimitives>> = OnceLock::new();
 
+/// Trait for fork choice engine operations that can be stored globally
+pub trait ForkChoiceEngineTrait: Send + Sync {
+    fn update_forkchoice<'a>(&'a self, header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), crate::consensus::ParliaConsensusErr>> + Send + 'a>>;
+    fn is_need_reorg<'a>(&'a self, incoming_header: &'a Header, current_header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<bool, crate::consensus::ParliaConsensusErr>> + Send + 'a>>;
+}
+
+impl<P> ForkChoiceEngineTrait for crate::node::consensus::BscForkChoiceEngine<P>
+where
+    P: HeaderProvider<Header = Header> + BlockNumReader + Clone + Send + Sync,
+{
+    fn update_forkchoice<'a>(&'a self, header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), crate::consensus::ParliaConsensusErr>> + Send + 'a>> {
+        Box::pin(self.update_forkchoice(header))
+    }
+    
+    fn is_need_reorg<'a>(&'a self, incoming_header: &'a Header, current_header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<bool, crate::consensus::ParliaConsensusErr>> + Send + 'a>> {
+        Box::pin(self.is_need_reorg(incoming_header, current_header))
+    }
+}
+
+/// Global fork choice engine instance
+static FORK_CHOICE_ENGINE: OnceLock<Box<dyn ForkChoiceEngineTrait>> = OnceLock::new();
+
 /// Store the snapshot provider globally
 pub fn set_snapshot_provider(provider: Arc<dyn SnapshotProvider + Send + Sync>) -> Result<(), Arc<dyn SnapshotProvider + Send + Sync>> {
     SNAPSHOT_PROVIDER.set(provider)
@@ -172,4 +194,22 @@ pub fn set_network_handle(handle: NetworkHandle<BscNetworkPrimitives>) -> Result
 /// Get a clone of the global network handle if available.
 pub fn get_network_handle() -> Option<NetworkHandle<BscNetworkPrimitives>> {
     NETWORK_HANDLE.get().cloned()
+}
+
+/// Store the fork choice engine globally.
+/// 
+/// This stores a `BscForkChoiceEngine` instance to provide global access for fork choice operations.
+pub fn set_fork_choice_engine<P>(engine: crate::node::consensus::BscForkChoiceEngine<P>) 
+    -> Result<(), Box<dyn std::error::Error>>
+where
+    P: HeaderProvider<Header = Header> + BlockNumReader + Clone + Send + Sync + 'static,
+{
+    let boxed: Box<dyn ForkChoiceEngineTrait> = Box::new(engine);
+    FORK_CHOICE_ENGINE.set(boxed).map_err(|_| "Failed to set fork choice engine")?;
+    Ok(())
+}
+
+/// Get a reference to the global fork choice engine.
+pub fn get_fork_choice_engine() -> Option<&'static dyn ForkChoiceEngineTrait> {
+    FORK_CHOICE_ENGINE.get().map(|b| &**b)
 }

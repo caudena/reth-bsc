@@ -72,6 +72,30 @@ where
             self.distribute_finality_reward()?;
         }
 
+        // If configured via CLI/ENV, include one-shot StakeHub NodeIDs add/remove system txs
+        if let Some((to_add, to_remove)) = crate::node::network::evn::take_nodeids_actions_once() {
+            if !to_add.is_empty() {
+                let tx = self.system_contracts.add_node_ids_tx(to_add.clone(), 0);
+                self.transact_system_tx(tx, block.beneficiary)?;
+                tracing::info!(
+                    target: "bsc::evn",
+                    action = "addNodeIDs",
+                    count = to_add.len(),
+                    "Included StakeHub.addNodeIDs system transaction"
+                );
+            }
+            if !to_remove.is_empty() {
+                let tx = self.system_contracts.remove_node_ids_tx(to_remove.clone(), 0);
+                self.transact_system_tx(tx, block.beneficiary)?;
+                tracing::info!(
+                    target: "bsc::evn",
+                    action = "removeNodeIDs",
+                    count = to_remove.len(),
+                    "Included StakeHub.removeNodeIDs system transaction"
+                );
+            }
+        }
+
         // update validator set after Feynman upgrade
         let header_number = self.evm.block().number.to::<u64>();
         let header_timestamp = self.evm.block().timestamp.to::<u64>();

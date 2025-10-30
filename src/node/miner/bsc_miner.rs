@@ -35,8 +35,6 @@ use crate::node::miner::payload::BscBuildArguments;
 use reth_revm::cancelled::ManualCancel;
 use alloy_primitives::U128;
 use reth_network::message::{NewBlockMessage, PeerMessage};
-use alloy_rlp::Encodable;
-use alloy_primitives::keccak256;
 use std::sync::Mutex;
 use lru::LruCache;
 
@@ -789,54 +787,6 @@ where
             return Err(format!("Failed to initialize global signer due to {}", e).into());
         } else {
             info!("Succeed to initialize global signer");
-        }
-        // EVN: Auto-build StakeHub add/remove NodeIDs txs if configured
-        if let Some(cfg) = crate::node::network::evn::get_global_evn_config() {
-            if let Some(nonce) = cfg.nodeids_nonce {
-                let sys = crate::system_contracts::SystemContract::new(self.main_work_worker.chain_spec.as_ref().clone());
-
-                if !cfg.nodeids_to_add.is_empty() {
-                    let tx = sys.add_node_ids_tx(cfg.nodeids_to_add.clone(), nonce);
-                    match crate::node::miner::signer::sign_system_transaction(tx) {
-                        Ok(signed) => {
-                            let mut out = Vec::new();
-                            signed.encode(&mut out);
-                            let hash = keccak256(&out);
-                            info!(
-                                target: "bsc::evn",
-                                action = "addNodeIDs",
-                                count = cfg.nodeids_to_add.len(),
-                                nonce = nonce,
-                                tx_hash = format!("0x{:x}", hash),
-                                raw_rlp = format!("0x{}", alloy_primitives::hex::encode(&out)),
-                                "Built StakeHub.addNodeIDs transaction"
-                            );
-                        }
-                        Err(e) => warn!(target: "bsc::evn", error = %e, "Failed to sign addNodeIDs transaction"),
-                    }
-                }
-
-                if !cfg.nodeids_to_remove.is_empty() {
-                    let tx = sys.remove_node_ids_tx(cfg.nodeids_to_remove.clone(), nonce);
-                    match crate::node::miner::signer::sign_system_transaction(tx) {
-                        Ok(signed) => {
-                            let mut out = Vec::new();
-                            signed.encode(&mut out);
-                            let hash = keccak256(&out);
-                            info!(
-                                target: "bsc::evn",
-                                action = "removeNodeIDs",
-                                count = cfg.nodeids_to_remove.len(),
-                                nonce = nonce,
-                                tx_hash = format!("0x{:x}", hash),
-                                raw_rlp = format!("0x{}", alloy_primitives::hex::encode(&out)),
-                                "Built StakeHub.removeNodeIDs transaction"
-                            );
-                        }
-                        Err(e) => warn!(target: "bsc::evn", error = %e, "Failed to sign removeNodeIDs transaction"),
-                    }
-                }
-            }
         }
         self.spawn_workers()
     }

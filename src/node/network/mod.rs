@@ -1,12 +1,8 @@
 #![allow(clippy::owned_cow)]
 use crate::{
-    node::{
-        engine_api::payload::BscPayloadTypes,
-        network::block_import::{handle::ImportHandle, BscBlockImport},
-        primitives::{BscBlobTransactionSidecar, BscPrimitives},
-        BscNode,
-    },
-    BscBlock,
+    BscBlock, node::{
+        BscNode, engine_api::payload::BscPayloadTypes, network::block_import::{BscBlockImport, handle::ImportHandle}, primitives::{BscBlobTransactionSidecar, BscPrimitives}
+    }
 };
 use alloy_rlp::{Decodable, Encodable};
 use handshake::BscHandshake;
@@ -217,15 +213,12 @@ impl BscNetworkBuilder {
             warn!(target: "bsc", "Block import sender already initialised; overriding skipped");
         }
         
-        // Import the necessary types for consensus
-        use crate::consensus::ParliaConsensus;
+        // Import the necessary types for block import service
         use crate::node::network::block_import::service::ImportService;
         
-        // Create consensus instance for ImportService
-        let consensus = Arc::new(ParliaConsensus::new(
-            ctx.provider().clone(),
-            ctx.chain_spec().clone(),
-        ));
+        // Clone needed values before moving into the async closure
+        let provider = ctx.provider().clone();
+        let chain_spec = ctx.chain_spec().clone();
         
         // Spawn the critical ImportService task exactly like the official implementation
         ctx.task_executor().spawn_critical("block import", async move {
@@ -237,7 +230,14 @@ impl BscNetworkBuilder {
                 .await
                 .unwrap();
 
-            ImportService::new(consensus, handle, from_network, from_hashes, to_network).await.unwrap();
+            ImportService::new(
+                provider,
+                chain_spec,
+                handle,
+                from_network,
+                from_hashes,
+                to_network,
+            ).await.unwrap();
         });
 
         let network_builder = network_builder
@@ -318,8 +318,8 @@ where
 
         loop {
             if crate::node::network::evn::is_evn_synced() { break; }
-            if let Some(n) = crate::shared::get_best_block_number() {
-                if let Some(h) = crate::shared::get_header_by_number(n) {
+            if let Some(n) = crate::shared::get_best_canonical_block_number() {
+                if let Some(h) = crate::shared::get_canonical_header_by_number(n) {
                     let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(u64::MAX);
                     let ts = h.timestamp();
                     if now >= ts && now.saturating_sub(ts) <= max_lag {

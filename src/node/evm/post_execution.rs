@@ -7,7 +7,7 @@ use crate::consensus::parlia::{DIFF_INTURN, VoteAddress, VoteAttestation, snapsh
 use crate::consensus::{SYSTEM_ADDRESS, MAX_SYSTEM_REWARD, SYSTEM_REWARD_PERCENT};
 use crate::evm::transaction::BscTxEnv;
 use crate::node::miner::util::prepare_new_header;
-use crate::system_contracts::{SLASH_CONTRACT, SYSTEM_REWARD_CONTRACT, feynman_fork::{ValidatorElectionInfo, get_top_validators_by_voting_power, ElectedValidators}};
+use crate::system_contracts::{SLASH_CONTRACT, SYSTEM_REWARD_CONTRACT, STAKE_HUB_CONTRACT, feynman_fork::{ValidatorElectionInfo, get_top_validators_by_voting_power, ElectedValidators}};
 use reth_chainspec::{EthChainSpec, EthereumHardforks, Hardforks};
 use reth_evm::{eth::receipt_builder::{ReceiptBuilder, ReceiptBuilderCtx}, execute::BlockExecutionError, Database, Evm, FromRecoveredTx, FromTxWithEncoded, IntoTxEnv, block::StateChangeSource};
 use reth_primitives::{TransactionSigned, Transaction};
@@ -70,30 +70,6 @@ where
 
         if self.spec.is_plato_active_at_block(block.number.to()) {
             self.distribute_finality_reward()?;
-        }
-
-        // If configured via CLI/ENV, include one-shot StakeHub NodeIDs add/remove system txs
-        if let Some((to_add, to_remove)) = crate::node::network::evn::take_nodeids_actions_once() {
-            if !to_add.is_empty() {
-                let tx = self.system_contracts.add_node_ids_tx(to_add.clone(), 0);
-                self.transact_system_tx(tx, block.beneficiary)?;
-                tracing::info!(
-                    target: "bsc::evn",
-                    action = "addNodeIDs",
-                    count = to_add.len(),
-                    "Included StakeHub.addNodeIDs system transaction"
-                );
-            }
-            if !to_remove.is_empty() {
-                let tx = self.system_contracts.remove_node_ids_tx(to_remove.clone(), 0);
-                self.transact_system_tx(tx, block.beneficiary)?;
-                tracing::info!(
-                    target: "bsc::evn",
-                    action = "removeNodeIDs",
-                    count = to_remove.len(),
-                    "Included StakeHub.removeNodeIDs system transaction"
-                );
-            }
         }
 
         // update validator set after Feynman upgrade
@@ -297,10 +273,25 @@ where
 
         if self.ctx.is_miner {
             if let Some(signed) = signed_tx.clone() {
-                let recovered = signed.try_into_recovered_unchecked().unwrap_or_else(|_| {
+                let recovered = signed.clone().try_into_recovered_unchecked().unwrap_or_else(|_| {
                     panic!("Failed to recover system transaction signature")
                 });
                 self.assembled_system_txs.push(recovered);
+
+                if transaction.to() == Some(STAKE_HUB_CONTRACT) {
+                    if let Some(net) = crate::shared::get_network_handle() {
+                        let tx_to_broadcast = signed.clone();
+                        tokio::spawn(async move {
+                            if let Some(txh) = net.transactions_handle().await {
+                                txh.broadcast_transactions(std::iter::once(tx_to_broadcast));
+                                tracing::info!(
+                                    target: "bsc::evn",
+                                    "Broadcasted StakeHub system tx to public network"
+                                );
+                            }
+                        });
+                    }
+                }
             }
         }
 

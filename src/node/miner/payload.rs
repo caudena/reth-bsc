@@ -561,8 +561,16 @@ where
                         },
                         Some(Ok(Err(e))) => {
                             let elapsed = start_time.elapsed();
-                            warn!("Failed to build payload task due to {}, cost_time: {:?}, block_number: {}, retries: {}", 
-                                e, elapsed, self.build_args.config.parent_header.number()+1, self.retries);
+                            warn!(
+                                target: "bsc::miner::payload",
+                                error = %e,
+                                cost_time = ?elapsed,
+                                block_number = self.build_args.config.parent_header.number() + 1,
+                                parent_hash = ?self.build_args.config.parent_header.hash(),
+                                is_inturn = self.mining_ctx.is_inturn,
+                                retries = self.retries,
+                                "Failed to build payload task"
+                            );
                             return self.try_return_best_payload();
                         },
                         Some(Err(join_err)) => {
@@ -617,7 +625,7 @@ where
             }
             Ok(())
         } else {
-            warn!("No best payload available to send");
+            warn!("No best payload available to send, try_mine_block_number: {}", self.build_args.config.parent_header.number()+1);
             Err(Box::new(BscPayloadJobError::NoPayloadsAvailable))
         }
     }

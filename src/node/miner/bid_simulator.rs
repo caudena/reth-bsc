@@ -156,6 +156,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
             parent_snapshot: Arc::new(parent_snapshot),
             parent_header: parent_header.clone(),
             header: None,
+            is_inturn: true,
         };
         let parent_snapshot = mining_ctx.parent_snapshot.clone();
         let attributes = prepare_new_attributes(

@@ -48,6 +48,7 @@ pub struct MiningContext {
     pub header: Option<reth_primitives::Header>, // tmp header for payload building.
     pub parent_header: reth_primitives::SealedHeader,
     pub parent_snapshot: Arc<crate::consensus::parlia::snapshot::Snapshot>,
+    pub is_inturn: bool,
 }
 
 #[derive(Clone)]
@@ -106,14 +107,17 @@ where
                     // todo: refine it as pre cache to speedup, committed.execution_outcome().
                     let committed = event.committed();
                     let tip = committed.tip();
+                    let is_reorg = matches!(event, CanonStateNotification::Reorg { .. });
                     debug!(
-                        "Try new work, tip_block={}, hash={}, parent_hash={}, miner={}, diff={}, committed_blocks={}",
-                        committed.tip().number(),
-                        format!("0x{:x}", committed.tip().hash()),
-                        format!("0x{:x}", committed.tip().parent_hash()),
-                        committed.tip().beneficiary(),
-                        committed.tip().difficulty(),
-                        committed.len()
+                        target: "bsc::miner",
+                        tip_block = committed.tip().number(),
+                        hash = ?committed.tip().hash(),
+                        parent_hash = ?committed.tip().parent_hash(),
+                        miner = ?committed.tip().beneficiary(),
+                        diff = %committed.tip().difficulty(),
+                        committed_blocks = committed.len(),
+                        is_reorg,
+                        "Try new work"
                     );
                     
                     // If this is a reorg event, validate it using bsc fork choice rules
@@ -123,6 +127,10 @@ where
                                 // Reorg is valid, proceed with mining
                                 debug!(
                                     target: "bsc::miner",
+                                    old_tip_number = old.tip().number(),
+                                    new_tip_number = new.tip().number(),
+                                    old_tip_hash = ?old.tip().hash(),
+                                    new_tip_hash = ?new.tip().hash(),
                                     "Reorg validated by fork choice rules, proceeding with mining"
                                 );
                             }
@@ -132,6 +140,8 @@ where
                                     target: "bsc::miner",
                                     old_tip_number = old.tip().number(),
                                     new_tip_number = new.tip().number(),
+                                    old_tip_hash = ?old.tip().hash(),
+                                    new_tip_hash = ?new.tip().hash(),
                                     "Reorg rejected by fork choice rules, skipping mining on this tip"
                                 );
                                 continue;
@@ -143,6 +153,8 @@ where
                                     target: "bsc::miner",
                                     old_tip_number = old.tip().number(),
                                     new_tip_number = new.tip().number(),
+                                    old_tip_hash = ?old.tip().hash(),
+                                    new_tip_hash = ?new.tip().hash(),
                                     error = %e,
                                     "Failed to validate reorg, proceeding with mining"
                                 );
@@ -196,20 +208,28 @@ where
                 "Fork choice engine not initialized".into()
             })?;
         
-        let old_header = self.provider.sealed_header(old.tip().number())
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                format!("Failed to get old header: {}", e).into()
-            })?
-            .ok_or_else(|| -> Box<dyn std::error::Error + Send + Sync> {
-                format!("Old header not found for block {}", old.tip().number()).into()
-            })?;
+        let old_header = match self.provider.sealed_header_by_hash(old.tip().hash()) {
+            Ok(Some(header)) => header,
+            Ok(None) => {
+                // Old header not found (may have been pruned), accept the reorg as valid
+                debug!(
+                    target: "bsc::miner",
+                    old_tip_hash = ?old.tip().hash(),
+                    "Old header not found, accepting reorg as valid"
+                );
+                return Ok(true);
+            }
+            Err(e) => {
+                return Err(format!("Failed to get old header: {}", e).into());
+            }
+        };
         
-        let new_header = self.provider.sealed_header(new.tip().number())
+        let new_header = self.provider.sealed_header_by_hash(new.tip().hash())
             .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
                 format!("Failed to get new header: {}", e).into()
             })?
             .ok_or_else(|| -> Box<dyn std::error::Error + Send + Sync> {
-                format!("New header not found for block {}", new.tip().number()).into()
+                format!("New header not found for block hash {:?}", new.tip().hash()).into()
             })?;
         
         match forkchoice_engine.is_need_reorg(new_header.header(), old_header.header()).await {
@@ -250,13 +270,33 @@ where
         }
         
         let parent_header = match self.provider.sealed_header_by_hash(tip.hash()) {
-            Ok(Some(header)) => header,
+            Ok(Some(header)) => {
+                debug!(
+                    target: "bsc::miner",
+                    tip_number = tip.number(),
+                    tip_hash = ?tip.hash(),
+                    parent_header_hash = ?header.hash(),
+                    "Found parent header for mining"
+                );
+                header
+            }
             Ok(None) => {
-                debug!("Skip to mine new block due to head block header not found, validator: {}, tip: {}", self.validator_address, tip.number());
+                warn!(
+                    target: "bsc::miner",
+                    tip_number = tip.number(),
+                    tip_hash = ?tip.hash(),
+                    "Skip to mine new block due to head block header not found"
+                );
                 return;
             }
             Err(e) => {
-                debug!("Skip to mine new block due to error getting header, validator: {}, tip: {}, due to {}", self.validator_address, tip.number(), e);
+                warn!(
+                    target: "bsc::miner",
+                    tip_number = tip.number(),
+                    tip_hash = ?tip.hash(),
+                    error = %e,
+                    "Skip to mine new block due to error getting header"
+                );
                 return;
             }
         };
@@ -273,20 +313,23 @@ where
             debug!("Skip to mine new block due to not authorized, validator: {}, tip: {}", self.validator_address, tip.number());
             return;
         }
-        
+
+        let mut is_inturn = true;
+        if !parent_snapshot.is_inturn(self.validator_address) {
+            is_inturn = false;
+            debug!("Try off-turn mining, validator: {}, next_block: {}", self.validator_address, tip.number() + 1);
+        }
+
         if parent_snapshot.sign_recently(self.validator_address) {
             debug!("Skip to mine new block due to signed recently, validator: {}, tip: {}", self.validator_address, tip.number());
             return;
-        }
-        
-        if !parent_snapshot.is_inturn(self.validator_address) {
-            debug!("Try off-turn mining, validator: {}, next_block: {}", self.validator_address, tip.number() + 1);
         }
 
         let mining_ctx = MiningContext {
             header: None,
             parent_header,
             parent_snapshot: Arc::new(parent_snapshot),
+            is_inturn,
         };
 
         debug!("Queuing mining context, next_block: {}", tip.number() + 1);
@@ -359,13 +402,16 @@ where
                     match mining_ctx {
                         Some(ctx) => {
                             let next_block = ctx.parent_header.number() + 1;
-                            debug!("Received mining context, next_block: {}", next_block);
+                            let parent_hash = ctx.parent_header.hash();
+                            if !self.recheck_mining_ctx(&ctx) {
+                                continue;
+                            }
                             match self.try_mine_block(ctx).await {
                                 Ok(()) => {
-                                    debug!("Succeed to mine block, next_block: {}", next_block);
+                                    debug!("Succeed to try mine block, next_block: {}, parent_hash: 0x{:x}", next_block, parent_hash);
                                 }
                                 Err(e) => {
-                                    error!("Failed to mine block due to {}, next_block: {}", e, next_block);
+                                    error!("Failed to mine block due to {}, next_block: {}, parent_hash: 0x{:x}", e, next_block, parent_hash);
                                 }
                             }
                         }
@@ -383,6 +429,49 @@ where
         }
         
         warn!("Mining worker stopped");
+    }
+
+    /// Check if the mining context is still valid (parent is still the canonical head).
+    /// 
+    /// This is a best-effort check to avoid wasting resources on stale mining contexts.
+    /// It does NOT guarantee complete accuracy due to:
+    /// - Race conditions: The canonical head may change between this check and actual mining
+    /// - Time window: Multiple chain events may occur in quick succession
+    /// 
+    /// Purpose: Skip obviously stale contexts to reduce unnecessary work, not to provide
+    /// strict correctness guarantees.
+    fn recheck_mining_ctx(&self, ctx: &MiningContext) -> bool {
+        let parent_hash = ctx.parent_header.hash();
+        let current_best = match self.provider.best_block_number() {
+            Ok(num) => num,
+            Err(_) => return true, // On error, proceed to avoid blocking mining
+        };
+        
+        if ctx.parent_header.number() != current_best {
+            debug!(
+                target: "bsc::miner",
+                ctx_parent_number = ctx.parent_header.number(),
+                ctx_parent_hash = ?parent_hash,
+                current_best_number = current_best,
+                "Discarding stale mining context due to chain head number changed"
+            );
+            return false;
+        }
+        
+        if let Ok(Some(canonical_header)) = self.provider.sealed_header(current_best) {
+            if canonical_header.hash() != parent_hash {
+                debug!(
+                    target: "bsc::miner",
+                    ctx_parent_number = ctx.parent_header.number(),
+                    ctx_parent_hash = ?parent_hash,
+                    canonical_hash = ?canonical_header.hash(),
+                    "Discarding stale mining context due to same-height reorg"
+                );
+                return false;
+            }
+        }
+        
+        true
     }
 
     async fn try_mine_block(
@@ -419,6 +508,7 @@ where
             cancel: ManualCancel::default(),
         };
         
+        let parent_hash = mining_ctx.parent_header.hash();
         let (payload_job, job_handle) = BscPayloadJob::new(
             self.parlia.clone(), 
             mining_ctx,
@@ -433,8 +523,8 @@ where
         self.payload_job_join_set.spawn(async move {
             payload_job.start().await
         });
-        debug!("Succeed to async start payload job, cost_time: {:?}, block_number: {}",
-            start_time.elapsed(), block_number);
+        debug!("Succeed to async start payload job, cost_time: {:?}, block_number: {}, parent_hash: 0x{:x}",
+            start_time.elapsed(), block_number, parent_hash);
         
         Ok(())
     }
@@ -447,7 +537,7 @@ where
                     debug!("Succeed to execute payload job");
                 }
                 Ok(Err(e)) => {
-                    warn!("Failed to execute payload job due to {}", e);
+                    debug!("Failed to execute payload job due to {}", e);
                 }
                 Err(join_err) => {
                     error!("Failed to execute payload job due to task panicked or was cancelled, join_err: {}", join_err);
@@ -595,9 +685,14 @@ where
         let block_hash = sealed_block.hash();
         let block_number = sealed_block.number();
         let parent_hash = sealed_block.header().parent_hash;
-        if block_number <= self.provider.chain_info()?.best_number {
-            debug!("Skip to submit block due to block number is less than last block number, block_number: {}, last_block_number: {}", 
-                block_number, self.provider.last_block_number()?);
+        let best_block_number = self.provider.best_block_number()?;
+        if block_number <= best_block_number {
+            debug!(
+                target: "bsc::miner",
+                block_number,
+                best_block_number,
+                "Skip to submit block due to block number is not greater than best block number"
+            );
             return Ok(());
         }
 
@@ -631,13 +726,16 @@ where
         } else { 
             "offturn" 
         };
-        debug!("Submitting block {} (hash: 0x{:x}, parent_hash: 0x{:x}, txs: {}, gas_used: {}, turn_status: {})", 
-               block_number, 
-               block_hash, 
-               parent_hash,
-               sealed_block.body().transaction_count(),
-               sealed_block.gas_used(),
-               turn_status);
+        debug!(
+            target: "bsc::miner",
+            block_number,
+            hash = ?block_hash,
+            parent_hash = ?parent_hash,
+            txs = sealed_block.body().transaction_count(),
+            gas_used = sealed_block.gas_used(),
+            turn_status,
+            "Submitting block"
+        );
 
         // TODO: wait more times when huge chain import.
         // TODO: only canonical head can broadcast, avoid sidechain blocks.

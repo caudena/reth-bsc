@@ -71,7 +71,11 @@ pub struct BscConsensus<ChainSpec> {
 
 impl<ChainSpec: EthChainSpec + BscHardforks + 'static> BscConsensus<ChainSpec> {
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
-        Self { base: EthBeaconConsensus::new(chain_spec.clone()), parlia: Arc::new(Parlia::new(chain_spec.clone(), 200)), chain_spec }
+        Self { 
+            base: EthBeaconConsensus::new(chain_spec.clone()), 
+            parlia: Arc::new(Parlia::new(chain_spec.clone(), 200)), 
+            chain_spec 
+        }
     }
 }
 

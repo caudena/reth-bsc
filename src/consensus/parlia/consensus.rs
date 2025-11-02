@@ -47,7 +47,6 @@ lazy_static! {
 pub struct Parlia<ChainSpec> {
     pub spec: Arc<ChainSpec>,
     pub epoch: u64, // The epoch number
-    snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
 }
 
 impl<ChainSpec: std::fmt::Debug> std::fmt::Debug for Parlia<ChainSpec> {
@@ -55,7 +54,6 @@ impl<ChainSpec: std::fmt::Debug> std::fmt::Debug for Parlia<ChainSpec> {
         f.debug_struct("Parlia")
             .field("spec", &self.spec)
             .field("epoch", &self.epoch)
-            .field("snapshot_provider", &"<dyn SnapshotProvider>")
             .finish()
     }
 }
@@ -64,8 +62,7 @@ impl<ChainSpec> Parlia<ChainSpec>
 where ChainSpec: EthChainSpec + BscHardforks + 'static, 
 {
     pub fn new(chain_spec: Arc<ChainSpec>, epoch: u64) -> Self {
-        let snapshot_provider = crate::shared::get_snapshot_provider().unwrap();
-        Self { spec: chain_spec, epoch, snapshot_provider: snapshot_provider.clone() }
+        Self { spec: chain_spec, epoch }
     }
 
     /// Get chain spec
@@ -559,7 +556,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         SYSTEM_TXS_GAS_HARD_LIMIT
     }
     
-    pub fn assemble_vote_attestation(&self, parent_snap: &Snapshot, _parent_header: &Header, current_header: &mut Header) -> Result<(), ParliaConsensusError> {
+    pub fn assemble_vote_attestation(&self, parent_snap: &Snapshot, _parent_header: &Header, current_header: &mut Header, snapshot_provider: &Arc<dyn SnapshotProvider + Send + Sync>) -> Result<(), ParliaConsensusError> {
         if !self.spec.is_luban_active_at_block(current_header.number()) || current_header.number() < 3 {
             return Ok(());
         }
@@ -576,7 +573,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         let mut target_header = current_header.clone();
         let mut target_header_parent_snap = None;
         for _ in 0..times {
-            if let Some(snap) = self.snapshot_provider.snapshot_by_hash(&current_header.parent_hash()) {
+            if let Some(snap) = snapshot_provider.snapshot_by_hash(&current_header.parent_hash()) {
                 votes = fetch_vote_by_block_hash(current_header.parent_hash());
                 let quorum = usize::div_ceil(snap.validators.len() * 2, 3);
                 if votes.len() >= quorum {

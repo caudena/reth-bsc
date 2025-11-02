@@ -13,6 +13,7 @@ use futures::{future::Either, stream::FuturesUnordered, StreamExt};
 use parking_lot::RwLock;
 use reth::network::cache::LruCache;
 use reth_engine_primitives::{BeaconConsensusEngineHandle, EngineTypes};
+use reth::consensus::HeaderValidator;
 use reth_network::{
     import::{BlockImportError, BlockImportEvent, BlockImportOutcome, BlockValidation},
     message::{NewBlockMessage, PeerMessage},
@@ -151,6 +152,12 @@ where
             return;
         }
 
+        // Send ValidHeader announcement to trigger NewBlock diffusion from few peers
+        // TODO: add header validation later
+        let _ = self
+            .to_network
+            .send(BlockImportEvent::Announcement(BlockValidation::ValidHeader { block: block.clone() }));
+
         let payload_fut = self.new_payload(block.clone(), peer_id);
         self.pending_imports.push(payload_fut);
     }
@@ -248,23 +255,6 @@ where
                             }
                         }
                     }
-                    // Prune old votes from the vote pool based on the new block number
-                    let block_number = block.block.0.block.header.number();
-                    vote_pool::prune(block_number);
-
-                    // Produce and broadcast a local vote for this new canonical head, if eligible
-                    if let Some(sp) = crate::shared::get_snapshot_provider() {
-                        let sp = Arc::clone(sp);
-                        let spec = this.forkchoice_engine.chain_spec().clone();
-                        let header = block.block.0.block.header.clone();
-                        tokio::spawn(async move {
-                            crate::node::vote_producer::maybe_produce_and_broadcast_for_head(
-                                spec,
-                                sp.as_ref(),
-                                &header,
-                            );
-                        });
-                    }
                 }
 
                 if let Err(e) = this.to_network.send(BlockImportEvent::Outcome(outcome)) {
@@ -359,13 +349,14 @@ mod tests {
         // Wait for the first block to be processed
         let waker = futures::task::noop_waker();
         let mut cx = Context::from_waker(&waker);
-        let mut outcomes = Vec::new();
 
-        // Wait for both NewPayload and FCU outcomes from first block
-        while outcomes.is_empty() {
+        // Wait for the first block to be processed
+        loop {
             match fixture.handle.poll_outcome(&mut cx) {
-                Poll::Ready(Some(outcome)) => {
-                    outcomes.push(outcome);
+                Poll::Ready(Some(event)) => {
+                    if matches!(event, BlockImportEvent::Outcome(_)) {
+                        break;
+                    }
                 }
                 Poll::Ready(None) => break,
                 Poll::Pending => tokio::task::yield_now().await,
@@ -580,14 +571,23 @@ mod tests {
             let mut cx = Context::from_waker(&waker);
             let mut outcomes = Vec::new();
 
-            // Wait for both NewPayload and FCU outcomes
-            while outcomes.is_empty() {
+            // Wait for the first block to be processed
+            let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(1);
+            loop {
                 match self.handle.poll_outcome(&mut cx) {
-                    Poll::Ready(Some(outcome)) => {
-                        outcomes.push(outcome);
+                    Poll::Ready(Some(event)) => {
+                        outcomes.push(event);
+                        if outcomes.iter().any(&assert_fn) {
+                            break;
+                        }
                     }
                     Poll::Ready(None) => break,
-                    Poll::Pending => tokio::task::yield_now().await,
+                    Poll::Pending => {
+                        if tokio::time::Instant::now() >= deadline {
+                            break;
+                        }
+                        tokio::task::yield_now().await;
+                    }
                 }
             }
 

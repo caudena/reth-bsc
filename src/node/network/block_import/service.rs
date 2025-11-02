@@ -12,7 +12,7 @@ use alloy_rpc_types::engine::{ForkchoiceState, PayloadStatusEnum};
 use futures::{future::Either, stream::FuturesUnordered, StreamExt};
 use parking_lot::RwLock;
 use reth::network::cache::LruCache;
-use reth_engine_primitives::{BeaconConsensusEngineHandle, EngineTypes};
+use reth_engine_primitives::{EngineTypes, ConsensusEngineHandle};
 use reth::consensus::HeaderValidator;
 use reth_network::{
     import::{BlockImportError, BlockImportEvent, BlockImportOutcome, BlockValidation},
@@ -64,7 +64,7 @@ where
     Provider: BlockNumReader + HeaderProvider + Clone,
 {
     /// The handle to communicate with the engine service
-    engine: BeaconConsensusEngineHandle<BscPayloadTypes>,
+    engine: ConsensusEngineHandle<BscPayloadTypes>,
     /// The fork choice engine for BSC
     forkchoice_engine: BscForkChoiceEngine<Provider>,
     /// Receive the new block from the network
@@ -87,7 +87,7 @@ where
     pub fn new(
         provider: Provider,
         chain_spec: Arc<BscChainSpec>,
-        engine: BeaconConsensusEngineHandle<BscPayloadTypes>,
+        engine: ConsensusEngineHandle<BscPayloadTypes>,
         from_network: UnboundedReceiver<IncomingBlock>,
         from_hashes: UnboundedReceiver<IncomingHashes>,
         to_network: UnboundedSender<ImportEvent>,
@@ -148,6 +148,12 @@ where
 
     /// Add a new block import task to the pending imports
     fn on_new_block(&mut self, block: BlockMsg, peer_id: PeerId) {
+        // When bench-test feature is enabled, skip block import processing
+        #[cfg(feature = "bench-test")]
+        {
+            return;
+        }
+        
         if self.processed_blocks.contains(&block.hash) {
             return;
         }
@@ -534,7 +540,7 @@ mod tests {
             let chain_spec = Arc::new(crate::chainspec::BscChainSpec::from(crate::chainspec::bsc::bsc_mainnet()));
             
             let (to_engine, from_engine) = mpsc::unbounded_channel();
-            let engine_handle = BeaconConsensusEngineHandle::new(to_engine);
+            let engine_handle = ConsensusEngineHandle::new(to_engine);
 
             handle_engine_msg(from_engine, responses).await;
 

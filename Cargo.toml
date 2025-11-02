@@ -178,6 +178,8 @@ client = [
     "reth-rpc-eth-api/client",
 ]
 
+bench-test = []
+
 # Use the `--profile profiling` flag to show symbols in release mode.
 # e.g. `cargo build --profile profiling`
 [profile.profiling]

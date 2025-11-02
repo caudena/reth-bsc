@@ -29,6 +29,8 @@ use bit_set::BitSet;
 const BLST_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
 type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
+const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
+
 
 pub static VALIDATOR_CACHE: LazyLock<Mutex<ValidatorCache>> = LazyLock::new(|| {
     Mutex::new(LruMap::new(ByLength::new(1024)))
@@ -267,7 +269,22 @@ where
             // the attestation target block should be direct parent.
             let target_block = attestation.data.target_number;
             let target_hash = attestation.data.target_hash;
-            if target_block != parent.number() || target_hash != parent.hash_slow() {
+            let mut is_match = false;
+            let mut ancestor = parent.clone();
+            for _ in 0..self.get_ancestor_generation_depth(header) {
+                if ancestor.number() == target_block && ancestor.hash_slow() == target_hash {
+                    is_match = true;
+                    break;
+                }
+                ancestor = crate::node::evm::util::HEADER_CACHE_READER
+                    .lock()
+                    .unwrap()
+                    .get_header_by_hash(&ancestor.parent_hash())
+                    .ok_or_else(|| BscBlockExecutionError::UnknownHeader { block_hash: ancestor.parent_hash() })?;
+                tracing::debug!("ancestor: {:?}", ancestor);
+            }
+
+            if !is_match {
                 return Err(BscBlockExecutionError::Validation(
                     BscBlockValidationError::InvalidAttestationTarget {
                         block_number: GotExpected { got: target_block, expected: parent.number() },
@@ -361,6 +378,13 @@ where
         }
     
         Ok(())
+    }
+
+    fn get_ancestor_generation_depth(&self, header: &Header) -> u64 {
+        if self.spec.is_fermi_active_at_timestamp(header.number(),header.timestamp) {
+            return K_ANCESTOR_GENERATION_DEPTH;
+        }
+        1
     }
 
     

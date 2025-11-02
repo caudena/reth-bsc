@@ -29,7 +29,8 @@ use bit_set::BitSet;
 const BLST_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
 type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
-const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
+
+pub const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
 
 pub static VALIDATOR_CACHE: LazyLock<Mutex<ValidatorCache>> = LazyLock::new(|| {
     Mutex::new(LruMap::new(ByLength::new(1024)))

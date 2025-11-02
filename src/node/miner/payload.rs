@@ -87,7 +87,7 @@ pub struct BscBuildArguments<Attributes> {
 }
 
 /// BSC payload builder, used to build payload for bsc miner.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct BscPayloadBuilder<Pool, Client, EvmConfig = BscEvmConfig> {
     /// Client providing access to node state.
     client: Client,

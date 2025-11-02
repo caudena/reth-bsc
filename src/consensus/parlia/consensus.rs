@@ -15,6 +15,7 @@ use crate::consensus::parlia::VoteSignature;
 use crate::consensus::parlia::SYSTEM_TXS_GAS_HARD_LIMIT;
 use crate::consensus::parlia::SYSTEM_TXS_GAS_SOFT_LIMIT;
 use crate::hardforks::BscHardforks;
+use crate::node::evm::util::get_header_by_hash_from_cache;
 use reth_chainspec::EthChainSpec;
 use alloy_consensus::{Header, BlockHeader};
 use alloy_rlp::Decodable;
@@ -31,7 +32,9 @@ use super::{
 };
 use crate::consensus::parlia::go_rng::{RngSource, Shuffle};
 use tracing::{trace, debug, warn};
+use crate::consensus::parlia::provider::SnapshotProvider;
 
+const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
 const RECOVERED_PROPOSER_CACHE_NUM: usize = 4096;
 const ADDRESS_LENGTH: usize = 20; // Ethereum address length in bytes
 
@@ -40,17 +43,29 @@ lazy_static! {
     static ref RECOVERED_PROPOSER_CACHE: RwLock<LruMap<B256, Address, ByLength>> = RwLock::new(LruMap::new(ByLength::new(RECOVERED_PROPOSER_CACHE_NUM as u32)));
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Clone)]
 pub struct Parlia<ChainSpec> {
     pub spec: Arc<ChainSpec>,
     pub epoch: u64, // The epoch number
+    snapshot_provider: Arc<dyn SnapshotProvider + Send + Sync>,
+}
+
+impl<ChainSpec: std::fmt::Debug> std::fmt::Debug for Parlia<ChainSpec> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Parlia")
+            .field("spec", &self.spec)
+            .field("epoch", &self.epoch)
+            .field("snapshot_provider", &"<dyn SnapshotProvider>")
+            .finish()
+    }
 }
 
 impl<ChainSpec> Parlia<ChainSpec> 
 where ChainSpec: EthChainSpec + BscHardforks + 'static, 
 {
     pub fn new(chain_spec: Arc<ChainSpec>, epoch: u64) -> Self {
-        Self { spec: chain_spec, epoch }
+        let snapshot_provider = crate::shared::get_snapshot_provider().unwrap();
+        Self { spec: chain_spec, epoch, snapshot_provider: snapshot_provider.clone() }
     }
 
     /// Get chain spec
@@ -458,7 +473,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         let mut time_for_mining_ms = period_ms / 2;
         let last_block_in_turn = snap.last_block_in_one_turn(header.number);
         if !last_block_in_turn {
-            time_for_mining_ms = period_ms * 4 / 5;
+            time_for_mining_ms = period_ms;
         }
         if delay_ms > time_for_mining_ms {
             delay_ms = time_for_mining_ms;
@@ -544,27 +559,59 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         SYSTEM_TXS_GAS_HARD_LIMIT
     }
     
-    pub fn assemble_vote_attestation(&self, parent_snap: &Snapshot, parent_header: &Header, current_header: &mut Header) -> Result<(), ParliaConsensusError> {
-        if !self.spec.is_luban_active_at_block(current_header.number()) || current_header.number() < 2 {
+    pub fn assemble_vote_attestation(&self, parent_snap: &Snapshot, _parent_header: &Header, current_header: &mut Header) -> Result<(), ParliaConsensusError> {
+        if !self.spec.is_luban_active_at_block(current_header.number()) || current_header.number() < 3 {
             return Ok(());
         }
 
-        let votes = fetch_vote_by_block_hash(current_header.parent_hash());
-        if votes.len() < usize::div_ceil(parent_snap.validators.len() * 2, 3) {
-            tracing::debug!(target: "parlia::consensus", "vote count is less than 2/3 of validators, skip assemble vote attestation, number={}, parent ={:?}, vote count={}, validators count={}", 
-                current_header.number(), current_header.parent_hash(), votes.len(), parent_snap.validators.len());
-            return Ok(());
-        }
-
-        tracing::debug!(target: "parlia::consensus", "assemble vote attestation, number={}, parent ={:?}, vote count={}, validators count={}", 
-            current_header.number(), current_header.parent_hash(), votes.len(), parent_snap.validators.len());
         // get justified number and hash from parent snapshot
-        let (justified_number, justified_hash) = (parent_snap.vote_data.target_number, parent_snap.vote_data.target_hash);
+        let (justified_number, justified_hash) = (parent_snap.vote_data.target_number, parent_snap.vote_data.target_hash);  
+
+        let mut times = 1;
+        if self.spec.is_fermi_active_at_timestamp(current_header.number(), current_header.timestamp()) {
+            times = K_ANCESTOR_GENERATION_DEPTH;
+        }
+
+        let mut votes = Vec::new();
+        let mut target_header = current_header.clone();
+        let mut target_header_parent_snap = None;
+        for _ in 0..times {
+            if let Some(snap) = self.snapshot_provider.snapshot_by_hash(&current_header.parent_hash()) {
+                votes = fetch_vote_by_block_hash(current_header.parent_hash());
+                let quorum = usize::div_ceil(snap.validators.len() * 2, 3);
+                if votes.len() >= quorum {
+                    target_header_parent_snap = Some(snap);
+                    break;
+                }
+                let block_hash = target_header.parent_hash();
+                if let Some(header) = get_header_by_hash_from_cache(&block_hash) {
+                    target_header = header;
+                } else {
+                    return Err(ParliaConsensusError::HeaderNotFound {
+                        block_hash,
+                    });
+                }
+                if target_header.number() <= justified_number {
+                    break;
+                }
+            } else {
+                return Err(ParliaConsensusError::SnapshotNotFound {
+                    block_hash: current_header.parent_hash(),
+                });
+            }
+        }
+
+        if target_header_parent_snap.is_none() {
+            return Err(ParliaConsensusError::SnapshotNotFound {
+                block_hash: current_header.parent_hash(),
+            });
+        }
+
         let mut attestation = VoteAttestation::new_with_vote_data(VoteData {
             source_number: justified_number,
             source_hash: justified_hash,
-            target_number: parent_header.number,
-            target_hash: parent_header.hash_slow(),
+            target_number: target_header.number(),
+            target_hash: target_header.hash_slow(),
         });
         // Check vote data from votes
         for vote in votes.iter() {
@@ -588,7 +635,8 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
             .map_err(|_| ParliaConsensusError::AggregateSignatureError)?;
         attestation.agg_signature.copy_from_slice(&aggregate.to_signature().to_bytes());
         // Prepare vote address bitset.
-        for (_, val_info) in parent_snap.validators_map.iter() {
+        let target_snap = target_header_parent_snap.unwrap();
+        for (_, val_info) in target_snap.validators_map.iter() {
             if vote_addr_set.contains(&val_info.vote_addr) {
                 attestation.vote_address_set |= 1 << (val_info.index - 1)
             }

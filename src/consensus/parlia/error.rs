@@ -2,6 +2,8 @@ use alloy_primitives::BlockNumber;
 
 use crate::consensus::parlia::VoteAddress;
 
+use alloy_primitives::BlockHash;
+
 /// Parlia consensus error.
 #[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
 pub enum ParliaConsensusError {
@@ -32,6 +34,20 @@ pub enum ParliaConsensusError {
     /// Error for invalid header extra
     #[error("invalid header extra")]
     InvalidHeaderExtra,
+
+    /// Error for invalid header extra
+    #[error("header not found: {block_hash}")]
+    HeaderNotFound {
+        /// The block hash
+        block_hash: BlockHash,
+    },
+
+    /// Error when the snapshot is not found
+    #[error("snapshot not found: {block_hash}")]
+    SnapshotNotFound {
+        /// The block hash
+        block_hash: BlockHash,
+    },
 
     /// Error when the header is not in epoch
     #[error("{block_number} is not in epoch")]

@@ -18,6 +18,7 @@ use reth_ethereum_primitives::PooledTransactionVariant;
 use reth_engine_primitives::ConsensusEngineHandle;
 use reth_network::{NetworkConfig, NetworkHandle, NetworkManager};
 use reth_network_api::PeersInfo;
+use reth_provider::{BlockNumReader, HeaderProvider};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tracing::{info, warn, debug};
@@ -240,6 +241,7 @@ impl BscNetworkBuilder {
             ).await.unwrap();
         });
 
+        // TODO: update network with the latest canonical head, but has a fork id issue, can fix it later.
         let network_builder = network_builder
             .boot_nodes(ctx.chain_spec().bootnodes().unwrap_or_default())
             .set_head(ctx.chain_spec().head())
@@ -251,6 +253,19 @@ impl BscNetworkBuilder {
         
         let mut network_config = ctx.build_network_config(network_builder);
         network_config.status.forkid = network_config.fork_filter.current();
+        let provider = ctx.provider();
+        if let Ok(number) = provider.best_block_number() {
+            let td = provider.header_td_by_number(number).unwrap_or_default();
+            network_config.status.total_difficulty = td;
+        }
+        debug!(
+            target: "bsc::net",
+            version = ?network_config.status.version,
+            td = ?network_config.status.total_difficulty,
+            blockhash = ?network_config.status.blockhash,
+            genesis = ?network_config.status.genesis,
+            "Initialized ETH status for handshake"
+        );
 
         Ok(network_config)
     }

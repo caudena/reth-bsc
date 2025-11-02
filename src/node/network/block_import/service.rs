@@ -12,7 +12,7 @@ use alloy_rpc_types::engine::{ForkchoiceState, PayloadStatusEnum};
 use futures::{future::Either, stream::FuturesUnordered, StreamExt};
 use parking_lot::RwLock;
 use reth::network::cache::LruCache;
-use reth_engine_primitives::{BeaconConsensusEngineHandle, EngineTypes};
+use reth_engine_primitives::{ConsensusEngineHandle, EngineTypes};
 use reth_network::{
     import::{BlockImportError, BlockImportEvent, BlockImportOutcome, BlockValidation},
     message::{NewBlockMessage, PeerMessage},
@@ -63,7 +63,7 @@ where
     Provider: BlockNumReader + HeaderProvider + Clone,
 {
     /// The handle to communicate with the engine service
-    engine: BeaconConsensusEngineHandle<BscPayloadTypes>,
+    engine: ConsensusEngineHandle<BscPayloadTypes>,
     /// The fork choice engine for BSC
     forkchoice_engine: BscForkChoiceEngine<Provider>,
     /// Receive the new block from the network
@@ -86,7 +86,7 @@ where
     pub fn new(
         provider: Provider,
         chain_spec: Arc<BscChainSpec>,
-        engine: BeaconConsensusEngineHandle<BscPayloadTypes>,
+        engine: ConsensusEngineHandle<BscPayloadTypes>,
         from_network: UnboundedReceiver<IncomingBlock>,
         from_hashes: UnboundedReceiver<IncomingHashes>,
         to_network: UnboundedSender<ImportEvent>,
@@ -543,7 +543,7 @@ mod tests {
             let chain_spec = Arc::new(crate::chainspec::BscChainSpec::from(crate::chainspec::bsc::bsc_mainnet()));
             
             let (to_engine, from_engine) = mpsc::unbounded_channel();
-            let engine_handle = BeaconConsensusEngineHandle::new(to_engine);
+            let engine_handle = ConsensusEngineHandle::new(to_engine);
 
             handle_engine_msg(from_engine, responses).await;
 

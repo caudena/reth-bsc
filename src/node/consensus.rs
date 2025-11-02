@@ -25,7 +25,7 @@ use reth::{
 use reth_chainspec::EthChainSpec;
 use reth_primitives::{gas_spent_by_transactions, GotExpected};
 use reth_ethereum_primitives::Receipt;
-use reth_engine_primitives::BeaconConsensusEngineHandle;
+use reth_engine_primitives::ConsensusEngineHandle;
 use reth_payload_primitives::EngineApiMessageVersion;
 use reth_provider::{BlockNumReader, HeaderProvider};
 use std::sync::Arc;
@@ -291,7 +291,7 @@ pub struct BscForkChoiceEngine<P> {
     /// The provider for reading block information
     pub(crate) provider: P,
     /// The engine handle for communicating with the consensus engine
-    pub(crate) engine_handle: BeaconConsensusEngineHandle<BscPayloadTypes>,
+    pub(crate) engine_handle: ConsensusEngineHandle<BscPayloadTypes>,
     /// Chain specification
     chain_spec: Arc<BscChainSpec>,
     /// The fork choice rule
@@ -307,7 +307,7 @@ where
     /// Creates a new `BscForkChoiceEngine` instance.
     pub fn new(
         provider: P,
-        engine_handle: BeaconConsensusEngineHandle<BscPayloadTypes>,
+        engine_handle: ConsensusEngineHandle<BscPayloadTypes>,
         chain_spec: Arc<BscChainSpec>,
     ) -> Self {
         Self {
@@ -478,7 +478,7 @@ where
     /// with fallback logic for the incoming header if not found directly.
     async fn header_td_fcu(
         &self,
-        engine: &BeaconConsensusEngineHandle<BscPayloadTypes>,
+        engine: &ConsensusEngineHandle<BscPayloadTypes>,
         incoming: &Header,
         current: &Header,
     ) -> Result<(Option<alloy_primitives::U256>, Option<alloy_primitives::U256>), ParliaConsensusErr> {
@@ -504,7 +504,7 @@ where
     /// This private method queries the TD from the engine and caches it for future use.
     async fn header_td(
         &self,
-        engine: &BeaconConsensusEngineHandle<BscPayloadTypes>,
+        engine: &ConsensusEngineHandle<BscPayloadTypes>,
         number: u64,
         hash: B256,
     ) -> Result<Option<alloy_primitives::U256>, ParliaConsensusErr> {

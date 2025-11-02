@@ -35,6 +35,8 @@ use crate::node::miner::payload::BscBuildArguments;
 use reth_revm::cancelled::ManualCancel;
 use alloy_primitives::U128;
 use reth_network::message::{NewBlockMessage, PeerMessage};
+use crate::node::miner::bid_simulator::{BidSimulator, BidRuntime};
+use std::time::Duration;
 use std::sync::Mutex;
 use lru::LruCache;
 
@@ -306,6 +308,7 @@ pub struct MainWorkWorker<Pool, Provider> {
     payload_tx: mpsc::UnboundedSender<SubmitContext>,
     running_job_handle: Option<BscPayloadJobHandle>,
     payload_job_join_set: JoinSet<Result<(), Box<dyn std::error::Error + Send + Sync>>>,
+    simulator: Arc<BidSimulator<Provider, Pool>>,  // No outer RwLock, each map has its own lock
 }
 
 impl<Pool, Provider> MainWorkWorker<Pool, Provider>
@@ -322,6 +325,7 @@ where
         + Sync
         + 'static,
 {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         validator_address: Address,
         pool: Pool,
@@ -329,6 +333,7 @@ where
         chain_spec: Arc<crate::chainspec::BscChainSpec>,
         parlia: Arc<crate::consensus::parlia::Parlia<crate::chainspec::BscChainSpec>>,
         mining_queue_rx: mpsc::UnboundedReceiver<MiningContext>,
+        simulator: Arc<BidSimulator<Provider, Pool>>,  // No outer RwLock needed
         payload_tx: mpsc::UnboundedSender<SubmitContext>,
     ) -> Self {
         Self {
@@ -340,6 +345,7 @@ where
             mining_queue_rx,
             payload_tx,
             running_job_handle: None,
+            simulator,
             payload_job_join_set: JoinSet::new(),
         }
     }
@@ -354,7 +360,6 @@ where
                         Some(ctx) => {
                             let next_block = ctx.parent_header.number() + 1;
                             debug!("Received mining context, next_block: {}", next_block);
-
                             match self.try_mine_block(ctx).await {
                                 Ok(()) => {
                                     debug!("Succeed to mine block, next_block: {}", next_block);
@@ -413,13 +418,14 @@ where
             config: PayloadConfig::new(Arc::new(mining_ctx.parent_header.clone()), attributes),
             cancel: ManualCancel::default(),
         };
-                
+        
         let (payload_job, job_handle) = BscPayloadJob::new(
             self.parlia.clone(), 
             mining_ctx,
             payload_builder, 
             build_args, 
-            self.payload_tx.clone()
+            self.simulator.clone(),
+            self.payload_tx.clone(),
         );
         
         let start_time = std::time::Instant::now();
@@ -684,6 +690,80 @@ where
     }
 }
 
+pub struct MevWorkWorker<Provider, Pool> {
+    simulator: Arc<BidSimulator<Provider, Pool>>,  // No outer RwLock, each map has its own lock
+    bid_simulate_req_rx: mpsc::UnboundedReceiver<BidRuntime<Pool, BscEvmConfig>>,
+    bid_simulate_req_tx: mpsc::UnboundedSender<BidRuntime<Pool, BscEvmConfig>>,
+    provider: Provider,
+}
+
+impl<Provider, Pool> MevWorkWorker<Provider, Pool>
+where
+    Provider: HeaderProvider<Header = alloy_consensus::Header>
+        + BlockNumReader
+        + reth_provider::StateProviderFactory
+        + CanonStateSubscriptions
+        + Clone
+        + Send
+        + Sync
+        + 'static,
+    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>> + 'static,
+{
+    pub fn new(
+        simulator: Arc<BidSimulator<Provider, Pool>>,
+        provider: Provider,
+    ) -> Self {
+        let (bid_simulate_req_tx, bid_simulate_req_rx) = mpsc::unbounded_channel::<BidRuntime<Pool, BscEvmConfig>>();
+        Self { simulator, bid_simulate_req_rx, bid_simulate_req_tx, provider }
+    }
+
+    pub async fn run(mut self) {
+        info!("Starting MevWorkWorker");
+        let mut send_bid_interval = tokio::time::interval(Duration::from_millis(20));
+        let mut clear_bid_interval = tokio::time::interval(Duration::from_millis(1000));
+        
+        loop {
+            tokio::select! {
+                bid_runtime = self.bid_simulate_req_rx.recv() => {
+                    match bid_runtime {
+                        Some(bid_runtime) => {
+                            self.simulator.bid_simulate(bid_runtime);
+                        }
+                        None => {
+                            warn!("Bid simulate request channel closed");
+                            break;
+                        }
+                    }
+                }
+
+                // Interval for checking bid packages
+                _ = send_bid_interval.tick() => {
+                    // Attempt to send bids
+                    self.get_bid_and_send();
+                }
+
+                _ = clear_bid_interval.tick() => {
+                    let last_block_number = self.provider.last_block_number().unwrap_or(0);
+                    self.simulator.clear(last_block_number);
+                }
+            }
+        }
+    }
+
+    /// Send a bid to the miner's bid simulator (reads from global queue)
+    fn get_bid_and_send(&self) {
+        // Read bid packages from the global queue
+        if let Some(bid_package) = crate::shared::pop_bid_package() {
+            debug!("Popped bid package from queue, block: {}, committing to simulator", bid_package.block_number);
+            if let Some(req) = self.simulator.commit_new_bid(bid_package) {
+                if let Err(e) = self.bid_simulate_req_tx.send(req) {
+                    error!("Failed to send bid simulate request due to channel closed: {}", e);
+                }
+            }
+        }
+    }
+}
+
 /// Miner that handles block production for BSC.
 pub struct BscMiner<Pool, Provider> {
     validator_address: Address,
@@ -691,6 +771,7 @@ pub struct BscMiner<Pool, Provider> {
     new_work_worker: NewWorkWorker<Provider>,
     main_work_worker: MainWorkWorker<Pool, Provider>,
     result_work_worker: ResultWorkWorker<Provider>,
+    mev_work_worker: MevWorkWorker<Provider, Pool>,
     task_executor: TaskExecutor,
 }
 
@@ -753,6 +834,7 @@ where
         );
         
         let parlia = Arc::new(crate::consensus::parlia::Parlia::new(chain_spec.clone(), 200));
+        let simulator = Arc::new(BidSimulator::new(provider.clone(), pool.clone(), chain_spec.clone(), parlia.clone(), validator_address, snapshot_provider.clone()));
         let main_work_worker = MainWorkWorker::new(
             validator_address,
             pool.clone(),
@@ -760,6 +842,7 @@ where
             chain_spec.clone(),
             parlia.clone(),
             mining_queue_rx,
+            simulator.clone(),
             payload_tx,
         );
         
@@ -770,12 +853,18 @@ where
             payload_rx,
         );
         
+        let mev_work_worker = MevWorkWorker::new(
+            simulator.clone(),
+            provider.clone(),
+        );
+
         let miner = Self {
             validator_address,
             signing_key,
             new_work_worker,
             main_work_worker,
             result_work_worker,
+            mev_work_worker,
             task_executor,
         };
         info!("Succeed to new miner, address: {}", validator_address);
@@ -792,11 +881,11 @@ where
     }
 
     fn spawn_workers(self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.task_executor.spawn_critical("mev_work_worker", self.mev_work_worker.run());
         self.task_executor.spawn_critical("new_work_worker", self.new_work_worker.run());
         self.task_executor.spawn_critical("main_work_worker", self.main_work_worker.run());
         self.task_executor.spawn_critical("result_work_worker", self.result_work_worker.run());
         info!("Succeed to start mining, address: {}", self.validator_address);
         Ok(())
     }
-
 }

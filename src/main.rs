@@ -100,17 +100,7 @@ fn main() -> eyre::Result<()> {
     // Initialize bid package queue at startup
     reth_bsc::shared::init_bid_package_queue();
 
-    let mut args: Vec<String> = std::env::args().collect();
-    // set the default value of --rpc.pending-block to none
-    if !args.iter().any(|arg| arg.contains("rpc.pending-block")) {
-        if let Some(pos) = args.iter().position(|arg| arg == "node") {
-            args.insert(pos + 1, "--rpc.pending-block".to_string());
-            args.insert(pos + 2, "none".to_string());
-            eprintln!("BSC: Added --rpc.pending-block none by default");
-        }
-    }
-
-    Cli::<BscChainSpecParser, BscCliArgs>::parse_from(args).run_with_components::<BscNode>(
+    Cli::<BscChainSpecParser, BscCliArgs>::parse().run_with_components::<BscNode>(
         |spec| (BscEvmConfig::new(spec.clone()), BscConsensus::new(spec)),
         async move |builder, args| {
             // Set genesis hash override if provided

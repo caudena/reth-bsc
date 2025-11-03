@@ -15,7 +15,6 @@ use crate::consensus::parlia::VoteSignature;
 use crate::consensus::parlia::SYSTEM_TXS_GAS_HARD_LIMIT;
 use crate::consensus::parlia::SYSTEM_TXS_GAS_SOFT_LIMIT;
 use crate::hardforks::BscHardforks;
-use crate::node::evm::util::get_header_by_hash_from_cache;
 use reth_chainspec::EthChainSpec;
 use alloy_consensus::{Header, BlockHeader};
 use alloy_rlp::Decodable;
@@ -556,7 +555,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         SYSTEM_TXS_GAS_HARD_LIMIT
     }
     
-    pub fn assemble_vote_attestation(&self, parent_snap: &Snapshot, _parent_header: &Header, current_header: &mut Header, snapshot_provider: &Arc<dyn SnapshotProvider + Send + Sync>) -> Result<(), ParliaConsensusError> {
+    pub fn assemble_vote_attestation(&self, parent_snap: &Snapshot, parent_header: &Header, current_header: &mut Header, snapshot_provider: &Arc<dyn SnapshotProvider + Send + Sync>) -> Result<(), ParliaConsensusError> {
         if !self.spec.is_luban_active_at_block(current_header.number()) || current_header.number() < 3 {
             return Ok(());
         }
@@ -568,20 +567,19 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         if self.spec.is_fermi_active_at_timestamp(current_header.number(), current_header.timestamp()) {
             times = K_ANCESTOR_GENERATION_DEPTH;
         }
-
         let mut votes = Vec::new();
-        let mut target_header = current_header.clone();
+        let mut target_header = parent_header.clone();
         let mut target_header_parent_snap = None;
         for _ in 0..times {
-            if let Some(snap) = snapshot_provider.snapshot_by_hash(&current_header.parent_hash()) {
-                votes = fetch_vote_by_block_hash(current_header.parent_hash());
+            if let Some(snap) = snapshot_provider.snapshot_by_hash(&target_header.parent_hash()) {
+                votes = fetch_vote_by_block_hash(target_header.hash_slow());
                 let quorum = usize::div_ceil(snap.validators.len() * 2, 3);
                 if votes.len() >= quorum {
                     target_header_parent_snap = Some(snap);
                     break;
                 }
                 let block_hash = target_header.parent_hash();
-                if let Some(header) = get_header_by_hash_from_cache(&block_hash) {
+                if let Some(header) = crate::shared::get_canonical_header_by_hash_from_provider(&block_hash) {
                     target_header = header;
                 } else {
                     return Err(ParliaConsensusError::HeaderNotFound {
@@ -599,11 +597,9 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
 
         if target_header_parent_snap.is_none() {
-            return Err(ParliaConsensusError::SnapshotNotFound {
-                block_hash: current_header.parent_hash(),
-            });
+            warn!("target_header_parent_snap is none");
+            return Ok(());
         }
-
         let mut attestation = VoteAttestation::new_with_vote_data(VoteData {
             source_number: justified_number,
             source_hash: justified_hash,

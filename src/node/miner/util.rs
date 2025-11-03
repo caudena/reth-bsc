@@ -10,7 +10,7 @@ use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
 use crate::node::evm::pre_execution::VALIDATOR_CACHE;
-use crate::node::miner::signer::{seal_header_with_global_signer, SignerError};
+use crate::node::miner::signer::{seal_header_with_global_signer};
 use crate::node::miner::bsc_miner::MiningContext;
 use crate::consensus::parlia::provider::SnapshotProvider;
 
@@ -90,8 +90,8 @@ where
     
     // TODO: add BEP-590 changes in fermi hardfork later, it changes the assemble and verify logic.
     if let Err(e) = parlia.assemble_vote_attestation(parent_snap, parent_header, new_header, snapshot_provider) {
-        tracing::debug!(target: "parlia::miner", "Assemble vote attestation failed: {e:?}");
-        return Err(SignerError::SigningFailed(format!("Assemble vote attestation failed: {e:?}")));
+        tracing::warn!(target: "parlia::miner", "Assemble vote attestation failed: {e:?}");
+        //return Err(SignerError::SigningFailed(format!("Assemble vote attestation failed: {e:?}")));
     }
 
     {   // seal header

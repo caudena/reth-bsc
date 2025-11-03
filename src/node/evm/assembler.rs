@@ -168,6 +168,7 @@ where
                 self.snapshot_provider.as_ref().unwrap(),
             ) {
                 tracing::warn!("Failed to finalize header: {}", e);
+                return Err(BlockExecutionError::msg("Failed to finalize header"));
             }
 
             let header_hash = keccak256(alloy_rlp::encode(&header));

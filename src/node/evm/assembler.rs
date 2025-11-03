@@ -163,7 +163,8 @@ where
                 &parent_snap, 
                 &parent_header, 
                 ctx.turn_length,
-                &mut header
+                &mut header,
+                &snapshot_provider,
             ) {
                 tracing::warn!("Failed to finalize header: {}", e);
             }
@@ -289,7 +290,8 @@ where
                 &parent_snap, 
                 &parent_header, 
                 ctx.turn_length,
-                &mut header
+                &mut header,
+                &snapshot_provider,
             ) {
                 tracing::warn!("Failed to finalize header: {}", e);
             }

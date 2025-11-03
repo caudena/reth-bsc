@@ -10,8 +10,9 @@ use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
 use crate::node::evm::pre_execution::VALIDATOR_CACHE;
-use crate::node::miner::signer::{seal_header_with_global_signer, SignerError};
+use crate::node::miner::signer::{seal_header_with_global_signer};
 use crate::node::miner::bsc_miner::MiningContext;
+use crate::consensus::parlia::provider::SnapshotProvider;
 
 pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_snap: &Snapshot, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
     let new_header = prepare_new_header(parlia.clone(), parent_snap, parent_header, signer);
@@ -50,7 +51,9 @@ pub fn finalize_new_header<ChainSpec>(
     parent_snap: &Snapshot, 
     parent_header: &Header, 
     turn_length: Option<u8>,
-    new_header: &mut Header) -> Result<(), crate::node::miner::signer::SignerError>
+    new_header: &mut Header,
+    snapshot_provider: &Arc<dyn SnapshotProvider + Send + Sync>,
+) -> Result<(), crate::node::miner::signer::SignerError>
 where
     ChainSpec: EthChainSpec + crate::hardforks::BscHardforks + 'static,
 {
@@ -86,9 +89,9 @@ where
     }
     
     // TODO: add BEP-590 changes in fermi hardfork later, it changes the assemble and verify logic.
-    if let Err(e) = parlia.assemble_vote_attestation(parent_snap, parent_header, new_header) {
-        tracing::debug!(target: "parlia::miner", "Assemble vote attestation failed: {e:?}");
-        return Err(SignerError::SigningFailed(format!("Assemble vote attestation failed: {e:?}")));
+    if let Err(e) = parlia.assemble_vote_attestation(parent_snap, parent_header, new_header, snapshot_provider) {
+        tracing::warn!(target: "parlia::miner", "Assemble vote attestation failed: {e:?}");
+        //return Err(SignerError::SigningFailed(format!("Assemble vote attestation failed: {e:?}")));
     }
 
     {   // seal header

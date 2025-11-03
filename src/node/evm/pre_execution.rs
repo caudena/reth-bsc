@@ -29,7 +29,7 @@ use bit_set::BitSet;
 const BLST_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
 type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
-const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
+pub const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
 
 
 pub static VALIDATOR_CACHE: LazyLock<Mutex<ValidatorCache>> = LazyLock::new(|| {
@@ -287,8 +287,8 @@ where
             if !is_match {
                 return Err(BscBlockExecutionError::Validation(
                     BscBlockValidationError::InvalidAttestationTarget {
-                        block_number: GotExpected { got: target_block, expected: parent.number() },
-                        block_hash: GotExpected { got: target_hash, expected: parent.hash_slow() }
+                        block_number: GotExpected { got: target_block, expected: ancestor.number() },
+                        block_hash: GotExpected { got: target_hash, expected: ancestor.hash_slow() }
                             .into(),
                     }
                 ).into());

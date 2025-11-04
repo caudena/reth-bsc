@@ -91,7 +91,6 @@ where
     // TODO: add BEP-590 changes in fermi hardfork later, it changes the assemble and verify logic.
     if let Err(e) = parlia.assemble_vote_attestation(parent_snap, parent_header, new_header, snapshot_provider) {
         tracing::warn!(target: "parlia::miner", "Assemble vote attestation failed: {e:?}");
-        //return Err(SignerError::SigningFailed(format!("Assemble vote attestation failed: {e:?}")));
     }
 
     {   // seal header

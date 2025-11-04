@@ -26,11 +26,11 @@ use blst::{
 };
 use bit_set::BitSet;
 
+use crate::consensus::parlia::constants::K_ANCESTOR_GENERATION_DEPTH;
+
 const BLST_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
 type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
-pub const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
-
 
 pub static VALIDATOR_CACHE: LazyLock<Mutex<ValidatorCache>> = LazyLock::new(|| {
     Mutex::new(LruMap::new(ByLength::new(1024)))
@@ -271,7 +271,12 @@ where
             let target_hash = attestation.data.target_hash;
             let mut is_match = false;
             let mut ancestor = parent.clone();
-            for _ in 0..self.get_ancestor_generation_depth(header) {
+            let depth = if self.spec.is_fermi_active_at_timestamp(header.number(), header.timestamp) {
+                K_ANCESTOR_GENERATION_DEPTH
+            } else {
+                1
+            };
+            for _ in 0..depth {
                 if ancestor.number() == target_block && ancestor.hash_slow() == target_hash {
                     is_match = true;
                     break;
@@ -379,14 +384,6 @@ where
     
         Ok(())
     }
-
-    fn get_ancestor_generation_depth(&self, header: &Header) -> u64 {
-        if self.spec.is_fermi_active_at_timestamp(header.number(),header.timestamp) {
-            return K_ANCESTOR_GENERATION_DEPTH;
-        }
-        1
-    }
-
     
     fn verify_seal(
         &self,

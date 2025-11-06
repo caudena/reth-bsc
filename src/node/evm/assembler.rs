@@ -1,5 +1,12 @@
 use crate::{
-    chainspec::BscChainSpec, consensus::parlia::{Parlia, EMPTY_REQUESTS_HASH, EMPTY_WITHDRAWALS_HASH}, hardforks::BscHardforks, node::evm::config::{BscBlockExecutionCtx, BscBlockExecutorFactory}
+    chainspec::BscChainSpec, 
+    consensus::parlia::{Parlia, EMPTY_REQUESTS_HASH, EMPTY_WITHDRAWALS_HASH}, 
+    hardforks::BscHardforks, 
+    node::{
+        evm::config::{BscBlockExecutionCtx, BscBlockExecutorFactory},
+        miner::util::finalize_new_header,
+        primitives::{BscBlock, BscBlockBody},
+    }
 };
 use alloy_consensus::{BlockBody, Header, EMPTY_OMMER_ROOT_HASH, proofs, Transaction, BlockHeader};
 use alloy_primitives::{keccak256, B256};
@@ -17,7 +24,6 @@ use reth_primitives_traits::{logs_bloom, SealedHeader};
 use reth_provider::{BlockExecutionResult, StateProvider};
 use revm::database::BundleState;
 use std::sync::Arc;
-use crate::node::primitives::{BscBlock, BscBlockBody};
 
 
 /// BSC block assembler input that mirrors BlockAssemblerInput but is not #[non_exhaustive]
@@ -158,15 +164,13 @@ where
             let parent_snap = snapshot_provider
                 .snapshot_by_hash(&header.parent_hash)
                 .ok_or(BlockExecutionError::msg("Failed to get snapshot from snapshot provider"))?;
-            if let Err(e) = crate::node::miner::util::finalize_new_header(
+            finalize_new_header(
                 self.parlia.clone(), 
                 &parent_snap, 
                 &parent_header, 
                 ctx.turn_length,
                 &mut header
-            ) {
-                tracing::warn!("Failed to finalize header: {}", e);
-            }
+            ).map_err(|e| BlockExecutionError::msg(format!("Failed to finalize header: {}", e)))?;
 
             let header_hash = keccak256(alloy_rlp::encode(&header));
             tracing::debug!("Succeed to finalize header, block_number={}, hash=0x{:x}, parent_hash=0x{:x}, txs={}", 
@@ -284,15 +288,13 @@ where
             let parent_snap = snapshot_provider
                 .snapshot_by_hash(&header.parent_hash)
                 .ok_or(BlockExecutionError::msg("Failed to get snapshot from snapshot provider"))?;
-            if let Err(e) = crate::node::miner::util::finalize_new_header(
+            finalize_new_header(
                 self.parlia.clone(), 
                 &parent_snap, 
                 &parent_header, 
                 ctx.turn_length,
                 &mut header
-            ) {
-                tracing::warn!("Failed to finalize header: {}", e);
-            }
+            ).map_err(|e| BlockExecutionError::msg(format!("Failed to finalize header: {}", e)))?;
 
             let header_hash = keccak256(alloy_rlp::encode(&header));
             tracing::debug!("Succeed to finalize header, block_number={}, hash=0x{:x}, parent_hash=0x{:x}, txs={}", 

@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use alloy_consensus::Header;
+use alloy_consensus::{Header, BlockHeader};
 use alloy_primitives::{Address, Bytes, B256};
 use crate::consensus::parlia::Snapshot;
 use crate::consensus::parlia::consensus::Parlia;
@@ -40,6 +40,11 @@ where
         beneficiary: signer, 
         ..Default::default() 
     };
+    if BscHardforks::is_cancun_active_at_timestamp(parlia.spec.as_ref(), new_header.number, new_header.timestamp) {
+        let blob_params = parlia.spec.blob_params_at_timestamp(new_header.timestamp);
+        new_header.excess_blob_gas = parent_header.maybe_next_block_excess_blob_gas(blob_params);
+    }
+
     parlia.prepare_timestamp(parent_snap, parent_header, &mut new_header);
     new_header
 }

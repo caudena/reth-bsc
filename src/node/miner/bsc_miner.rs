@@ -513,7 +513,6 @@ where
         let attributes = prepare_new_attributes(
             &mut mining_ctx,
             self.parlia.clone(), 
-            &parent_snapshot, 
             &parent_header, 
             self.validator_address
         );

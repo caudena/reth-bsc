@@ -372,11 +372,27 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
     /// return the back off milliseconds of the validator, 0 if the validator is in turn.
     pub fn back_off_time(&self, snap: &Snapshot, parent: &Header, header: &Header) -> u64 {
         let validator = header.beneficiary;
+        
+        tracing::debug!(
+            target: "bsc::consensus::back_off_time",
+            block_number = header.number,
+            validator = ?validator,
+            snapshot_block = snap.block_number,
+            recent_proposers_count = snap.recent_proposers.len(),
+            recent_proposers = ?snap.recent_proposers,
+            "Calculating back_off_time"
+        );
+        
         if snap.is_inturn(validator) {
             return 0;
         }
 
         let mut delay = BACKOFF_TIME_OF_INITIAL;
+        // When mining blocks, `header.timestamp` is temporarily set to 0 (in Reth-BSC).
+        // Therefore, using `header.timestamp` to determine whether a hard fork has occurred is incorrect.
+        // As a result, during the Bohr and Lorentz hard forks, the network may experience some instability.
+        // So use `parent.timestamp` for Lorentz check to match Geth-BSC behavior.
+        // Note: Geth-BSC has the same issue for Bohr checks (Line 2251, 2274), kept for consistency.
         let is_parent_lorentz = self.spec.is_lorentz_active_at_timestamp(parent.number, parent.timestamp);
         if is_parent_lorentz {
             delay = LORENTZ_BACKOFF_TIME_OF_INITIAL;
@@ -385,6 +401,14 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
 
         if self.spec.is_planck_active_at_block(header.number) {
             let counts = snap.count_recent_proposers();
+            
+            tracing::debug!(
+                target: "bsc::consensus::back_off_time",
+                block_number = header.number,
+                counts = ?counts,
+                "Counted recent proposers"
+            );
+            
             if snap.sign_recently_by_counts(validator, &counts) {
                 // The backOffTime does not matter when a validator has signed recently.
                 return 0;
@@ -405,29 +429,85 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
                     self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp) &&
                         *addr == inturn_addr)
             });
+            
+            tracing::debug!(
+                target: "bsc::consensus::back_off_time",
+                block_number = header.number,
+                validators_after_filter = ?validators,
+                validators_count = validators.len(),
+                "Filtered validators"
+            );
         }
 
-        let mut rng = if self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp) {
+        let is_bohr = self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp);
+        let mut rng = if is_bohr {
             let turn_length = snap.turn_length.unwrap_or(DEFAULT_TURN_LENGTH);
-            RngSource::new(header.number as i64 / turn_length as i64)
+            let seed = header.number as i64 / turn_length as i64;
+            tracing::debug!(
+                target: "bsc::consensus::back_off_time",
+                block_number = header.number,
+                header_timestamp = header.timestamp,
+                parent_timestamp = parent.timestamp,
+                is_bohr = true,
+                turn_length = turn_length,
+                seed = seed,
+                "RNG seed (Bohr)"
+            );
+            RngSource::new(seed)
         } else {
-            RngSource::new(snap.block_number as i64)
+            let seed = snap.block_number as i64;
+            tracing::debug!(
+                target: "bsc::consensus::back_off_time",
+                block_number = header.number,
+                header_timestamp = header.timestamp,
+                parent_timestamp = parent.timestamp,
+                is_bohr = false,
+                seed = seed,
+                "RNG seed (pre-Bohr)"
+            );
+            RngSource::new(seed)
         };
 
         let mut back_off_steps: Vec<u64> = (0..validators.len() as u64).collect();
+        tracing::debug!(
+            target: "bsc::consensus::back_off_time",
+            block_number = header.number,
+            back_off_steps_before_shuffle = ?back_off_steps,
+            "Before shuffle"
+        );
         back_off_steps.shuffle(&mut rng);
+        tracing::debug!(
+            target: "bsc::consensus::back_off_time",
+            block_number = header.number,
+            back_off_steps_after_shuffle = ?back_off_steps,
+            "After shuffle"
+        );
 
         // get the index of the current validator and its shuffled backoff time.
         for (idx, val) in validators.iter().enumerate() {
             if *val == validator {
-                if delay == 0 && is_parent_lorentz {
+                let result = if delay == 0 && is_parent_lorentz {
                     // If the in-turn validator has signed recently, the expected backoff times are [0, 2, 3, ...].
                     if back_off_steps[idx] == 0 {
-                        return 0;
+                        0
+                    } else {
+                        LORENTZ_BACKOFF_TIME_OF_INITIAL + (back_off_steps[idx]- 1) * BACKOFF_TIME_OF_WIGGLE
                     }
-                    return LORENTZ_BACKOFF_TIME_OF_INITIAL + (back_off_steps[idx]- 1) * BACKOFF_TIME_OF_WIGGLE
-                }
-                return delay + back_off_steps[idx] * BACKOFF_TIME_OF_WIGGLE
+                } else {
+                    delay + back_off_steps[idx] * BACKOFF_TIME_OF_WIGGLE
+                };
+                
+                tracing::debug!(
+                    target: "bsc::consensus::back_off_time",
+                    block_number = header.number,
+                    validator = ?validator,
+                    idx = idx,
+                    back_off_step = back_off_steps[idx],
+                    result = result,
+                    "Calculated back_off_time result"
+                );
+                
+                return result;
             }
         }
 

@@ -13,8 +13,8 @@ use crate::node::evm::pre_execution::VALIDATOR_CACHE;
 use crate::node::miner::signer::{seal_header_with_global_signer};
 use crate::node::miner::bsc_miner::MiningContext;
 
-pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_snap: &Snapshot, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
-    let new_header = prepare_new_header(parlia.clone(), parent_snap, parent_header, signer);
+pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
+    let new_header = prepare_new_header(parlia.clone(), parent_header, signer);
     let mut attributes = EthPayloadBuilderAttributes{
         parent: new_header.parent_hash,
         timestamp: new_header.timestamp,
@@ -30,22 +30,26 @@ pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscCha
 }
 
 /// prepare a tmp new header for preparing attributes.
-pub fn prepare_new_header<ChainSpec>(parlia: Arc<Parlia<ChainSpec>>, parent_snap: &Snapshot, parent_header: &Header, signer: Address) -> Header 
+pub fn prepare_new_header<ChainSpec>(parlia: Arc<Parlia<ChainSpec>>, parent_header: &Header, signer: Address) -> Header 
 where
     ChainSpec: EthChainSpec + BscHardforks + 'static,
 {
     let mut new_header = Header { 
         number: parent_header.number + 1, 
         parent_hash: parent_header.hash_slow(), 
-        beneficiary: signer, 
+        beneficiary: signer,
+        // Temporarily set timestamp to parent + 1 to avoid header.timestamp = 0
+        // when back_off_time is called inside prepare_timestamp (which will be called in finalize_new_header).
+        // This ensures consistent hardfork checks between miner and validator.
+        timestamp: parent_header.timestamp + 1,
         ..Default::default() 
     };
-    if BscHardforks::is_cancun_active_at_timestamp(parlia.spec.as_ref(), new_header.number, new_header.timestamp) {
-        let blob_params = parlia.spec.blob_params_at_timestamp(new_header.timestamp);
+    if BscHardforks::is_cancun_active_at_timestamp(parlia.spec.as_ref(), new_header.number, parent_header.timestamp) {
+        let blob_params = parlia.spec.blob_params_at_timestamp(parent_header.timestamp);
         new_header.excess_blob_gas = parent_header.maybe_next_block_excess_blob_gas(blob_params);
     }
 
-    parlia.prepare_timestamp(parent_snap, parent_header, &mut new_header);
+    // Note: prepare_timestamp is now called in finalize_new_header
     new_header
 }
 
@@ -59,6 +63,9 @@ pub fn finalize_new_header<ChainSpec>(
 where
     ChainSpec: EthChainSpec + crate::hardforks::BscHardforks + 'static,
 {
+    // Prepare timestamp first (includes back_off_time calculation)
+    parlia.prepare_timestamp(parent_snap, parent_header, new_header);
+    
     new_header.difficulty = calculate_difficulty(parent_snap, new_header.beneficiary);
     if new_header.extra_data.len() < EXTRA_VANITY_LEN {
         new_header.extra_data = Bytes::from(vec![0u8; EXTRA_VANITY_LEN]);

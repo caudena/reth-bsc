@@ -578,7 +578,7 @@ where
                 header_number, max_elected_validators, validators_election_info);
         }
 
-        let header = prepare_new_header(self.parlia.clone(), self.inner_ctx.snap.as_ref().unwrap(), self.inner_ctx.parent_header.as_ref().unwrap(), self.evm.block().beneficiary);
+        let header = prepare_new_header(self.parlia.clone(), self.inner_ctx.parent_header.as_ref().unwrap(), self.evm.block().beneficiary);
         let epoch_length = self.parlia.get_epoch_length(&header);
         if (header.number + 1).is_multiple_of(epoch_length) {
             // cache it on pre block.

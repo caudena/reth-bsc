@@ -373,7 +373,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
     pub fn back_off_time(&self, snap: &Snapshot, parent: &Header, header: &Header) -> u64 {
         let validator = header.beneficiary;
         
-        tracing::debug!(
+        tracing::trace!(
             target: "bsc::consensus::back_off_time",
             block_number = header.number,
             validator = ?validator,
@@ -388,11 +388,6 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
 
         let mut delay = BACKOFF_TIME_OF_INITIAL;
-        // When mining blocks, `header.timestamp` is temporarily set to 0 (in Reth-BSC).
-        // Therefore, using `header.timestamp` to determine whether a hard fork has occurred is incorrect.
-        // As a result, during the Bohr and Lorentz hard forks, the network may experience some instability.
-        // So use `parent.timestamp` for Lorentz check to match Geth-BSC behavior.
-        // Note: Geth-BSC has the same issue for Bohr checks (Line 2251, 2274), kept for consistency.
         let is_parent_lorentz = self.spec.is_lorentz_active_at_timestamp(parent.number, parent.timestamp);
         if is_parent_lorentz {
             delay = LORENTZ_BACKOFF_TIME_OF_INITIAL;
@@ -402,7 +397,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         if self.spec.is_planck_active_at_block(header.number) {
             let counts = snap.count_recent_proposers();
             
-            tracing::debug!(
+            tracing::trace!(
                 target: "bsc::consensus::back_off_time",
                 block_number = header.number,
                 counts = ?counts,
@@ -430,7 +425,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
                         *addr == inturn_addr)
             });
             
-            tracing::debug!(
+            tracing::trace!(
                 target: "bsc::consensus::back_off_time",
                 block_number = header.number,
                 validators_after_filter = ?validators,
@@ -443,7 +438,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         let mut rng = if is_bohr {
             let turn_length = snap.turn_length.unwrap_or(DEFAULT_TURN_LENGTH);
             let seed = header.number as i64 / turn_length as i64;
-            tracing::debug!(
+            tracing::trace!(
                 target: "bsc::consensus::back_off_time",
                 block_number = header.number,
                 header_timestamp = header.timestamp,
@@ -456,7 +451,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
             RngSource::new(seed)
         } else {
             let seed = snap.block_number as i64;
-            tracing::debug!(
+            tracing::trace!(
                 target: "bsc::consensus::back_off_time",
                 block_number = header.number,
                 header_timestamp = header.timestamp,
@@ -469,14 +464,14 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         };
 
         let mut back_off_steps: Vec<u64> = (0..validators.len() as u64).collect();
-        tracing::debug!(
+        tracing::trace!(
             target: "bsc::consensus::back_off_time",
             block_number = header.number,
             back_off_steps_before_shuffle = ?back_off_steps,
             "Before shuffle"
         );
         back_off_steps.shuffle(&mut rng);
-        tracing::debug!(
+        tracing::trace!(
             target: "bsc::consensus::back_off_time",
             block_number = header.number,
             back_off_steps_after_shuffle = ?back_off_steps,
@@ -497,7 +492,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
                     delay + back_off_steps[idx] * BACKOFF_TIME_OF_WIGGLE
                 };
                 
-                tracing::debug!(
+                tracing::trace!(
                     target: "bsc::consensus::back_off_time",
                     block_number = header.number,
                     validator = ?validator,

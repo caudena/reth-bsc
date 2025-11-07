@@ -231,10 +231,6 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                 return None;
             }
             let header = apply_header.unwrap();
-            tracing::debug!(
-                "Applying header to snapshot: block_number={}, block_hash={}, beneficiary={:?}",
-                header.number, block_hash, header.beneficiary
-            );
             let epoch_remainder = header.number % working_snapshot.epoch_num;
             let miner_check_len = working_snapshot.miner_history_check_len();
             let is_epoch_boundary = header.number > 0 && epoch_remainder == miner_check_len;
@@ -288,7 +284,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                 &*self.chain_spec,
             ) {
                 Some(snap) => {
-                    tracing::debug!(
+                    tracing::trace!(
                         "Successfully applied header: block_number={}, recent_proposers_count={}, recent_proposers_keys={:?}",
                         snap.block_number, snap.recent_proposers.len(), 
                         snap.recent_proposers.keys().collect::<Vec<_>>()

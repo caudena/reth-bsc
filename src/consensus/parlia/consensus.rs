@@ -604,8 +604,7 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
             return;
         }
         let mut extra_data = new_header.extra_data.to_vec();
-        // TODO: fetch turn length from system contract or use default value.
-        extra_data.push(turn_length.unwrap_or(DEFAULT_TURN_LENGTH));
+        extra_data.push(turn_length.unwrap());
         new_header.extra_data = alloy_primitives::Bytes::from(extra_data);
     }
 

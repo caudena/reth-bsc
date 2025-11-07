@@ -121,6 +121,16 @@ where
             self.get_current_validators(header.number, header.hash_slow())?;
         }
 
+        {   // prepare turn length for next header in fullnode mode.
+            let epoch_length = self.inner_ctx.snap.as_ref().unwrap().epoch_num;
+            if (header.number + 1).is_multiple_of(epoch_length) && self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp) {
+                let turn_length = self.get_turn_length(&header)?;
+                let mut cache = TURN_LENGTH_CACHE.lock().unwrap();
+                cache.insert(header.hash_slow(), turn_length);
+                tracing::debug!("Succeed to update turn length cache, block_number: {}, block_hash: {}, turn_length: {}", 
+                    header.number, header.hash_slow(), turn_length);
+            }
+        }
         tracing::trace!("Succeed to finalize new block, block_number: {}", block.number);
         Ok(())
     }

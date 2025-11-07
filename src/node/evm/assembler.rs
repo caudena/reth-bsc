@@ -168,7 +168,6 @@ where
                 self.parlia.clone(), 
                 &parent_snap, 
                 &parent_header, 
-                ctx.turn_length,
                 &mut header
             ).map_err(|e| BlockExecutionError::msg(format!("Failed to finalize header: {}", e)))?;
 
@@ -292,7 +291,6 @@ where
                 self.parlia.clone(), 
                 &parent_snap, 
                 &parent_header, 
-                ctx.turn_length,
                 &mut header
             ).map_err(|e| BlockExecutionError::msg(format!("Failed to finalize header: {}", e)))?;
 

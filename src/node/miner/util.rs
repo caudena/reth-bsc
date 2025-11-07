@@ -9,7 +9,7 @@ use crate::consensus::parlia::{EXTRA_VANITY_LEN, EXTRA_SEAL_LEN};
 use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
-use crate::node::evm::pre_execution::VALIDATOR_CACHE;
+use crate::node::evm::pre_execution::{TURN_LENGTH_CACHE, VALIDATOR_CACHE};
 use crate::node::miner::signer::{seal_header_with_global_signer};
 use crate::node::miner::bsc_miner::MiningContext;
 
@@ -60,7 +60,6 @@ pub fn finalize_new_header<ChainSpec>(
     parlia: Arc<Parlia<ChainSpec>>, 
     parent_snap: &Snapshot, 
     parent_header: &Header, 
-    turn_length: Option<u8>,
     new_header: &mut Header) -> Result<(), crate::node::miner::signer::SignerError>
 where
     ChainSpec: EthChainSpec + crate::hardforks::BscHardforks + 'static,
@@ -95,6 +94,11 @@ where
     }
 
     {   // prepare turn length
+        let mut turn_length = None;
+        let mut cache = TURN_LENGTH_CACHE.lock().unwrap();
+        if let Some(cached_turn_length) = cache.get(&parent_header.hash_slow()) {
+            turn_length = Some(*cached_turn_length);
+        }
         parlia.prepare_turn_length(parent_snap, turn_length, new_header);
     }
     

@@ -9,12 +9,13 @@ use crate::consensus::parlia::{EXTRA_VANITY_LEN, EXTRA_SEAL_LEN};
 use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
-use crate::node::evm::pre_execution::{TURN_LENGTH_CACHE, VALIDATOR_CACHE};
-use crate::node::miner::signer::{seal_header_with_global_signer};
+use crate::node::evm::pre_execution::VALIDATOR_CACHE;
+use crate::node::miner::signer::{seal_header_with_global_signer, SignerError};
 use crate::node::miner::bsc_miner::MiningContext;
 
 pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
-    let new_header = prepare_new_header(parlia.clone(), parent_header, signer);
+    let mut new_header = prepare_new_header(parlia.clone(), parent_header, signer);
+    parlia.prepare_timestamp(&ctx.parent_snapshot, parent_header, &mut new_header);
     let mut attributes = EthPayloadBuilderAttributes{
         parent: new_header.parent_hash,
         timestamp: new_header.timestamp,
@@ -64,7 +65,6 @@ pub fn finalize_new_header<ChainSpec>(
 where
     ChainSpec: EthChainSpec + crate::hardforks::BscHardforks + 'static,
 {
-    parlia.prepare_timestamp(parent_snap, parent_header, new_header);
     new_header.difficulty = calculate_difficulty(parent_snap, new_header.beneficiary);
     
     if new_header.extra_data.len() < EXTRA_VANITY_LEN {
@@ -84,38 +84,18 @@ where
         let epoch_length = parent_snap.epoch_num;
         if (new_header.number).is_multiple_of(epoch_length) {
             let mut validators: Option<(Vec<Address>, Vec<crate::consensus::parlia::VoteAddress>)> = None;
-            match VALIDATOR_CACHE.lock() {
-                Ok(mut cache) => {
-                    if let Some(cached_result) = cache.get(&parent_header.hash_slow()) {
-                        tracing::debug!("Succeed to query cached validator result, block_number: {}, block_hash: {}", parent_header.number, parent_header.hash_slow());
-                        validators = Some(cached_result.clone());
-                    }
-                }
-                Err(e) => {
-                    tracing::error!("VALIDATOR_CACHE lock is poisoned: {:?}, block_number: {}", e, new_header.number);
-                }
+            let mut cache = VALIDATOR_CACHE.lock().unwrap();
+            if let Some(cached_result) = cache.get(&parent_header.hash_slow()) {
+                tracing::debug!("Succeed to query cached validator result, block_number: {}, block_hash: {}", parent_header.number, parent_header.hash_slow());
+                validators = Some(cached_result.clone());
             }
             
             parlia.prepare_validators(parent_snap, validators, new_header);
         }
     }
 
-    {   // prepare turn length
-        let mut turn_length = None;
-        match TURN_LENGTH_CACHE.lock() {
-            Ok(mut cache) => {
-                if let Some(cached_turn_length) = cache.get(&parent_header.hash_slow()) {
-                    turn_length = Some(*cached_turn_length);
-                } else {
-                    tracing::warn!("Failed to query cached turn length, block_number: {}, block_hash: {}", parent_header.number, parent_header.hash_slow());
-                }
-            }
-            Err(e) => {
-                tracing::error!("TURN_LENGTH_CACHE lock is poisoned: {:?}, block_number: {}", e, new_header.number);
-            }
-        }
-        parlia.prepare_turn_length(parent_snap, turn_length, new_header);
-    }
+    parlia.prepare_turn_length(parent_snap, new_header).
+        map_err(|e| SignerError::SigningFailed(format!("Failed to prepare turn length: {}", e)))?;
     
     // TODO: add BEP-590 changes in fermi hardfork later, it changes the assemble and verify logic.
     if let Err(e) = parlia.assemble_vote_attestation(parent_snap, parent_header, new_header) {

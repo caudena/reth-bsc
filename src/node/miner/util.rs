@@ -14,7 +14,8 @@ use crate::node::miner::signer::{SignerError, seal_header_with_global_signer};
 use crate::node::miner::bsc_miner::MiningContext;
 
 pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
-    let new_header = prepare_new_header(parlia.clone(), parent_header, signer);
+    let mut new_header = prepare_new_header(parlia.clone(), parent_header, signer);
+    parlia.prepare_timestamp(&ctx.parent_snapshot, parent_header, &mut new_header);
     let mut attributes = EthPayloadBuilderAttributes{
         parent: new_header.parent_hash,
         timestamp: new_header.timestamp,
@@ -64,7 +65,6 @@ pub fn finalize_new_header<ChainSpec>(
 where
     ChainSpec: EthChainSpec + crate::hardforks::BscHardforks + 'static,
 {
-    parlia.prepare_timestamp(parent_snap, parent_header, new_header);
     new_header.difficulty = calculate_difficulty(parent_snap, new_header.beneficiary);
     
     if new_header.extra_data.len() < EXTRA_VANITY_LEN {

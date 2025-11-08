@@ -3,7 +3,7 @@ use alloy_rlp::{Decodable, Encodable};
 use futures::{Stream, StreamExt};
 use std::{pin::Pin, task::{Context, Poll, ready}};
 use reth_eth_wire::multiplex::ProtocolConnection;
-use bytes::{Bytes, BufMut};
+use bytes::{Bytes};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio::time::{Duration, Sleep};
@@ -14,7 +14,6 @@ use std::sync::Arc;
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
 
 use crate::node::network::votes::{VotesPacket, BscCapPacket, handle_votes_broadcast};
-use crate::consensus::parlia::vote::VoteEnvelope;
 use super::protocol::proto::{BscProtoMessageId, BSC_PROTOCOL_VERSION};
 
 /// Commands that can be sent to the BSC connection.
@@ -55,14 +54,6 @@ impl BscProtocolConnection {
         }
     }
 
-    fn encode_votes_slice(buf: &mut BytesMut, votes: &[VoteEnvelope]) {
-        // Message ID followed by an RLP list of VoteEnvelope
-        buf.put_u8(BscProtoMessageId::Votes as u8);
-        let payload_length: usize = votes.iter().map(|v| v.length()).sum();
-        alloy_rlp::Header { list: true, payload_length }.encode(buf);
-        for v in votes { v.encode(buf); }
-    }
-
     fn encode_command(cmd: BscCommand) -> BytesMut {
         match cmd {
             BscCommand::Capability { protocol_version, extra } => {
@@ -84,8 +75,7 @@ impl BscProtocolConnection {
             BscCommand::Votes(votes) => {
                 let mut buf = BytesMut::new();
                 let vote_count = votes.len();
-                // Zero-copy encode from slice (no Vec clone). Message ID + RLP list of envelopes.
-                Self::encode_votes_slice(&mut buf, votes.as_slice());
+                VotesPacket(votes.as_ref().clone()).encode(&mut buf);
                 
                 tracing::debug!(
                     target: "bsc_protocol",

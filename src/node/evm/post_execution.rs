@@ -102,14 +102,15 @@ where
         }
 
         if !self.system_txs.is_empty() {
-            tracing::warn!(
+            tracing::error!(
                 "Remaining system txs after block execution, block_number: {}, len: {}",
                 block.number,
                 self.system_txs.len()
             );
             for tx in self.system_txs.iter() {
-                tracing::warn!("remaining system tx: {:?}", tx);
+                tracing::error!("remaining system tx: {:?}", tx);
             }
+            return Err(BscBlockExecutionError::Validation(BscBlockValidationError::UnexpectedSystemTx).into());
         }
 
         let header = self.inner_ctx.header.as_ref().unwrap().clone();

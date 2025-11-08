@@ -554,7 +554,6 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
     }
 
     pub fn prepare_validators(&self, snap: &Snapshot, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
-        // Use epoch_num from snapshot for epoch boundary check
         let epoch_length = snap.epoch_num;
         if !(new_header.number).is_multiple_of(epoch_length) {
             return;

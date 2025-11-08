@@ -114,7 +114,7 @@ where
 
         let header = self.inner_ctx.header.as_ref().unwrap().clone();
         
-        // Get the current block's snapshot (after applying this block's header)
+        // Notes: here we get the current block's snapshot (after applying this block's header) to prepare cache.
         // This is important because epoch_num may change during block application
         let current_snap = self
             .snapshot_provider
@@ -125,18 +125,15 @@ where
         
         // Use epoch_num from current snapshot (after apply) for epoch boundary check
         let epoch_length = current_snap.epoch_num;
-        if (header.number + 1).is_multiple_of(epoch_length) {
+        let is_next_epoch = (header.number + 1).is_multiple_of(epoch_length);
+        if is_next_epoch {  // cache validators
             // cache it on pre block.
             // for verify validators in post-check of fullnode mode and prepare new header in miner mode.
             self.get_current_validators(header.number, header.hash_slow())?;
         }
 
-        {   // prepare turn length for next header in fullnode mode.
-            // Use epoch_num from current snapshot (after apply)
-            let epoch_length = current_snap.epoch_num;
-            let is_next_epoch = (header.number + 1).is_multiple_of(epoch_length);
+        { // cache turnlength
             let is_bohr = self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp);
-            
             tracing::debug!(
                 "Check turn length cache update: block_number={}, epoch_length={}, is_next_epoch={}, is_bohr={}",
                 header.number, epoch_length, is_next_epoch, is_bohr
@@ -160,7 +157,6 @@ where
         header: Option<Header>
     ) -> Result<(), BlockExecutionError> {
         let header_ref = header.as_ref().unwrap();
-        // Use epoch_num from snapshot for epoch boundary check
         let epoch_length = self.inner_ctx.snap.as_ref().unwrap().epoch_num;
         if !header_ref.number.is_multiple_of(epoch_length) {
             tracing::trace!("Skip verify validator, block_number {} is not an epoch boundary, epoch_length: {}", header_ref.number, epoch_length);

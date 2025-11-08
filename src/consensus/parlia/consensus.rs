@@ -8,6 +8,7 @@ use schnellru::LruMap;
 use schnellru::ByLength;
 use alloy_primitives::{Address, B256};
 use secp256k1::{SECP256K1, Message, ecdsa::{RecoveryId, RecoverableSignature}};
+use crate::node::evm::pre_execution::TURN_LENGTH_CACHE;
 use crate::consensus::parlia::util::is_breathe_block;
 use crate::consensus::parlia::vote_pool::fetch_vote_by_block_hash;
 use crate::consensus::parlia::VoteData;
@@ -15,7 +16,6 @@ use crate::consensus::parlia::VoteSignature;
 use crate::consensus::parlia::SYSTEM_TXS_GAS_HARD_LIMIT;
 use crate::consensus::parlia::SYSTEM_TXS_GAS_SOFT_LIMIT;
 use crate::hardforks::BscHardforks;
-use crate::node::evm::pre_execution::TURN_LENGTH_CACHE;
 use reth_chainspec::EthChainSpec;
 use alloy_consensus::{Header, BlockHeader};
 use alloy_rlp::Decodable;
@@ -553,8 +553,8 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
     }
 
-    pub fn prepare_validators(&self, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
-        let epoch_length = self.get_epoch_length(new_header);
+    pub fn prepare_validators(&self, snap: &Snapshot, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
+        let epoch_length = snap.epoch_num;
         if !(new_header.number).is_multiple_of(epoch_length) {
             return;
         }

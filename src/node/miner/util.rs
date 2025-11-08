@@ -9,8 +9,8 @@ use crate::consensus::parlia::{EXTRA_VANITY_LEN, EXTRA_SEAL_LEN};
 use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
-use crate::node::evm::pre_execution::{VALIDATOR_CACHE};
-use crate::node::miner::signer::{SignerError, seal_header_with_global_signer};
+use crate::node::evm::pre_execution::VALIDATOR_CACHE;
+use crate::node::miner::signer::{seal_header_with_global_signer, SignerError};
 use crate::node::miner::bsc_miner::MiningContext;
 
 pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
@@ -80,7 +80,8 @@ where
     // })
 
     {   // prepare validators
-        let epoch_length = parlia.get_epoch_length(new_header);
+        // Use epoch_num from parent snapshot for epoch boundary check
+        let epoch_length = parent_snap.epoch_num;
         if (new_header.number).is_multiple_of(epoch_length) {
             let mut validators: Option<(Vec<Address>, Vec<crate::consensus::parlia::VoteAddress>)> = None;
             let mut cache = VALIDATOR_CACHE.lock().unwrap();
@@ -89,7 +90,7 @@ where
                 validators = Some(cached_result.clone());
             }
             
-            parlia.prepare_validators(validators, new_header);
+            parlia.prepare_validators(parent_snap, validators, new_header);
         }
     }
 

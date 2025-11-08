@@ -284,9 +284,10 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                 &*self.chain_spec,
             ) {
                 Some(snap) => {
-                    tracing::trace!(
-                        "Successfully applied header: block_number={}, recent_proposers_count={}, recent_proposers_keys={:?}",
-                        snap.block_number, snap.recent_proposers.len(), 
+                    tracing::debug!(
+                        "Successfully applied header: block_number={}, epoch_num={}, turn_length={:?}, recent_proposers_count={}, recent_proposers_keys={:?}",
+                        snap.block_number, snap.epoch_num, snap.turn_length,
+                        snap.recent_proposers.len(), 
                         snap.recent_proposers.keys().collect::<Vec<_>>()
                     );
                     snap

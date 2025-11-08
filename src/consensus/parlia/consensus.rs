@@ -552,8 +552,9 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
     }
 
-    pub fn prepare_validators(&self, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
-        let epoch_length = self.get_epoch_length(new_header);
+    pub fn prepare_validators(&self, snap: &Snapshot, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
+        // Use epoch_num from snapshot for epoch boundary check
+        let epoch_length = snap.epoch_num;
         if !(new_header.number).is_multiple_of(epoch_length) {
             return;
         }
@@ -604,7 +605,18 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
             return;
         }
         let mut extra_data = new_header.extra_data.to_vec();
-        extra_data.push(turn_length.unwrap());
+        
+        let turn_length_value = turn_length.unwrap_or_else(|| {
+            panic!(
+                "turn_length is None when preparing epoch block: block_number={}, block_hash={:?}, epoch_length={}, parent_block={}, is_bohr_active=true",
+                new_header.number,
+                new_header.hash_slow(),
+                epoch_length,
+                parent_snap.block_number
+            );
+        });
+        
+        extra_data.push(turn_length_value);
         new_header.extra_data = alloy_primitives::Bytes::from(extra_data);
     }
 

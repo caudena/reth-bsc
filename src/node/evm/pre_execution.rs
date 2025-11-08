@@ -86,7 +86,8 @@ where
 
         self.verify_cascading_fields(&header, &parent_header, &snap)?;
 
-        let epoch_length = self.parlia.get_epoch_length(&header);
+        // Use epoch_num from snapshot for epoch boundary check
+        let epoch_length = snap.epoch_num;
         if header.number.is_multiple_of(epoch_length) {
             // TODO: need fix it later, it may got error when restart the node?
             let (validator_set, vote_addresses) = self.get_current_validators(header.number-1, header.parent_hash)?;

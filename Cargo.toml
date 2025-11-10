@@ -43,6 +43,7 @@ reth-primitives-traits = { git = "https://github.com/bnb-chain/reth.git", branch
 reth-provider = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc", features = ["test-utils"] }
 reth-rpc-eth-api = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc" }
 reth-rpc-engine-api = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc" }
+reth-tasks = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc" }
 reth-tracing = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc" }
 reth-trie-common = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc" }
 reth-trie-db = { git = "https://github.com/bnb-chain/reth.git", branch = "fix-tracerpc" }

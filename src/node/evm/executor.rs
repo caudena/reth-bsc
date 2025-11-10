@@ -217,14 +217,31 @@ where
         &mut self,
         block_number: BlockNumber,
     ) -> Result<bool, BlockExecutionError> {
-        debug!(
-            "Apply history storage account {:?} at height {:?}",
-            HISTORY_STORAGE_ADDRESS, block_number
+        tracing::info!(
+            target: "bsc::executor::prague",
+            block_number,
+            address = ?HISTORY_STORAGE_ADDRESS,
+            "Deploying HistoryStorageAddress contract (Prague transition)"
         );
 
         let account = self.evm.db_mut().load_cache_account(HISTORY_STORAGE_ADDRESS).map_err(|err| {
+            tracing::error!(
+                target: "bsc::executor::prague",
+                block_number,
+                error = ?err,
+                "Failed to load HistoryStorageAddress account"
+            );
             BlockExecutionError::other(err)
         })?;
+
+        let old_info = account.account_info();
+        tracing::debug!(
+            target: "bsc::executor::prague",
+            block_number,
+            old_nonce = ?old_info.as_ref().map(|i| i.nonce),
+            old_code_hash = ?old_info.as_ref().map(|i| i.code_hash),
+            "HistoryStorageAddress account before deployment"
+        );
 
         let mut new_info = account.account_info().unwrap_or_default();
         new_info.code_hash = keccak256(HISTORY_STORAGE_CODE.clone());
@@ -234,6 +251,12 @@ where
 
         let transition = account.change(new_info, Default::default());
         self.evm.db_mut().apply_transition(vec![(HISTORY_STORAGE_ADDRESS, transition)]);
+        
+        tracing::info!(
+            target: "bsc::executor::prague",
+            block_number,
+            "Successfully deployed HistoryStorageAddress contract"
+        );
         Ok(true)
     }
 }
@@ -278,18 +301,62 @@ where
         let state_clear_flag = self.spec.is_spurious_dragon_active_at_block(self.evm.block().number.to());
         self.evm.db_mut().set_state_clear_flag(state_clear_flag);
         let parent_timestamp = self.inner_ctx.parent_header.as_ref().unwrap().timestamp;
+        tracing::debug!(
+            target: "bsc::executor::prague",
+            block_number = self.evm.block().number.to::<u64>(),
+            block_timestamp = self.evm.block().timestamp.to::<u64>(),
+            parent_timestamp,
+            "Prague hardfork check parameters"
+        );
         // Note: here use a parent timestamp to check if the feynman fork is active. 
         if !self.spec.is_feynman_active_at_timestamp(self.evm.block().number.to::<u64>(), parent_timestamp) {
             self.upgrade_contracts()?;
         }
      
         // enable BEP-440/EIP-2935 for historical block hashes from state
-        if self.spec.is_prague_transition_at_block_and_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>(), parent_timestamp) {
+        let is_prague_transition = self.spec.is_prague_transition_at_block_and_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>(), parent_timestamp);
+        let is_prague_active = self.spec.is_prague_active_at_block_and_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>());
+        
+        // Check if HistoryStorageAddress contract exists in state
+        let history_contract_exists = self.evm.db_mut().load_cache_account(HISTORY_STORAGE_ADDRESS)
+            .ok()
+            .and_then(|acc| acc.account_info())
+            .map(|info| info.nonce > 0 || !info.code_hash.is_zero())
+            .unwrap_or(false);
+        
+        tracing::info!(
+            target: "bsc::executor::prague",
+            block_number = self.evm.block().number.to::<u64>(),
+            block_hash = ?self.evm.block().blob_excess_gas_and_price,
+            is_prague_transition,
+            is_prague_active,
+            is_miner = self.ctx.is_miner,
+            history_contract_exists,
+            "Prague hardfork check result and contract state"
+        );
+        if is_prague_transition {
+                tracing::info!(
+                    target: "bsc::executor::prague",
+                    block_number = self.evm.block().number.to::<u64>(),
+                    "Calling apply_history_storage_account (Prague transition)"
+                );
                 self.apply_history_storage_account(self.evm.block().number.to::<u64>())?;
         }
-        if self.spec.is_prague_active_at_block_and_timestamp(self.evm.block().number.to::<u64>(), self.evm.block().timestamp.to::<u64>()) {
+        if is_prague_active {
+            tracing::info!(
+                target: "bsc::executor::prague",
+                block_number = self.evm.block().number.to::<u64>(),
+                parent_hash = ?self.ctx.base.parent_hash,
+                "Calling apply_blockhashes_contract_call (Prague active)"
+            );
             self.system_caller
                 .apply_blockhashes_contract_call(self.ctx.base.parent_hash, &mut self.evm)?;
+        } else {
+            tracing::info!(
+                target: "bsc::executor::prague",
+                block_number = self.evm.block().number.to::<u64>(),
+                "Prague not active, skipping apply_blockhashes_contract_call"
+            );
         }
 
         Ok(())

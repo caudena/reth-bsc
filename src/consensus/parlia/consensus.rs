@@ -8,6 +8,7 @@ use schnellru::LruMap;
 use schnellru::ByLength;
 use alloy_primitives::{Address, B256};
 use secp256k1::{SECP256K1, Message, ecdsa::{RecoveryId, RecoverableSignature}};
+use crate::node::evm::pre_execution::TURN_LENGTH_CACHE;
 use crate::consensus::parlia::util::is_breathe_block;
 use crate::consensus::parlia::vote_pool::fetch_vote_by_block_hash;
 use crate::consensus::parlia::VoteData;
@@ -552,8 +553,8 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         }
     }
 
-    pub fn prepare_validators(&self, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
-        let epoch_length = self.get_epoch_length(new_header);
+    pub fn prepare_validators(&self, snap: &Snapshot, validators: Option<(Vec<alloy_primitives::Address>, Vec<crate::consensus::parlia::VoteAddress>)>, new_header: &mut Header) {
+        let epoch_length = snap.epoch_num;
         if !(new_header.number).is_multiple_of(epoch_length) {
             return;
         }
@@ -598,15 +599,22 @@ where ChainSpec: EthChainSpec + BscHardforks + 'static,
         new_header.extra_data = alloy_primitives::Bytes::from(extra_data);
     }
 
-    pub fn prepare_turn_length(&self, parent_snap: &Snapshot, turn_length: Option<u8>, new_header: &mut Header) {
+    pub fn prepare_turn_length(&self, parent_snap: &Snapshot, new_header: &mut Header) -> Result<(), ParliaConsensusError> {
         let epoch_length = parent_snap.epoch_num;
         if !new_header.number.is_multiple_of(epoch_length) || !self.spec.is_bohr_active_at_timestamp(new_header.number, new_header.timestamp) {
-            return;
+            return Ok(());
         }
+        
+        let mut cache = TURN_LENGTH_CACHE.lock().unwrap();
+        let turn_length = *cache.get(&new_header.parent_hash).ok_or(ParliaConsensusError::TurnLengthNotFound {
+            block_hash: new_header.parent_hash,
+        })?;
+        
         let mut extra_data = new_header.extra_data.to_vec();
-        // TODO: fetch turn length from system contract or use default value.
-        extra_data.push(turn_length.unwrap_or(DEFAULT_TURN_LENGTH));
+        extra_data.push(turn_length);
         new_header.extra_data = alloy_primitives::Bytes::from(extra_data);
+
+        Ok(())
     }
 
     pub fn estimate_gas_reserved_for_system_txs(&self, parent_timestamp: Option<u64>, current_number: u64, current_timestamp: u64) -> u64 {

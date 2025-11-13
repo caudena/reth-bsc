@@ -10,11 +10,12 @@ use reth::payload::EthPayloadBuilderAttributes;
 use crate::hardforks::BscHardforks;
 use reth_chainspec::EthChainSpec;
 use crate::node::evm::pre_execution::VALIDATOR_CACHE;
-use crate::node::miner::signer::{seal_header_with_global_signer};
+use crate::node::miner::signer::{seal_header_with_global_signer, SignerError};
 use crate::node::miner::bsc_miner::MiningContext;
 
 pub fn prepare_new_attributes(ctx: &mut MiningContext, parlia: Arc<Parlia<BscChainSpec>>, parent_header: &Header, signer: Address) -> EthPayloadBuilderAttributes {
-    let new_header = prepare_new_header(parlia.clone(), parent_header, signer);
+    let mut new_header = prepare_new_header(parlia.clone(), parent_header, signer);
+    parlia.prepare_timestamp(&ctx.parent_snapshot, parent_header, &mut new_header);
     let mut attributes = EthPayloadBuilderAttributes{
         parent: new_header.parent_hash,
         timestamp: new_header.timestamp,
@@ -60,12 +61,10 @@ pub fn finalize_new_header<ChainSpec>(
     parlia: Arc<Parlia<ChainSpec>>, 
     parent_snap: &Snapshot, 
     parent_header: &Header, 
-    turn_length: Option<u8>,
     new_header: &mut Header) -> Result<(), crate::node::miner::signer::SignerError>
 where
     ChainSpec: EthChainSpec + crate::hardforks::BscHardforks + 'static,
 {
-    parlia.prepare_timestamp(parent_snap, parent_header, new_header);
     new_header.difficulty = calculate_difficulty(parent_snap, new_header.beneficiary);
     
     if new_header.extra_data.len() < EXTRA_VANITY_LEN {
@@ -81,7 +80,8 @@ where
     // })
 
     {   // prepare validators
-        let epoch_length = parlia.get_epoch_length(new_header);
+        // Use epoch_num from parent snapshot for epoch boundary check
+        let epoch_length = parent_snap.epoch_num;
         if (new_header.number).is_multiple_of(epoch_length) {
             let mut validators: Option<(Vec<Address>, Vec<crate::consensus::parlia::VoteAddress>)> = None;
             let mut cache = VALIDATOR_CACHE.lock().unwrap();
@@ -90,13 +90,12 @@ where
                 validators = Some(cached_result.clone());
             }
             
-            parlia.prepare_validators(validators, new_header);
+            parlia.prepare_validators(parent_snap, validators, new_header);
         }
     }
 
-    {   // prepare turn length
-        parlia.prepare_turn_length(parent_snap, turn_length, new_header);
-    }
+    parlia.prepare_turn_length(parent_snap, new_header).
+        map_err(|e| SignerError::SigningFailed(format!("Failed to prepare turn length: {}", e)))?;
     
     // TODO: add BEP-590 changes in fermi hardfork later, it changes the assemble and verify logic.
     if let Err(e) = parlia.assemble_vote_attestation(parent_snap, parent_header, new_header) {

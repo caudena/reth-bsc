@@ -8,6 +8,7 @@ use crate::chainspec::BscChainSpec;
 use crate::consensus::parlia::{bls_signer, provider::SnapshotProvider, vote::VoteData, votes, VoteAddress};
 use crate::hardforks::BscHardforks;
 use crate::consensus::parlia::util::calculate_millisecond_timestamp;
+use crate::node::evm::util::get_cannonical_header_from_cache;
 use crate::node::vote_journal;
 
 /// Number of blocks to wait after mining becomes enabled before producing votes.
@@ -58,24 +59,24 @@ pub fn maybe_produce_and_broadcast_for_head(
         .unwrap_or(false);
     if !mining_enabled {
         BLOCKS_SINCE_MINING.store(0, Ordering::Relaxed);
-        tracing::trace!(target: "bsc::vote", reason = "mining-disabled", "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "mining-disabled", "skip vote production");
         return;
     }
 
     // Respect downloader gating
     if !START_VOTE.load(Ordering::Relaxed) {
-        tracing::trace!(target: "bsc::vote", reason = "downloader-active", "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "downloader-active", "skip vote production");
         return;
     }
     // Only vote post-Luban
     if !chain_spec.is_luban_active_at_block(head.number()) {
-        tracing::trace!(target: "bsc::vote", reason = "pre-luban", block=head.number(), "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "pre-luban", block=head.number(), "skip vote production");
         return;
     }
 
     // Require signer
     if !bls_signer::is_bls_signer_initialized() {
-        tracing::trace!(target: "bsc::vote", reason = "bls-not-initialized", "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "bls-not-initialized", "skip vote production");
         return;
     }
 
@@ -89,7 +90,7 @@ pub fn maybe_produce_and_broadcast_for_head(
         match guard {
             Ok(mut lru) => {
                 if lru.get(&target_hash).is_some() {
-                    tracing::trace!(target: "bsc::vote", reason = "dup-target", target_hash=%format!("0x{:x}", target_hash), "skip vote production");
+                    tracing::debug!(target: "bsc::vote", reason = "dup-target", target_hash=%format!("0x{:x}", target_hash), "skip vote production");
                     return;
                 }
                 lru.insert(target_hash, ());
@@ -105,7 +106,7 @@ pub fn maybe_produce_and_broadcast_for_head(
     let threshold = warmup_blocks();
     let cnt = BLOCKS_SINCE_MINING.fetch_add(1, Ordering::Relaxed) + 1;
     if cnt <= threshold {
-        tracing::trace!(target: "bsc::vote", reason = "warmup", count=cnt, threshold=threshold, "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "warmup", count=cnt, threshold=threshold, "skip vote production");
         return;
     }
     // Clamp to threshold to avoid unbounded growth
@@ -115,7 +116,7 @@ pub fn maybe_produce_and_broadcast_for_head(
     let snap = match snapshot_provider.snapshot_by_hash(&target_hash) {
         Some(s) => s,
         None => {
-            tracing::trace!(target: "bsc::vote", reason = "missing-snapshot", target_hash=%format!("0x{:x}", target_hash), "skip vote production");
+            tracing::debug!(target: "bsc::vote", reason = "missing-snapshot", target_hash=%format!("0x{:x}", target_hash), "skip vote production");
             return;
         }
     };
@@ -152,7 +153,7 @@ pub fn maybe_produce_and_broadcast_for_head(
     let is_validator = set.contains(&my_vote_addr);
     drop(set);
     if !is_validator {
-        tracing::trace!(target: "bsc::vote", reason = "not-validator", "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "not-validator", "skip vote production");
         return;
     }
 
@@ -164,21 +165,32 @@ pub fn maybe_produce_and_broadcast_for_head(
         .map(|d| d.as_millis() as u64)
         .unwrap_or(u64::MAX);
     if now_ms.saturating_add(TIME_FOR_BROADCAST_MS) > vote_assemble_ms {
-        tracing::trace!(target: "bsc::vote", reason = "too-late", now_ms=now_ms, vote_assemble_ms=vote_assemble_ms, "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "too-late", now_ms=now_ms, vote_assemble_ms=vote_assemble_ms, "skip vote production");
         return;
     }
     // Compose vote data: source = last justified from snapshot; target = head.hash/number
-    let source_number = snap.vote_data.target_number;
-    let source_hash = snap.vote_data.target_hash;
+    let mut source_number = snap.vote_data.target_number;
+    let mut source_hash = snap.vote_data.target_hash;
+
+    // if source_hash is zero, it loads genesis hash as source.
+    // once one attestation generated, attestation of snap would not be nil forever basically
+    // ref: https://github.com/bnb-chain/bsc/blob/583cfec3ea811fb124e6812aabd190555d5aeabc/consensus/parlia/parlia.go#L2161
     if source_hash == B256::ZERO {
-        // Don't sign until we have a non-zero source
-        tracing::trace!(target: "bsc::vote", reason = "zero-source", "skip vote production");
-        return;
+        match get_cannonical_header_from_cache(0) {
+            Some(genesis_header) => {
+                source_number = genesis_header.number();
+                source_hash = genesis_header.hash_slow();
+            }
+            None => {
+                tracing::debug!(target: "bsc::vote", reason = "zero-source", "skip vote production, genesis header not found");
+                return;
+            }
+        }
     }
 
     // Check vote rules against local journal to prevent slashing and double votes.
     if !vote_journal::under_rules(source_number, target_number) {
-        tracing::trace!(target: "bsc::vote", reason = "under-rules-failed", source_number=source_number, target_number=target_number, "skip vote production");
+        tracing::debug!(target: "bsc::vote", reason = "under-rules-failed", source_number=source_number, target_number=target_number, "skip vote production");
         return;
     }
 

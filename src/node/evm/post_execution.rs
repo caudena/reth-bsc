@@ -2,12 +2,12 @@ use super::executor::BscBlockExecutor;
 use super::error::{BscBlockExecutionError, BscBlockValidationError};
 use super::util::set_nonce;
 use crate::consensus::parlia::FF_REWARD_DISTRIBUTION_INTERVAL;
+use crate::node::evm::pre_execution::TURN_LENGTH_CACHE;
 use crate::node::evm::util::get_header_by_hash_from_cache;
 use crate::node::miner::signer::{sign_system_transaction, is_signer_initialized};
 use crate::consensus::parlia::{DIFF_INTURN, VoteAddress, VoteAttestation, snapshot::DEFAULT_TURN_LENGTH, constants::COLLECT_ADDITIONAL_VOTES_REWARD_RATIO, util::is_breathe_block};
 use crate::consensus::{SYSTEM_ADDRESS, MAX_SYSTEM_REWARD, SYSTEM_REWARD_PERCENT};
 use crate::evm::transaction::BscTxEnv;
-use crate::node::miner::util::prepare_new_header;
 use crate::system_contracts::{SLASH_CONTRACT, SYSTEM_REWARD_CONTRACT, STAKE_HUB_CONTRACT, feynman_fork::{ValidatorElectionInfo, get_top_validators_by_voting_power, ElectedValidators}};
 use reth_chainspec::{EthChainSpec, EthereumHardforks, Hardforks};
 use reth_evm::{eth::receipt_builder::{ReceiptBuilder, ReceiptBuilderCtx}, execute::BlockExecutionError, Database, Evm, FromRecoveredTx, FromTxWithEncoded, IntoTxEnv, block::StateChangeSource};
@@ -102,24 +102,52 @@ where
         }
 
         if !self.system_txs.is_empty() {
-            tracing::warn!(
+            tracing::error!(
                 "Remaining system txs after block execution, block_number: {}, len: {}",
                 block.number,
                 self.system_txs.len()
             );
             for tx in self.system_txs.iter() {
-                tracing::warn!("remaining system tx: {:?}", tx);
+                tracing::error!("remaining system tx: {:?}", tx);
             }
+            return Err(BscBlockExecutionError::Validation(BscBlockValidationError::UnexpectedSystemTx).into());
         }
 
         let header = self.inner_ctx.header.as_ref().unwrap().clone();
-        let epoch_length = self.parlia.get_epoch_length(&header);
-        if (header.number + 1).is_multiple_of(epoch_length) {
+        
+        // Notes: here we get the current block's snapshot (after applying this block's header) to prepare cache.
+        // This is important because epoch_num may change during block application
+        let current_snap = self
+            .snapshot_provider
+            .as_ref()
+            .unwrap()
+            .snapshot_by_hash(&header.hash_slow())
+            .ok_or(BlockExecutionError::msg("Failed to get current snapshot from snapshot provider"))?;
+        
+        // Use epoch_num from current snapshot (after apply) for epoch boundary check
+        let epoch_length = current_snap.epoch_num;
+        let is_next_epoch = (header.number + 1).is_multiple_of(epoch_length);
+        if is_next_epoch {  // cache validators
             // cache it on pre block.
             // for verify validators in post-check of fullnode mode and prepare new header in miner mode.
             self.get_current_validators(header.number, header.hash_slow())?;
         }
 
+        { // cache turnlength
+            let is_bohr = self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp);
+            tracing::debug!(
+                "Check turn length cache update: block_number={}, epoch_length={}, is_next_epoch={}, is_bohr={}",
+                header.number, epoch_length, is_next_epoch, is_bohr
+            );
+            
+            if is_next_epoch && is_bohr {
+                let turn_length = self.get_turn_length(&header)?;
+                let mut cache = TURN_LENGTH_CACHE.lock().unwrap();
+                cache.insert(header.hash_slow(), turn_length);
+                tracing::debug!("Succeed to update turn length cache, block_number: {}, block_hash: {}, epoch_length: {}, turn_length: {}", 
+                    header.number, header.hash_slow(), epoch_length, turn_length);
+            }
+        }
         tracing::trace!("Succeed to finalize new block, block_number: {}", block.number);
         Ok(())
     }
@@ -130,7 +158,7 @@ where
         header: Option<Header>
     ) -> Result<(), BlockExecutionError> {
         let header_ref = header.as_ref().unwrap();
-        let epoch_length = self.parlia.get_epoch_length(header_ref);
+        let epoch_length = self.inner_ctx.snap.as_ref().unwrap().epoch_num;
         if !header_ref.number.is_multiple_of(epoch_length) {
             tracing::trace!("Skip verify validator, block_number {} is not an epoch boundary, epoch_length: {}", header_ref.number, epoch_length);
             return Ok(());
@@ -189,7 +217,7 @@ where
                 Err(err) => return Err(BscBlockExecutionError::Validation(BscBlockValidationError::ParliaConsensusError { error: Box::new(err) }).into()),
             }
         };
-        let turn_length_from_contract = self.get_turn_length(header_ref)?.unwrap();
+        let turn_length_from_contract = self.get_turn_length(header_ref)?;
         if turn_length_from_header == turn_length_from_contract {
             tracing::debug!("Succeed to verify turn length, block_number: {}", header_ref.number);
             return Ok(())
@@ -205,16 +233,16 @@ where
     fn get_turn_length(
         &mut self,
         header: &Header,
-    ) -> Result<Option<u8>, BlockExecutionError> {
+    ) -> Result<u8, BlockExecutionError> {
         if self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp) {
             let (to, data) = self.system_contracts.get_turn_length();
             let bz = self.eth_call(to, data)?;
 
             let turn_length = self.system_contracts.unpack_data_into_turn_length(bz.as_ref()).to::<u8>();
-            return Ok(Some(turn_length))
+            return Ok(turn_length);
         }
 
-        Ok(Some(DEFAULT_TURN_LENGTH))
+        Ok(DEFAULT_TURN_LENGTH)
     }
 
     fn slash_spoiled_validator(
@@ -576,21 +604,6 @@ where
              )?;
             tracing::debug!("Update validator set, block_number: {}, max_elected_validators: {}, validators_election_info: {:?}", 
                 header_number, max_elected_validators, validators_election_info);
-        }
-
-        let header = prepare_new_header(self.parlia.clone(), self.inner_ctx.parent_header.as_ref().unwrap(), self.evm.block().beneficiary);
-        let epoch_length = self.parlia.get_epoch_length(&header);
-        if (header.number + 1).is_multiple_of(epoch_length) {
-            // cache it on pre block.
-            // for verify validators in post-check of fullnode mode and prepare new header in miner mode.
-            self.get_current_validators(header.number, header.hash_slow())?;
-        }
-
-        {   // prepare new header in miner mode.
-            let epoch_length = self.inner_ctx.snap.as_ref().unwrap().epoch_num;
-            if header.number.is_multiple_of(epoch_length) && self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp) {
-                self.ctx.turn_length = self.get_turn_length(&header)?;
-            }
         }
 
         Ok(())

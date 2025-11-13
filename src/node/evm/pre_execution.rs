@@ -28,14 +28,18 @@ use bit_set::BitSet;
 
 const BLST_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
-type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
 const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
 
+type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
+type TurnLengthCache = LruMap<BlockHash, u8, ByLength>;
 
 pub static VALIDATOR_CACHE: LazyLock<Mutex<ValidatorCache>> = LazyLock::new(|| {
     Mutex::new(LruMap::new(ByLength::new(1024)))
 });
 
+pub static TURN_LENGTH_CACHE: LazyLock<Mutex<TurnLengthCache>> = LazyLock::new(|| {
+    Mutex::new(LruMap::new(ByLength::new(1024)))
+});
 
 impl<'a, DB, EVM, Spec, R: ReceiptBuilder> BscBlockExecutor<'a, EVM, Spec, R>
 where
@@ -82,7 +86,7 @@ where
 
         self.verify_cascading_fields(&header, &parent_header, &snap)?;
 
-        let epoch_length = self.parlia.get_epoch_length(&header);
+        let epoch_length = snap.epoch_num;
         if header.number.is_multiple_of(epoch_length) {
             // TODO: need fix it later, it may got error when restart the node?
             let (validator_set, vote_addresses) = self.get_current_validators(header.number-1, header.parent_hash)?;

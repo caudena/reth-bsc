@@ -120,6 +120,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
     pub fn add_pending_bid(&self, block_number: u64, builder: Address, bid_hash: B256) {
         let key = format!("{}-{}-{}", block_number, builder, bid_hash);
         self.pending_bid.write().insert(key, 1);
+        self.mev_metrics.pending_bids.increment(1);
     }
 
     pub fn commit_new_bid(&self, bid: Bid) -> Option<BidRuntime<Pool, BscEvmConfig>> {
@@ -247,6 +248,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
             // If parsing fails, keep the entry (safe default)
             true
         });
+        self.mev_metrics.pending_bids.set(self.pending_bid.read().len() as f64);
     }
 
     fn new_bid_runtime(&self, _bid: &Bid, _validator_commission: u64, parent_header: SealedHeader, attributes: EthPayloadBuilderAttributes) -> Result<BidRuntime<Pool, BscEvmConfig>, Box<dyn std::error::Error + Send + Sync>>{
@@ -284,9 +286,6 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
         let mut success = false;
         let parent_hash = bid_runtime.bid.parent_hash;
         self.simulating_bid.write().insert(parent_hash, bid_runtime.bid.clone());
-        
-        // Update pending bids metric
-        self.mev_metrics.pending_bids.set(self.simulating_bid.read().len() as f64);
         
         let mut txs_except_last = bid_runtime.bid.txs.clone();
         let pay_bid_tx = txs_except_last.pop();
@@ -429,7 +428,6 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
         
         if success {
             self.mev_metrics.valid_bids_total.increment(1);
-            self.mev_metrics.winning_bids.set(self.best_bid.read().len() as f64);
             
             // Update best bid gas used (in MGas)
             let gas_used_mgas = bid_runtime.gas_used as f64 / 1_000_000.0;

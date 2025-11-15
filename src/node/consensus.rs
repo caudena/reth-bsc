@@ -7,8 +7,8 @@ use crate::{
         ParliaConsensusErr,
         parlia::{provider::EnhancedDbSnapshotProvider, Parlia, util::calculate_millisecond_timestamp, BscForkChoiceRule, HeaderForForkchoice},
     },
-    metrics::{BscFinalityMetrics, BscConsensusMetrics},
-    shared,
+    metrics::{BscFinalityMetrics},
+    shared
 };
 use alloy_consensus::{Header, TxReceipt};
 use alloy_primitives::{B256, Bytes};
@@ -68,7 +68,6 @@ pub struct BscConsensus<ChainSpec> {
     base: EthBeaconConsensus<ChainSpec>,
     parlia: Arc<Parlia<ChainSpec>>,
     chain_spec: Arc<ChainSpec>,
-    consensus_metrics: BscConsensusMetrics,
 }
 
 impl<ChainSpec: EthChainSpec + BscHardforks + 'static> BscConsensus<ChainSpec> {
@@ -77,7 +76,6 @@ impl<ChainSpec: EthChainSpec + BscHardforks + 'static> BscConsensus<ChainSpec> {
             base: EthBeaconConsensus::new(chain_spec.clone()), 
             parlia: Arc::new(Parlia::new(chain_spec.clone(), 200)), 
             chain_spec,
-            consensus_metrics: BscConsensusMetrics::default(),
         }
     }
 }
@@ -149,9 +147,7 @@ impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> Consensu
         &self,
         block: &SealedBlock<BscBlock>,
     ) -> Result<(), ConsensusError> {
-        let start = std::time::Instant::now();
         let result = self.parlia.validate_block_pre_execution(block);
-        self.consensus_metrics.validation_duration_seconds.record(start.elapsed().as_secs_f64());
         result
     }
 }
@@ -165,8 +161,6 @@ impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> FullCons
         block: &RecoveredBlock<BscBlock>,
         result: &BlockExecutionResult<Receipt>,
     ) -> Result<(), ConsensusError> {
-        let start = std::time::Instant::now();
-        
         let receipts = &result.receipts;
         let requests = &result.requests;
         let chain_spec = &self.chain_spec;
@@ -175,7 +169,6 @@ impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> FullCons
         let cumulative_gas_used =
             receipts.last().map(|receipt| receipt.cumulative_gas_used).unwrap_or(0);
         if block.header().gas_used != cumulative_gas_used {
-            self.consensus_metrics.validation_duration_seconds.record(start.elapsed().as_secs_f64());
             return Err(ConsensusError::BlockGasUsed {
                 gas: GotExpected { got: cumulative_gas_used, expected: block.header().gas_used },
                 gas_spent_by_tx: gas_spent_by_transactions(receipts),
@@ -194,7 +187,6 @@ impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> FullCons
                     .map(|r| Bytes::from(r.with_bloom_ref().encoded_2718()))
                     .collect::<Vec<_>>();
                 tracing::debug!(%error, ?receipts, "receipts verification failed");
-                self.consensus_metrics.validation_duration_seconds.record(start.elapsed().as_secs_f64());
                 return Err(error)
             }
         }
@@ -202,19 +194,15 @@ impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> FullCons
         // Validate that the header requests hash matches the calculated requests hash
         if chain_spec.is_prague_active_at_block_and_timestamp(block.header().number, block.header().timestamp) {
             let Some(header_requests_hash) = block.header().requests_hash else {
-                self.consensus_metrics.validation_duration_seconds.record(start.elapsed().as_secs_f64());
                 return Err(ConsensusError::RequestsHashMissing)
             };
             let requests_hash = requests.requests_hash();
             if requests_hash != header_requests_hash {
-                self.consensus_metrics.validation_duration_seconds.record(start.elapsed().as_secs_f64());
                 return Err(ConsensusError::BodyRequestsHashDiff(
                     GotExpected::new(requests_hash, header_requests_hash).into(),
                 ))
             }
         }
-
-        self.consensus_metrics.validation_duration_seconds.record(start.elapsed().as_secs_f64());
         Ok(())
     }
 }

@@ -48,9 +48,6 @@ pub struct BscConsensusMetrics {
     /// Total number of out-of-turn blocks produced
     pub noturn_blocks_total: Counter,
     
-    /// Current number of known validators
-    pub validator_count: Gauge,
-    
     /// Current block height (equivalent to chain/head/block)
     pub current_block_height: Gauge,
     
@@ -65,10 +62,6 @@ pub struct BscConsensusMetrics {
     
     /// Total number of bad blocks detected (equivalent to chain/insert/badBlock)
     pub bad_blocks_total: Counter,
-    
-    /// Block validation duration in seconds (equivalent to chain/validation)
-    /// Includes pre-execution and post-execution validation
-    pub validation_duration_seconds: Histogram,
 }
 
 /// Metrics for BSC reward distribution
@@ -102,6 +95,9 @@ pub struct BscVoteMetrics {
     /// Total number of vote attestation errors (equivalent to parlia/verifyVoteAttestation/error)
     pub vote_attestation_errors_total: Counter,
     
+    /// Total number of attestation update errors (equivalent to parlia/updateAttestation/error)
+    pub attestation_update_errors_total: Counter,
+    
     /// Total number of BLS signature verifications
     pub bls_verifications_total: Counter,
     
@@ -113,6 +109,18 @@ pub struct BscVoteMetrics {
     
     /// Current size of vote pool
     pub vote_pool_size: Gauge,
+    
+    /// Total number of vote signing errors (when producing votes)
+    pub vote_signing_errors_total: Counter,
+    
+    /// Total number of vote journal persist errors
+    pub vote_journal_errors_total: Counter,
+    
+    /// Current number of votes in the vote pool (equivalent to curVotes/local)
+    pub current_votes_count: Gauge,
+    
+    /// Total number of votes received locally (cumulative)
+    pub received_votes_total: Counter,
 }
 
 /// Metrics for BSC MEV operations
@@ -129,9 +137,6 @@ pub struct BscMevMetrics {
     
     /// Current number of pending MEV bids (equivalent to worker/bidExist)
     pub pending_bids: Gauge,
-    
-    /// Current number of winning bids (equivalent to worker/bidWin)
-    pub winning_bids: Gauge,
     
     /// Best bid gas used in MGas (equivalent to worker/bestBidGasUsed)
     pub best_bid_gas_used_mgas: Gauge,
@@ -167,10 +172,7 @@ pub struct BscMinerMetrics {
 /// Tracks fast finality operations and finalized blocks.
 #[derive(Metrics, Clone)]
 #[metrics(scope = "bsc.finality")]
-pub struct BscFinalityMetrics {
-    /// Total number of blocks finalized
-    pub finalized_blocks_total: Counter,
-    
+pub struct BscFinalityMetrics {    
     /// Current finalized block height (equivalent to chain/head/finalized)
     pub finalized_block_height: Gauge,
     

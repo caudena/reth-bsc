@@ -1,7 +1,7 @@
 use super::executor::BscBlockExecutor;
 use super::error::{BscBlockExecutionError, BscBlockValidationError};
 use super::util::set_nonce;
-use crate::consensus::parlia::FF_REWARD_DISTRIBUTION_INTERVAL;
+use crate::consensus::parlia::{FF_REWARD_DISTRIBUTION_INTERVAL};
 use crate::node::evm::pre_execution::TURN_LENGTH_CACHE;
 use crate::node::evm::util::get_header_by_hash_from_cache;
 use crate::node::miner::signer::{sign_system_transaction, is_signer_initialized};
@@ -16,7 +16,7 @@ use reth_revm::State;
 use crate::node::evm::ResultAndState;
 use revm::{context::{BlockEnv, TxEnv}, Database as RevmDatabase, DatabaseCommit};
 use alloy_consensus::{Header, TxReceipt, Transaction as AlloyTransaction, SignableTransaction};
-use alloy_primitives::{Address, hex, TxKind, U256};
+use alloy_primitives::{Address, BlockNumber, TxKind, U256, hex};
 use std::collections::HashMap;
 use tracing::warn;
 use reth_primitives_traits::{GotExpected, SignerRecoverable};
@@ -130,7 +130,7 @@ where
         if is_next_epoch {  // cache validators
             // cache it on pre block.
             // for verify validators in post-check of fullnode mode and prepare new header in miner mode.
-            self.get_current_validators(header.number, header.hash_slow())?;
+            self.get_current_validators_with_cache(header.number, header.hash_slow())?;
         }
 
         { // cache turnlength
@@ -141,7 +141,7 @@ where
             );
             
             if is_next_epoch && is_bohr {
-                let turn_length = self.get_turn_length(&header)?;
+                let turn_length = self.get_turn_length(header.number, header.timestamp)?;
                 let mut cache = TURN_LENGTH_CACHE.lock().unwrap();
                 cache.insert(header.hash_slow(), turn_length);
                 tracing::debug!("Succeed to update turn length cache, block_number: {}, block_hash: {}, epoch_length: {}, turn_length: {}", 
@@ -190,7 +190,6 @@ where
 
         let expected = self.parlia.get_validator_bytes_from_header(header_ref, epoch_length).unwrap();
         if !validator_bytes.as_slice().eq(expected.as_slice()) {
-            // TODO: recheck it, maybe still has bugs.
             warn!("validator bytes: {:?}", hex::encode(validator_bytes));
             warn!("expected: {:?}", hex::encode(expected));
             return Err(BlockExecutionError::msg("Invalid validators"));
@@ -217,7 +216,7 @@ where
                 Err(err) => return Err(BscBlockExecutionError::Validation(BscBlockValidationError::ParliaConsensusError { error: Box::new(err) }).into()),
             }
         };
-        let turn_length_from_contract = self.get_turn_length(header_ref)?;
+        let turn_length_from_contract = self.get_turn_length(header_ref.number, header_ref.timestamp)?;
         if turn_length_from_header == turn_length_from_contract {
             tracing::debug!("Succeed to verify turn length, block_number: {}", header_ref.number);
             return Ok(())
@@ -232,9 +231,10 @@ where
 
     fn get_turn_length(
         &mut self,
-        header: &Header,
+        header_number: BlockNumber,
+        header_timestamp: u64
     ) -> Result<u8, BlockExecutionError> {
-        if self.spec.is_bohr_active_at_timestamp(header.number, header.timestamp) {
+        if self.spec.is_bohr_active_at_timestamp(header_number, header_timestamp) {
             let (to, data) = self.system_contracts.get_turn_length();
             let bz = self.eth_call(to, data)?;
 
@@ -263,6 +263,12 @@ where
         transaction: Transaction, 
         sender: Address
     ) -> Result<(), BlockExecutionError> {
+        // Record system contract call
+        self.executor_metrics.system_contract_calls_total.increment(1);
+        
+        // Start timing for system contract duration
+        let start_time = std::time::Instant::now();
+        
         let account = self.evm
             .db_mut()
             .basic(sender)
@@ -289,6 +295,7 @@ where
                 for tx in self.system_txs.iter() {
                     warn!("left system tx: {:?}", tx);
                 }
+                self.executor_metrics.system_contract_errors_total.increment(1);
                 return Err(BscBlockExecutionError::Validation(
                     BscBlockValidationError::UnexpectedSystemTx
                 ).into());
@@ -299,11 +306,13 @@ where
                 Ok(signed) => Some(signed),
                 Err(e) => {
                     tracing::warn!("Failed to sign system transaction: {}", e);
+                    self.executor_metrics.system_contract_errors_total.increment(1);
                     return Err(BscBlockExecutionError::FailedToSignSystemTransaction { error: e.to_string() }.into());
                 }
             }
         } else {
             tracing::warn!("Global signer not initialized for mining mode");
+            self.executor_metrics.system_contract_errors_total.increment(1);
             return Err(BscBlockExecutionError::GlobalSignerNotInitializedForMiningMode.into());
         };
 
@@ -312,7 +321,7 @@ where
                 let recovered = signed.clone().try_into_recovered_unchecked().unwrap_or_else(|_| {
                     panic!("Failed to recover system transaction signature")
                 });
-                self.assembled_system_txs.push(recovered);
+                self.shared_ctx.inner.borrow_mut().assembled_system_txs.push(recovered);
 
                 if transaction.to() == Some(STAKE_HUB_CONTRACT) {
                     if let Some(net) = crate::shared::get_network_handle() {
@@ -360,6 +369,9 @@ where
 
         let gas_used = result.gas_used();
         self.gas_used += gas_used;
+        
+        // Record system transaction gas usage
+        self.executor_metrics.system_tx_gas_used_total.increment(gas_used);
 
         self.receipts.push(self.receipt_builder.build_receipt(ReceiptBuilderCtx {
             tx: signed_tx.as_ref().unwrap(),
@@ -369,6 +381,10 @@ where
             cumulative_gas_used: self.gas_used,
         }));
         self.evm.db_mut().commit(state);
+
+        // Record system contract execution duration
+        let duration = start_time.elapsed();
+        self.executor_metrics.system_contract_duration_seconds.record(duration.as_secs_f64());
 
         Ok(())
     }
@@ -418,6 +434,11 @@ where
                 let tx = self.system_contracts.distribute_to_system(reward_to_system);
                 self.transact_system_tx(tx, validator)?;
                 tracing::debug!("Distribute to system, block_number: {}, reward_to_system: {}", self.evm.block().number, reward_to_system);
+                
+                // Track system rewards distribution
+                self.rewards_metrics.system_rewards_distributed_total.increment(1);
+                // Note: Truncating to u64 for metrics (large rewards unlikely)
+                self.rewards_metrics.system_rewards_amount_wei_total.increment(reward_to_system.min(u128::from(u64::MAX)) as u64);
             }
 
             block_reward -= reward_to_system;
@@ -427,6 +448,11 @@ where
         let tx = self.system_contracts.distribute_to_validator(validator, block_reward);
         self.transact_system_tx(tx, validator)?;
         tracing::debug!("Distribute to validator, block_number: {}, block_reward: {}", self.evm.block().number, block_reward);
+        
+        // Track validator rewards distribution
+        self.rewards_metrics.validator_rewards_distributed_total.increment(1);
+        // Note: Truncating to u64 for metrics (large rewards unlikely)
+        self.rewards_metrics.validator_rewards_amount_wei_total.increment(block_reward.min(u128::from(u64::MAX)) as u64);
         
         Ok(())
     }
@@ -454,7 +480,7 @@ where
             let snap = self.snapshot_provider.
                 as_ref().
                 unwrap().
-                snapshot_by_hash(&header.hash_slow()).
+                snapshot_by_hash(&header.parent_hash).
                 ok_or(BlockExecutionError::msg("Failed to get snapshot from snapshot provider"))?;
 
             if let Some(attestation) =
@@ -554,6 +580,7 @@ where
     ) -> Result<(), BlockExecutionError> {
         tracing::debug!("Start to finalize new block, block_number: {}, is_miner: {}", block.number, self.ctx.is_miner);
         let snap = self.inner_ctx.snap.as_ref().unwrap();
+        let epoch_length = snap.epoch_num;
         let expected_validator = snap.inturn_validator();
         if block.beneficiary != expected_validator {
             let signed_recently = if self.spec.is_plato_active_at_block(block.number.to()) {
@@ -606,6 +633,33 @@ where
                 header_number, max_elected_validators, validators_election_info);
         }
 
+        
+        // TODO: remove post cache later.
+        // Use epoch_num from current snapshot (after apply) for epoch boundary check
+        let is_next_epoch = (header_number + 1).is_multiple_of(epoch_length);
+        if is_next_epoch {  
+            // cache validators
+            tracing::debug!(
+                "Check validator cache update: block_number={}, epoch_length={}, is_next_epoch={}",
+                header_number, epoch_length, is_next_epoch
+            );
+            let (validators, vote_addresses) = self.get_current_validators(header_number)?;
+            self.shared_ctx.inner.borrow_mut().current_validators = Some((validators, vote_addresses));
+        }
+
+        { 
+            // cache turnlength
+            let is_bohr = self.spec.is_bohr_active_at_timestamp(header_number, header_timestamp);
+            tracing::debug!(
+                "Check turn length cache update: block_number={}, epoch_length={}, is_next_epoch={}, is_bohr={}",
+                header_number, epoch_length, is_next_epoch, is_bohr
+            );
+            
+            if is_next_epoch && is_bohr {
+                let turn_length = self.get_turn_length(header_number, header_timestamp)?;
+                self.shared_ctx.inner.borrow_mut().turn_length = Some(turn_length);
+            }
+        }
         Ok(())
     }
 }

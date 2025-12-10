@@ -26,6 +26,14 @@ pub struct BscCliArgs {
     #[arg(long = "mining.dev")]
     pub mining_dev: bool,
 
+    /// Target gas limit for mined blocks (e.g., 30000000 for 30M, 140000000 for 140M)
+    #[arg(long = "mining.gas-limit")]
+    pub mining_gas_limit: Option<u64>,
+
+    /// Minimum gas tip for mined blocks (e.g., 1000000000 for 1G, 1000000000000 for 1T)
+    #[arg(long = "mining.min-gas-tip")]
+    pub mining_min_gas_tip: Option<u128>,
+
     /// Private key for mining (hex format, for testing only)
     /// The validator address will be automatically derived from this key
     #[arg(long = "mining.private-key")]
@@ -139,6 +147,14 @@ fn main() -> eyre::Result<()> {
                 }
                 if let Some(ref pass) = args.keystore_password {
                     mining_config.keystore_password = Some(pass.clone());
+                }
+
+                if let Some(gas_limit) = args.mining_gas_limit {
+                    mining_config.gas_limit = Some(gas_limit);
+                }
+
+                if let Some(min_gas_tip) = args.mining_min_gas_tip {
+                    mining_config.min_gas_tip = Some(min_gas_tip);
                 }
 
                 // Ensure keys are available if enabled but none provided

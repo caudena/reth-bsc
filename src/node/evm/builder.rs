@@ -1,4 +1,4 @@
-use crate::{BscPrimitives, node::evm::{executor::BscBlockExecutor, assembler::{BscBlockAssemblerInput, BscBlockAssembler}, config::{BscBlockExecutionCtx, BscBlockExecutorFactory}, factory::BscEvmFactory}, hardforks::BscHardforks};
+use crate::{BscPrimitives, hardforks::BscHardforks, node::evm::{assembler::{BscBlockAssembler, BscBlockAssemblerInput}, config::{BscBlockExecutionCtx, BscBlockExecutorFactory, BscExecutionSharedCtx}, executor::BscBlockExecutor, factory::BscEvmFactory, pre_execution::{TURN_LENGTH_CACHE, VALIDATOR_CACHE}}};
 use reth_evm::execute::{BlockBuilder, BlockBuilderOutcome, BlockExecutionError, ExecutorTx};
 use alloy_evm::eth::receipt_builder::ReceiptBuilder;
 use reth_primitives_traits::{HeaderTy, NodePrimitives, Recovered, RecoveredBlock, SealedHeader, SignerRecoverable, TxTy};
@@ -21,6 +21,8 @@ where
     pub transactions: Vec<Recovered<TxTy<BscPrimitives>>>,
     /// The parent block execution context.
     pub ctx: BscBlockExecutionCtx<'a>,
+    /// The shared context for block execution.
+    pub shared_ctx: BscExecutionSharedCtx,
     /// The sealed parent block header.
     pub parent: &'a SealedHeader<HeaderTy<BscPrimitives>>,
     /// The assembler used to build the block.
@@ -35,6 +37,7 @@ where
     pub fn new(
         executor: BscBlockExecutor<'a, EVM, Spec, R>,
         ctx: BscBlockExecutionCtx<'a>,
+        shared_ctx: BscExecutionSharedCtx,
         assembler: &'a BscBlockAssembler<crate::chainspec::BscChainSpec>,
         parent: &'a SealedHeader<HeaderTy<BscPrimitives>>,
     ) -> Self {
@@ -42,6 +45,7 @@ where
             executor,
             transactions: Vec::new(),
             ctx,
+            shared_ctx,
             parent,
             assembler,
         }
@@ -94,18 +98,21 @@ where
         mut self,
         state: impl StateProvider,
     ) -> Result<BlockBuilderOutcome<BscPrimitives>, BlockExecutionError> {
-        // TODO: remove finish_with_system_txs, keep executor.finish(), system txs can be fetched from executor.
-        let ((evm, result), assembled_system_txs) = self.executor.finish_with_system_txs(|executor| executor.finish())?;
+        let finish_start = std::time::Instant::now();
+        let (evm, result) = self.executor.finish()?;
         let (db, evm_env) = evm.finish();
 
+        let assembled_system_txs = self.shared_ctx.inner.borrow().assembled_system_txs.clone();
         // merge all transitions into bundle state
         db.merge_transitions(BundleRetention::Reverts);
 
         // calculate the state root
+        let state_root_start = std::time::Instant::now();
         let hashed_state = state.hashed_post_state(&db.bundle_state);
         let (state_root, trie_updates) = state
             .state_root_with_updates(hashed_state.clone())
             .map_err(BlockExecutionError::other)?;
+        let state_root_duration = state_root_start.elapsed();
 
         let user_tx_len = self.transactions.len();
         let system_tx_len = assembled_system_txs.len();
@@ -127,7 +134,22 @@ where
             state_provider: &state,
             state_root,
         };
+        let assemble_start = std::time::Instant::now();
         let block = self.assembler.assemble_block_bsc(bsc_input)?;
+
+        // cache current validators and turn length
+        let current_validators = self.shared_ctx.inner.borrow().current_validators.clone();
+        if let Some((validators, vote_addresses)) = current_validators {
+            VALIDATOR_CACHE.lock().unwrap().insert(block.header.hash_slow(), (validators, vote_addresses));
+            tracing::debug!("Succeed to update validator cache in builder, block_number: {}, block_hash: {}", block.header.number, block.header.hash_slow());
+        }
+        if let Some(turn_length) = self.shared_ctx.inner.borrow().turn_length {
+            TURN_LENGTH_CACHE.lock().unwrap().insert(block.header.hash_slow(), turn_length);
+            tracing::debug!("Succeed to update turn length cache in builder, block_number: {}, block_hash: {}", block.header.number, block.header.hash_slow());
+        }
+        let assemble_duration = assemble_start.elapsed();
+        
+        let finish_duration = finish_start.elapsed();
         tracing::debug!(
             target: "bsc::builder",
             block_number = %block.header.number,
@@ -135,6 +157,9 @@ where
             user_tx_len = user_tx_len,
             system_tx_len = system_tx_len,
             total_tx_len = total_tx_len,
+            finish_duration_ms = finish_duration.as_millis(),
+            state_root_duration_ms = state_root_duration.as_millis(),
+            assemble_duration_ms = assemble_duration.as_millis(),
             "Succeed to seal block"
         );
 

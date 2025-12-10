@@ -1,8 +1,11 @@
 use alloy_consensus::Transaction;
+use alloy_consensus::BlockHeader;
 use alloy_primitives::U256;
 use alloy_evm::Evm;
+use reth_chain_state::{ExecutedBlock, ExecutedTrieUpdates};
 use crate::node::evm::config::BscEvmConfig;
 use reth_provider::StateProviderFactory;
+use reth_evm::execute::ExecutionOutcome;
 use reth_revm::{database::StateProviderDatabase, db::State};
 use reth_evm::{ConfigureEvm, NextBlockEnvAttributes};
 use reth_evm::execute::BlockBuilder;
@@ -79,6 +82,9 @@ pub struct BidSimulator<Client, Pool> {
     bid_receiving: bool,
     chain_spec: Arc<BscChainSpec>,
     min_gas_price: U256,
+    
+    // MEV metrics
+    mev_metrics: crate::metrics::BscMevMetrics,
 }
 
 impl<Client, Pool> BidSimulator<Client, Pool> 
@@ -99,6 +105,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
             pending_bid: Arc::new(RwLock::new(HashMap::new())),
             bid_receiving: true,
             min_gas_price: U256::ZERO,
+            mev_metrics: crate::metrics::BscMevMetrics::default(),
         }   
     }
 
@@ -116,6 +123,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
     pub fn add_pending_bid(&self, block_number: u64, builder: Address, bid_hash: B256) {
         let key = format!("{}-{}-{}", block_number, builder, bid_hash);
         self.pending_bid.write().insert(key, 1);
+        self.mev_metrics.pending_bids.increment(1);
     }
 
     pub fn commit_new_bid(&self, bid: Bid) -> Option<BidRuntime<Pool, BscEvmConfig>> {
@@ -157,6 +165,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
             parent_header: parent_header.clone(),
             header: None,
             is_inturn: true,
+            cached_reads: None,
         };
         let parent_snapshot = mining_ctx.parent_snapshot.clone();
         let attributes = prepare_new_attributes(
@@ -243,6 +252,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
             // If parsing fails, keep the entry (safe default)
             true
         });
+        self.mev_metrics.pending_bids.set(self.pending_bid.read().len() as f64);
     }
 
     fn new_bid_runtime(&self, _bid: &Bid, _validator_commission: u64, parent_header: SealedHeader, attributes: EthPayloadBuilderAttributes) -> Result<BidRuntime<Pool, BscEvmConfig>, Box<dyn std::error::Error + Send + Sync>>{
@@ -272,10 +282,15 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
         if !self.bid_receiving {
             return 
         }
+        
+        // Track simulation start time
+        let sim_start = std::time::Instant::now();
+        let is_first_bid = self.best_bid.read().is_empty();
+        
         let mut success = false;
-        //let startTs = std::time::Instant::now();
         let parent_hash = bid_runtime.bid.parent_hash;
         self.simulating_bid.write().insert(parent_hash, bid_runtime.bid.clone());
+        
         let mut txs_except_last = bid_runtime.bid.txs.clone();
         let pay_bid_tx = txs_except_last.pop();
         
@@ -365,7 +380,7 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
         }
         
         // Finish the builder
-        let BlockBuilderOutcome { execution_result, block, .. } = match builder.finish(&state_provider).map_err(PayloadBuilderError::other) {
+        let BlockBuilderOutcome { execution_result, hashed_state, trie_updates, block } = match builder.finish(&state_provider).map_err(PayloadBuilderError::other) {
             Ok(outcome) => outcome,
             Err(e) => {
                 debug!("Failed to finish builder: {:?}", e);
@@ -385,9 +400,20 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
         sealed_block = Arc::new(plain.into());
 
         bid_runtime.bsc_payload = BscBuiltPayload {
-            block: sealed_block,
+            block: sealed_block.clone(),
             fees: bid_runtime.gas_fee,
-            requests: Some(execution_result.requests),
+            requests: Some(execution_result.requests.clone()),
+            executed_block: ExecutedBlock {
+                recovered_block: Arc::new(block.clone()),
+                execution_output: Arc::new(ExecutionOutcome::new(
+                    db.take_bundle(),
+                    vec![execution_result.receipts.clone()],
+                    sealed_block.header().number(),
+                    vec![execution_result.requests.clone()],
+                )),
+                hashed_state: Arc::new(hashed_state.clone()),
+            },
+            executed_trie: Some(ExecutedTrieUpdates::Present(Arc::new(trie_updates))),
         };
 
         // Acquire write lock to update best_bid
@@ -405,6 +431,30 @@ Pool: reth::transaction_pool::TransactionPool<Transaction: reth::transaction_poo
                 best_bid_map.insert(parent_hash, bid_runtime.clone());
                 success = true;
             }
+        }
+        
+        // Update metrics after simulation
+        let sim_duration = sim_start.elapsed().as_secs_f64();
+        self.mev_metrics.bid_simulation_duration_seconds.record(sim_duration);
+        
+        if is_first_bid {
+            self.mev_metrics.first_bid_simulation_seconds.record(sim_duration);
+        }
+        
+        if success {
+            self.mev_metrics.valid_bids_total.increment(1);
+            
+            // Update best bid gas used (in MGas)
+            let gas_used_mgas = bid_runtime.gas_used as f64 / 1_000_000.0;
+            self.mev_metrics.best_bid_gas_used_mgas.set(gas_used_mgas);
+            
+            // Calculate simulation speed (MGas/s)
+            if sim_duration > 0.0 {
+                let mgasps = gas_used_mgas / sim_duration;
+                self.mev_metrics.bid_simulation_speed_mgasps.set(mgasps);
+            }
+        } else {
+            self.mev_metrics.invalid_bids_total.increment(1);
         }
 
         debug!("bidSimulator: sim_bid finished, block number:{}, parent hash:{}, builder:{}, bid hash:{}, gas used:{}, success:{}",
@@ -534,8 +584,8 @@ EvmConfig: ConfigureEvm<NextBlockEnvCtx = NextBlockEnvAttributes> + 'static,
                 }
             };
 
-            let _gas_used = match builder.execute_transaction(recovered_tx.clone()) {
-                Ok(gas_used) => gas_used,
+            let tx_gas_used = match builder.execute_transaction(recovered_tx.clone()) {
+                Ok(tx_gas_used) => tx_gas_used,
                 Err(BlockExecutionError::Validation(BlockValidationError::InvalidTx {
                     error, ..
                 })) => {
@@ -572,8 +622,8 @@ EvmConfig: ConfigureEvm<NextBlockEnvCtx = NextBlockEnvAttributes> + 'static,
                 } 
             }
 
-            gas_used += _gas_used;
-            gas_fee += (U256::from(tx_effective_gas_price) + U256::from(base_fee)) * U256::from(_gas_used);
+            gas_used += tx_gas_used;
+            gas_fee += (U256::from(tx_effective_gas_price) + U256::from(base_fee)) * U256::from(tx_gas_used);
         }
         
         self.gas_used += gas_used;

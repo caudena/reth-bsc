@@ -25,10 +25,9 @@ use blst::{
     BLST_ERROR,
 };
 use bit_set::BitSet;
+use crate::consensus::parlia::constants::K_ANCESTOR_GENERATION_DEPTH;
 
 const BLST_DST: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
-
-const K_ANCESTOR_GENERATION_DEPTH: u64 = 3;
 
 type ValidatorCache = LruMap<BlockHash, (Vec<Address>, Vec<VoteAddress>), ByLength>;
 type TurnLengthCache = LruMap<BlockHash, u8, ByLength>;
@@ -89,7 +88,7 @@ where
         let epoch_length = snap.epoch_num;
         if header.number.is_multiple_of(epoch_length) {
             // TODO: need fix it later, it may got error when restart the node?
-            let (validator_set, vote_addresses) = self.get_current_validators(header.number-1, header.parent_hash)?;
+            let (validator_set, vote_addresses) = self.get_current_validators_with_cache(header.number-1, header.parent_hash)?;
             tracing::debug!("validator_set: {:?}, vote_addresses: {:?}", validator_set, vote_addresses);
             
             let vote_addrs_map = if vote_addresses.is_empty() {
@@ -158,7 +157,7 @@ where
         Ok(())
     }
 
-    pub(crate) fn get_current_validators(
+    pub(crate) fn get_current_validators_with_cache(
         &mut self, 
         block_number: BlockNumber,
         block_hash: BlockHash
@@ -172,16 +171,7 @@ where
             }
         }
 
-        let result = if self.spec.is_luban_active_at_block(block_number) {
-            let (to, data) = self.system_contracts.get_current_validators();
-            let output = self.eth_call(to, data)?;
-            self.system_contracts.unpack_data_into_validator_set(&output)
-        } else {
-            let (to, data) = self.system_contracts.get_current_validators_before_luban(block_number);
-            let output = self.eth_call(to, data)?;
-            let validator_set = self.system_contracts.unpack_data_into_validator_set_before_luban(&output);
-            (validator_set, Vec::new())
-        };
+        let result = self.get_current_validators(block_number)?;
 
         {
             let mut cache = VALIDATOR_CACHE.lock().unwrap();
@@ -192,6 +182,7 @@ where
 
         Ok(result)
     }
+
 
     pub(crate) fn eth_call(
         &mut self, 
@@ -227,6 +218,25 @@ where
         Ok(output.clone())
     }
 
+    pub(crate) fn get_current_validators(
+        &mut self, 
+        block_number: BlockNumber
+    ) -> Result<(Vec<Address>, Vec<VoteAddress>), BlockExecutionError> {
+
+        let result = if self.spec.is_luban_active_at_block(block_number) {
+            let (to, data) = self.system_contracts.get_current_validators();
+            let output = self.eth_call(to, data)?;
+            self.system_contracts.unpack_data_into_validator_set(&output)
+        } else {
+            let (to, data) = self.system_contracts.get_current_validators_before_luban(block_number);
+            let output = self.eth_call(to, data)?;
+            let validator_set = self.system_contracts.unpack_data_into_validator_set_before_luban(&output);
+            (validator_set, Vec::new())
+        };
+
+        Ok(result)
+    }
+    
     fn verify_cascading_fields(
         &self,
         header: &Header,
@@ -234,7 +244,14 @@ where
         snap: &Snapshot,
     ) -> Result<(), BlockExecutionError> {
         self.verify_block_time_for_ramanujan(snap, header, parent)?;
-        self.verify_vote_attestation(snap, header, parent)?;
+        
+        // Verify vote attestation and track errors
+        if let Err(err) = self.verify_vote_attestation(snap, header, parent) {
+            // Update vote attestation error metric for all attestation-related errors
+            self.vote_metrics.vote_attestation_errors_total.increment(1);
+            return Err(err);
+        }
+        
         self.verify_seal(snap, header)?;
 
         Ok(())
@@ -278,7 +295,12 @@ where
             let target_hash = attestation.data.target_hash;
             let mut is_match = false;
             let mut ancestor = parent.clone();
-            for _ in 0..self.get_ancestor_generation_depth(header) {
+            let depth = if self.spec.is_fermi_active_at_timestamp(header.number(), header.timestamp) {
+                K_ANCESTOR_GENERATION_DEPTH
+            } else {
+                1
+            };
+            for _ in 0..depth {
                 if ancestor.number() == target_block && ancestor.hash_slow() == target_hash {
                     is_match = true;
                     break;
@@ -294,8 +316,8 @@ where
             if !is_match {
                 return Err(BscBlockExecutionError::Validation(
                     BscBlockValidationError::InvalidAttestationTarget {
-                        block_number: GotExpected { got: target_block, expected: parent.number() },
-                        block_hash: GotExpected { got: target_hash, expected: parent.hash_slow() }
+                        block_number: GotExpected { got: target_block, expected: ancestor.number() },
+                        block_hash: GotExpected { got: target_hash, expected: ancestor.hash_slow() }
                             .into(),
                     }
                 ).into());
@@ -320,7 +342,7 @@ where
                 .snapshot_provider
                 .as_ref()
                 .unwrap()
-                .snapshot_by_hash(&parent.parent_hash)
+                .snapshot_by_hash(&ancestor.parent_hash)
                 .ok_or(BlockExecutionError::msg("Failed to get pre snapshot from snapshot provider"))?;
 
             // query bls keys from snapshot.
@@ -363,37 +385,53 @@ where
             }
  
             // check bls aggregate sig
-            let vote_addrs: Vec<PublicKey> = vote_addrs
-                .iter()
-                .map(|addr| PublicKey::from_bytes(addr.as_slice()).unwrap())
-                .collect();
-            let vote_addrs_ref: Vec<&PublicKey> = vote_addrs.iter().collect();
+            let mut pubkeys: Vec<PublicKey> = Vec::with_capacity(vote_addrs.len());
+            for addr in &vote_addrs {
+                match PublicKey::from_bytes(addr.as_slice()) {
+                    Ok(pk) => pubkeys.push(pk),
+                    Err(_) => {
+                        return Err(
+                            BscBlockExecutionError::Validation(
+                                BscBlockValidationError::InvalidAttestationSignature
+                            ).into()
+                        );
+                    }
+                }
+            }
+            let vote_addrs_ref: Vec<&PublicKey> = pubkeys.iter().collect();
  
-            let sig = Signature::from_bytes(&attestation.agg_signature[..])
-                .map_err(|_| BscBlockExecutionError::BLSTInnerError)?;
+            let sig = Signature::from_bytes(&attestation.agg_signature[..]).map_err(|_| {
+                BscBlockExecutionError::Validation(BscBlockValidationError::InvalidAttestationSignature)
+            })?;
+            
+            // Track BLS verification attempt
+            self.vote_metrics.bls_verifications_total.increment(1);
+            let start = std::time::Instant::now();
+            
             let err = sig.fast_aggregate_verify(
                 true,
                 attestation.data.hash().as_slice(),
                 BLST_DST,
                 &vote_addrs_ref,
             );
+            
+            // Record verification duration
+            self.vote_metrics.bls_verification_duration_seconds.record(start.elapsed().as_secs_f64());
  
             return match err {
                 BLST_ERROR::BLST_SUCCESS => Ok(()),
-                _ => Err(BscBlockExecutionError::BLSTInnerError.into()),
+                _ => {
+                    // Update BLS verification failure metric (kept here as it's a specific metric)
+                    self.vote_metrics.bls_verification_failures_total.increment(1);
+                    Err(BscBlockExecutionError::Validation(
+                        BscBlockValidationError::InvalidAttestationSignature
+                    ).into())
+                },
             };
         }
     
         Ok(())
     }
-
-    fn get_ancestor_generation_depth(&self, header: &Header) -> u64 {
-        if self.spec.is_fermi_active_at_timestamp(header.number(),header.timestamp) {
-            return K_ANCESTOR_GENERATION_DEPTH;
-        }
-        1
-    }
-
     
     fn verify_seal(
         &self,

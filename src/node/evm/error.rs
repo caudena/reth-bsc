@@ -59,6 +59,10 @@ pub enum BscBlockValidationError {
     #[error("invalid attestation vote count: {0}")]
     InvalidAttestationVoteCount(GotExpected<u64>),
 
+    /// Error when the attestation's aggregate signature is invalid
+    #[error("invalid attestation signature")]
+    InvalidAttestationSignature,
+
     /// Error when the block's header signer is invalid
     #[error("wrong header signer: block number {block_number}, signer {signer}")]
     WrongHeaderSigner {
@@ -186,8 +190,18 @@ pub enum BscBlockExecutionError {
 
 impl From<BscBlockExecutionError> for BlockExecutionError {
     fn from(err: BscBlockExecutionError) -> Self {
+        // Update execution errors metric for all types of errors
+        use once_cell::sync::Lazy;
+        use crate::metrics::{BscConsensusMetrics, BscExecutorMetrics};
+        static CONSENSUS_METRICS: Lazy<BscConsensusMetrics> = Lazy::new(BscConsensusMetrics::default);
+        static EXECUTOR_METRICS: Lazy<BscExecutorMetrics> = Lazy::new(BscExecutorMetrics::default);
+        EXECUTOR_METRICS.execution_errors_total.increment(1);
+        
         match err {
             BscBlockExecutionError::Validation(validation_err) => {
+                // Update bad blocks metric
+                CONSENSUS_METRICS.bad_blocks_total.increment(1);
+                
                 // TODO: now use DepositRequestDecode as the validation error carrier,
                 // but we should refine it by rewrite some validation error types in reth engine-tree.
                 // Note: Validation errors will be identified in the engine-tree and treated as invalid blocks. 

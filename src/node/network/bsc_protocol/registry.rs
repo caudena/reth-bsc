@@ -2,8 +2,12 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 use std::sync::Arc;
 
+use alloy_primitives::U128;
 use once_cell::sync::Lazy;
+use reth_eth_wire::NewBlock;
+use reth_network::message::NewBlockMessage;
 use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio::sync::broadcast;
 
@@ -11,6 +15,12 @@ use reth_network_api::PeerId;
 
 use super::stream::BscCommand;
 use reth_network::Peers;
+use crate::node::network::BscNewBlock;
+use crate::node::network::blocks_by_range::{GetBlocksByRangePacket, BlocksByRangePacket, MAX_REQUEST_RANGE_BLOCKS_COUNT};
+use alloy_primitives::B256;
+use std::time::Duration;
+use tokio::time::timeout;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Global registry of active BSC protocol senders per peer.
 static REGISTRY: Lazy<RwLock<HashMap<PeerId, UnboundedSender<BscCommand>>>> =
@@ -33,6 +43,99 @@ pub fn register_peer(peer: PeerId, tx: UnboundedSender<BscCommand>) {
             tracing::error!(target: "bsc::registry", error=%e, "Registry lock poisoned (register)");
         }
     }
+}
+
+/// Snapshot the currently registered BSC protocol peers
+pub fn list_registered_peers() -> Vec<PeerId> {
+    match REGISTRY.read() {
+        Ok(guard) => guard.keys().copied().collect(),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// Returns true if the given peer is registered with the BSC subprotocol
+pub fn has_registered_peer(peer: PeerId) -> bool {
+    match REGISTRY.read() {
+        Ok(guard) => guard.contains_key(&peer),
+        Err(_) => false,
+    }
+}
+
+/// Simple request id generator for GetBlocksByRange
+static REQ_COUNTER: Lazy<AtomicU64> = Lazy::new(|| AtomicU64::new(1));
+
+/// Request blocks by range from a specific peer. Returns response or timeout error.
+pub async fn request_blocks_by_range(
+    peer: PeerId,
+    start_height: u64,
+    start_hash: B256,
+    count: u64,
+    timeout_dur: Duration,
+) -> Result<BlocksByRangePacket, String> {
+    if count == 0 || count > MAX_REQUEST_RANGE_BLOCKS_COUNT {
+        return Err(format!("invalid count {}", count));
+    }
+
+    let tx = {
+        let guard = REGISTRY.read();
+        match guard {
+            Ok(g) => g.get(&peer).cloned(),
+            Err(_) => None,
+        }
+    }.ok_or_else(|| "peer not registered for bsc protocol".to_string())?;
+
+    let request_id = REQ_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let (resp_tx, resp_rx) = oneshot::channel();
+    let packet = GetBlocksByRangePacket { request_id, start_block_height: start_height, start_block_hash: start_hash, count };
+    tx.send(BscCommand::GetBlocksByRange(packet, resp_tx))
+        .map_err(|_| "failed to send GetBlocksByRange command".to_string())?;
+
+    match timeout(timeout_dur, resp_rx).await {
+        Ok(Ok(Ok(res))) => Ok(res),
+        Ok(Ok(Err(e))) => Err(e),
+        Ok(Err(_canceled)) => Err("request canceled".to_string()),
+        Err(_elapsed) => Err("request timed out".to_string()),
+    }
+}
+
+/// Batch request a range and wait for import of the returned blocks.
+/// Returns the list of imported block hashes in ascending order (oldest -> newest).
+pub async fn batch_request_range_and_await_import(
+    peer: PeerId,
+    start_height: u64,
+    start_hash: B256,
+    count: u64,
+    request_timeout: Duration
+) -> Result<(), String> {
+    let resp = request_blocks_by_range(peer, start_height, start_hash, count, request_timeout).await?;
+    tracing::debug!(
+        target: "bsc::registry",
+        peer = %peer,
+        start_height = start_height,
+        start_hash = %start_hash,
+        count = count,
+        blocks = resp.blocks.len(),
+        "Batch request range and await importing blocks"
+    );
+
+    // Forward blocks to import path (iterate oldest -> newest)
+    if let Some(sender) = crate::shared::get_block_import_sender() {
+        for block in resp.blocks.iter().rev() {
+            let nb = BscNewBlock(NewBlock {
+                block: block.clone(),
+                td: U128::from(0u64),
+            });
+            let hash = block.header.hash_slow();
+            let msg = NewBlockMessage { hash, block: Arc::new(nb) };
+            if let Err(e) = sender.send((msg, peer)) {
+                tracing::error!(target: "bsc::registry", error=%e, "Failed to send block to import path");
+            }
+        }
+    } else {
+        tracing::debug!(target: "bsc_protocol", "Block import sender not available; dropping range import forward");
+    }
+
+    Ok(())
 }
 
 /// Broadcast votes to all connected peers.
@@ -77,7 +180,7 @@ pub fn broadcast_votes(votes: Vec<crate::consensus::parlia::vote::VoteEnvelope>)
             let mut allow = is_evn(&peer);
             if !allow {
                 if let Some(info) = peer_info_map.get(&peer) {
-                    tracing::debug!(target: "bsc::vote", peer=%peer, latest_block=info.status.latest_block, 
+                    tracing::trace!(target: "bsc::vote", peer=%peer, latest_block=info.status.latest_block, 
                         total_difficulty=u256_to_u128(info.status.total_difficulty.unwrap_or_default()), 
                         "peer info when checking allow broadcast votes");
                     // Prefer Eth69 latest block distance; else use total_difficulty delta if both are known
@@ -104,9 +207,9 @@ pub fn broadcast_votes(votes: Vec<crate::consensus::parlia::vote::VoteEnvelope>)
                 allow = true;
             }
 
-            tracing::debug!(target: "bsc::vote", peer=%peer, allow=allow, "broadcast votes to peer");
+            tracing::trace!(target: "bsc::vote", peer=%peer, allow=allow, "broadcast votes to peer");
             if allow && tx.send(BscCommand::Votes(Arc::clone(&votes_arc))).is_err() {
-                tracing::debug!(target: "bsc::vote", peer=%peer, "failed to send votes to peer, remove from registry");
+                tracing::trace!(target: "bsc::vote", peer=%peer, "failed to send votes to peer, remove from registry");
                 to_remove.push(peer);
             }
         }

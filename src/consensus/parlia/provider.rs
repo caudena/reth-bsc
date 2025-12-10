@@ -113,6 +113,12 @@ impl<DB: Database> DbSnapshotProvider<DB> {
         tracing::debug!("Succeed to insert snapshot to db, block_number: {}, block_hash: {}", snap.block_number, snap.block_hash);
         Ok(())
     }
+
+    /// Insert into in-memory cache only (no persistence).
+    /// Used to cache intermediate snapshots during rebuild to avoid repeated long rebuilds.
+    pub fn insert_cache_only(&self, snapshot: &Snapshot) {
+        self.cache_by_hash.write().insert(snapshot.block_hash, snapshot.clone());
+    }
 }
 
 impl<DB: Database + 'static> SnapshotProvider for DbSnapshotProvider<DB> {
@@ -211,7 +217,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                     break Some(snap);
                 }
                 rebuild_block_hashes.push(parent_block_hash);
-                tracing::debug!("Succeed to walk to parent block, parent_block_number: {}", parent_header.clone().unwrap().number);
+                tracing::trace!("Succeed to walk to parent block, parent_block_number: {}", parent_header.clone().unwrap().number);
                 parent_block_hash = parent_header.clone().unwrap().parent_hash;
             }
         };
@@ -284,12 +290,14 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                 &*self.chain_spec,
             ) {
                 Some(snap) => {
-                    tracing::debug!(
+                    tracing::trace!(
                         "Successfully applied header: block_number={}, epoch_num={}, turn_length={:?}, recent_proposers_count={}, recent_proposers_keys={:?}",
                         snap.block_number, snap.epoch_num, snap.turn_length,
                         snap.recent_proposers.len(), 
                         snap.recent_proposers.keys().collect::<Vec<_>>()
                     );
+                    // Cache intermediate snapshots in memory to avoid repeated long rebuilds
+                    self.base.insert_cache_only(&snap);
                     snap
                 },
                 None => {
@@ -298,7 +306,7 @@ impl<DB: Database + 'static> EnhancedDbSnapshotProvider<DB> {
                 }
             };
 
-            // rebuild snapshot is not refresh cache.
+            // Persist at checkpoint boundaries to DB; intermediate snapshots are cached in-memory only.
             if working_snapshot.block_number.is_multiple_of(crate::consensus::parlia::snapshot::CHECKPOINT_INTERVAL) {
                 self.base.persist_to_db(&working_snapshot).ok()?;
             }

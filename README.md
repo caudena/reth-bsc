@@ -59,6 +59,15 @@ An archive node stores the complete blockchain history and state:
 ./target/${profile}/reth-bsc node --chain bsc --datadir ./data_dir
 ```
 
+### TrieDB Node
+
+An triedb node uses RocksDB store state data:
+
+```bash
+./target/${profile}/reth-bsc node --chain bsc --datadir ./data_dir --statedb.triedb
+```
+
+
 ### BSC Testnet
 
 To run on BSC Testnet instead of Mainnet, simply replace `--chain bsc` with `--chain bsc-testnet` in any of the above commands:
@@ -162,7 +171,7 @@ Note: This currently affects the outgoing handshake signaling. Further EVN behav
 
 ## Contributing
 
-We welcome community contributions! Whether you're interested in helping with historical sync implementation, BSC Pectra support, or live sync functionality, your help is valuable. Please feel free to open issues or submit pull requests. You can reach out to me on [Telegram](https://t.me/loocapro).
+We welcome community contributions! Please feel free to open issues or submit pull requests.
 
 ## Disclaimer
 
@@ -173,6 +182,7 @@ This project is experimental and under active development. Use at your own risk.
 This project is inspired by and builds upon the work of:
 
 - [BNB Chain Reth](https://github.com/bnb-chain/reth) - The original BSC implementation of Reth
+- The first contributor of community version [@loocapro](https://github.com/loocapro)
 - The Reth team, especially [@mattsse](https://github.com/mattsse) for their invaluable contributions to the Reth ecosystem
 
 ## Acknowledgements from BNBChain team

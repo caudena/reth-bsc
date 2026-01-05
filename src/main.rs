@@ -95,6 +95,16 @@ pub struct BscCliArgs {
     /// Comma-separated bytes32 NodeIDs to remove in StakeHub (0x-prefixed)
     #[arg(long = "evn.remove-nodeid", value_delimiter = ',')]
     pub evn_remove_nodeids: Vec<String>,
+
+    /// Comma-separated devp2p NodeIDs (enode IDs) to mark as proxyed peers.
+    /// These peers will receive priority block/vote broadcasts.
+    /// Env alternative: `BSC_PROXYED_PEER_IDS` (comma-separated)
+    #[arg(long = "proxyed-peers", value_delimiter = ',')]
+    pub proxyed_peer_ids: Vec<String>,
+
+    /// Disable TX broadcast forbidden for EVN peers.
+    #[arg(long = "evn.disable-tx-broadcast-forbidden")]
+    pub evn_disable_tx_broadcast_forbidden: bool,
 }
 
 fn main() -> eyre::Result<()> {
@@ -116,6 +126,11 @@ fn main() -> eyre::Result<()> {
                 tracing::error!("Failed to set genesis hash override: {}", e);
                 return Err(e);
             }
+
+            if builder.config().rpc.ipcdisable {    
+                panic!("IPC is disabled, please enable it by setting --ipc.enable to true");
+            }
+            let ipc_path = builder.config().rpc.ipcpath.clone();
             
             // Map CLI args into a global MiningConfig override before launching services
             {
@@ -135,11 +150,6 @@ fn main() -> eyre::Result<()> {
 
                 if let Some(ref pk_hex) = args.private_key {
                     mining_config.private_key_hex = Some(pk_hex.clone());
-                    // Derive validator address from provided key
-                    if let Ok(sk) = mining_config::keystore::load_private_key_from_hex(pk_hex) {
-                        let addr = mining_config::keystore::get_validator_address(&sk);
-                        mining_config.validator_address = Some(addr);
-                    }
                 }
 
                 if let Some(ref path) = args.keystore_path {
@@ -149,6 +159,23 @@ fn main() -> eyre::Result<()> {
                     mining_config.keystore_password = Some(pass.clone());
                 }
 
+                // We'll derive and trust the validator address from the configured signing key when possible.
+                // If not available, fall back to configured address (may be ZERO when disabled).
+                mining_config.signing_key = if let Some(keystore_path) = &mining_config.keystore_path {
+                    let password = mining_config.keystore_password.as_deref().unwrap_or("");
+                    let signing_key = mining_config::keystore::load_private_key_from_keystore(keystore_path, password).
+                        map_err(|e| eyre::eyre!("Failed to load private key from keystore: {}", e))?;
+                    mining_config.validator_address = Some(mining_config::keystore::get_validator_address(&signing_key));
+                    Some(signing_key)
+                } else if let Some(hex_key) = &mining_config.private_key_hex {
+                    let signing_key = mining_config::keystore::load_private_key_from_hex(hex_key).
+                        map_err(|e| eyre::eyre!("Failed to load private key from hex: {}", e))?;
+                    mining_config.validator_address = Some(mining_config::keystore::get_validator_address(&signing_key));
+                    Some(signing_key)
+                } else {
+                    None
+                };
+                
                 if let Some(gas_limit) = args.mining_gas_limit {
                     mining_config.gas_limit = Some(gas_limit);
                 }
@@ -195,6 +222,7 @@ fn main() -> eyre::Result<()> {
                     .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE" | "True"))
                     .unwrap_or(false);
                 let evn_enabled = args.evn_enabled || enabled_from_env;
+                let disable_tx_broadcast_forbidden = args.evn_disable_tx_broadcast_forbidden;
                 // Collect whitelist node IDs
                 let whitelist_from_env = std::env::var("BSC_EVN_NODEIDS_WHITELIST")
                     .ok()
@@ -244,6 +272,7 @@ fn main() -> eyre::Result<()> {
 
                 let cfg = reth_bsc::node::network::evn::EvnConfig {
                     enabled: evn_enabled,
+                    disable_tx_broadcast_forbidden,
                     whitelist_nodeids,
                     proxyed_validators: parsed_validators,
                     nodeids_to_add: parse_nodeids(args.evn_add_nodeids.clone()),
@@ -252,6 +281,47 @@ fn main() -> eyre::Result<()> {
                 tracing::debug!(target: "bsc::init", "EVN is enabled: {}, config: {:?}", evn_enabled, cfg);
                 let _ = reth_bsc::node::network::evn::set_global_evn_config(cfg);
                 if evn_enabled { tracing::info!("EVN features enabled (disable peer tx broadcast)"); }
+            }
+
+            // Collect and parse proxyed peer IDs from CLI/env
+            let proxyed_peer_ids = {
+                let peers_from_env = std::env::var("BSC_PROXYED_PEER_IDS")
+                    .ok()
+                    .map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect::<Vec<_>>())
+                    .unwrap_or_default();
+                let mut peer_ids_str = peers_from_env;
+                peer_ids_str.extend(args.proxyed_peer_ids.iter().cloned());
+                
+                let mut parsed_peer_ids = Vec::new();
+                for peer_id_str in peer_ids_str {
+                    // Parse as 64-character hex PeerId (64 bytes total)
+                    let peer_id_str = peer_id_str.trim();
+                    if peer_id_str.is_empty() { continue; }
+                    
+                    let hex = peer_id_str.strip_prefix("0x").unwrap_or(peer_id_str);
+                    match alloy_primitives::hex::decode(hex) {
+                        Ok(bytes) if bytes.len() == 64 => {
+                            let mut arr = [0u8; 64];
+                            arr.copy_from_slice(&bytes);
+                            let peer_id = reth_network_api::PeerId::from(alloy_primitives::FixedBytes::<64>::from(arr));
+                            parsed_peer_ids.push(peer_id);
+                        }
+                        Ok(_) => tracing::warn!("Invalid proxyed peer ID length (need 64 bytes): {}", peer_id_str),
+                        Err(e) => tracing::warn!("Failed to parse proxyed peer ID '{}': {}", peer_id_str, e),
+                    }
+                }
+                
+                if !parsed_peer_ids.is_empty() {
+                    tracing::info!(target: "bsc::init", "Configured {} proxyed peer(s)", parsed_peer_ids.len());
+                }
+                parsed_peer_ids
+            };
+
+            // Store proxyed peer IDs for later use in network configuration
+            if !proxyed_peer_ids.is_empty() {
+                if let Err(e) = reth_bsc::shared::set_proxyed_peer_ids(proxyed_peer_ids) {
+                    tracing::warn!(target: "bsc::init", "Failed to set proxyed peer IDs: {:?}", e);
+                }
             }
 
             let (node, engine_handle_tx) = BscNode::new();
@@ -306,6 +376,9 @@ fn main() -> eyre::Result<()> {
 
             // Send the engine handle to the network
             engine_handle_tx.send(node.beacon_engine_handle.clone()).unwrap();
+
+            // Set the IPC client
+            reth_bsc::shared::set_ipc_client(ipc_path).await.unwrap();
 
             exit_future.await
         },

@@ -1,21 +1,28 @@
 use crate::consensus::parlia::SnapshotProvider;
-use std::sync::{Arc, OnceLock};
-use alloy_consensus::{Header, BlockHeader};
-use alloy_primitives::B256;
-use reth_provider::{HeaderProvider, BlockNumReader};
-use crate::node::network::BscNetworkPrimitives;
-use reth_network::NetworkHandle;
-use crate::node::network::block_import::service::{IncomingBlock, IncomingMinedBlock};
-use tokio::sync::mpsc::UnboundedSender;
-use tokio::sync::broadcast;
-use reth_network_api::PeerId;
-use parking_lot::Mutex;
-use std::collections::VecDeque;
-use reth_payload_builder_primitives::Events;
 use crate::node::engine_api::payload::BscPayloadTypes;
+use crate::node::network::block_import::service::{IncomingBlock, IncomingMinedBlock};
+use crate::node::network::BscNetworkPrimitives;
 use crate::node::primitives::BscBlock;
+use alloy_consensus::{BlockHeader, Header};
+use alloy_rlp::Encodable;
+use alloy_eips::BlockId;
+use alloy_primitives::{B256, Bytes, U256};
+use reth_primitives::TransactionSigned;
+use parking_lot::Mutex;
+use reth_network::NetworkHandle;
+use reth_network_api::PeerId;
+use reth_payload_builder_primitives::Events;
+use reth_provider::{BlockNumReader, HeaderProvider};
+use schnellru::{ByLength, LruMap};
+use std::collections::VecDeque;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
-use schnellru::{LruMap, ByLength};
+use std::sync::{Arc, OnceLock};
+use tokio::sync::broadcast;
+use tokio::sync::mpsc::UnboundedSender;
+use alloy_rpc_types::{
+    Block as RpcBlock, BlockOverrides, Header as RpcHeader, Receipt as RpcReceipt, Transaction as RpcTransaction, TransactionRequest as RpcTransactionRequest, state::StateOverride
+};
 
 /// Function type for HeaderProvider::header() access (by hash)
 type HeaderByHashFn = Arc<dyn Fn(&B256) -> Option<Header> + Send + Sync>;
@@ -54,7 +61,8 @@ static BLOCK_IMPORT_SENDER: OnceLock<UnboundedSender<IncomingBlock>> = OnceLock:
 static LOCAL_PEER_ID: OnceLock<PeerId> = OnceLock::new();
 
 /// Global queue for bid packages (thread-safe)
-static BID_PACKAGE_QUEUE: OnceLock<Arc<Mutex<VecDeque<crate::node::miner::bid_simulator::Bid>>>> = OnceLock::new();
+static BID_PACKAGE_QUEUE: OnceLock<Arc<Mutex<VecDeque<crate::node::miner::bid_simulator::Bid>>>> =
+    OnceLock::new();
 
 /// Global network handle to interact with P2P (reth).
 static NETWORK_HANDLE: OnceLock<NetworkHandle<BscNetworkPrimitives>> = OnceLock::new();
@@ -63,6 +71,11 @@ static NETWORK_HANDLE: OnceLock<NetworkHandle<BscNetworkPrimitives>> = OnceLock:
 static PAYLOAD_EVENTS_TX: OnceLock<broadcast::Sender<Events<BscPayloadTypes>>> = OnceLock::new();
 /// Broadcast channel for notifying about successfully imported block hashes
 static IMPORTED_BLOCKS_TX: OnceLock<broadcast::Sender<B256>> = OnceLock::new();
+
+/// Global MEV running status
+static MEV_RUNNING: OnceLock<Arc<AtomicBool>> = OnceLock::new();
+/// Global proxyed peer IDs list
+static PROXYED_PEER_IDS: OnceLock<Vec<PeerId>> = OnceLock::new();
 
 /// Set global imported blocks broadcast sender.
 pub fn set_imported_blocks_tx(tx: broadcast::Sender<B256>) -> Result<(), broadcast::Sender<B256>> {
@@ -74,21 +87,69 @@ pub fn get_imported_blocks_tx() -> Option<&'static broadcast::Sender<B256>> {
     IMPORTED_BLOCKS_TX.get()
 }
 
+/// Set global proxyed peer IDs.
+pub fn set_proxyed_peer_ids(peer_ids: Vec<PeerId>) -> Result<(), Vec<PeerId>> {
+    PROXYED_PEER_IDS.set(peer_ids)
+}
+
+/// Get global proxyed peer IDs if initialized.
+pub fn get_proxyed_peer_ids() -> Option<&'static Vec<PeerId>> {
+    PROXYED_PEER_IDS.get()
+}
+
 /// Trait for fork choice engine operations that can be stored globally
 pub trait ForkChoiceEngineTrait: Send + Sync {
-    fn update_forkchoice<'a>(&'a self, header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), crate::consensus::ParliaConsensusErr>> + Send + 'a>>;
-    fn is_need_reorg<'a>(&'a self, incoming_header: &'a Header, current_header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<bool, crate::consensus::ParliaConsensusErr>> + Send + 'a>>;
+    fn update_forkchoice<'a>(
+        &'a self,
+        header: &'a Header,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<(), crate::consensus::ParliaConsensusErr>>
+                + Send
+                + 'a,
+        >,
+    >;
+    fn is_need_reorg<'a>(
+        &'a self,
+        incoming_header: &'a Header,
+        current_header: &'a Header,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<bool, crate::consensus::ParliaConsensusErr>>
+                + Send
+                + 'a,
+        >,
+    >;
 }
 
 impl<P> ForkChoiceEngineTrait for crate::node::consensus::BscForkChoiceEngine<P>
 where
     P: HeaderProvider<Header = Header> + BlockNumReader + Clone + Send + Sync,
 {
-    fn update_forkchoice<'a>(&'a self, header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), crate::consensus::ParliaConsensusErr>> + Send + 'a>> {
+    fn update_forkchoice<'a>(
+        &'a self,
+        header: &'a Header,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<(), crate::consensus::ParliaConsensusErr>>
+                + Send
+                + 'a,
+        >,
+    > {
         Box::pin(self.update_forkchoice(header))
     }
-    
-    fn is_need_reorg<'a>(&'a self, incoming_header: &'a Header, current_header: &'a Header) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<bool, crate::consensus::ParliaConsensusErr>> + Send + 'a>> {
+
+    fn is_need_reorg<'a>(
+        &'a self,
+        incoming_header: &'a Header,
+        current_header: &'a Header,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<bool, crate::consensus::ParliaConsensusErr>>
+                + Send
+                + 'a,
+        >,
+    > {
         Box::pin(self.is_need_reorg(incoming_header, current_header))
     }
 }
@@ -127,7 +188,9 @@ impl Default for BodyCache {
 }
 
 /// Store the snapshot provider globally
-pub fn set_snapshot_provider(provider: Arc<dyn SnapshotProvider + Send + Sync>) -> Result<(), Arc<dyn SnapshotProvider + Send + Sync>> {
+pub fn set_snapshot_provider(
+    provider: Arc<dyn SnapshotProvider + Send + Sync>,
+) -> Result<(), Arc<dyn SnapshotProvider + Send + Sync>> {
     SNAPSHOT_PROVIDER.set(provider)
 }
 
@@ -138,7 +201,9 @@ pub fn get_snapshot_provider() -> Option<&'static Arc<dyn SnapshotProvider + Sen
 
 /// Store the header provider globally
 /// Creates functions that directly call HeaderProvider::header() and HeaderProvider::header_by_number()
-pub fn set_header_provider<T>(provider: Arc<T>) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+pub fn set_header_provider<T>(
+    provider: Arc<T>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
 where
     T: HeaderProvider<Header = Header> + BlockNumReader + Send + Sync + 'static,
 {
@@ -150,7 +215,7 @@ where
             _ => None,
         }
     });
-    
+
     // Create function for header by number
     let provider_clone2 = provider.clone();
     let header_by_number_fn = Arc::new(move |block_number: u64| -> Option<Header> {
@@ -159,14 +224,17 @@ where
             _ => None,
         }
     });
-    
+
     // Set both functions
     HEADER_BY_HASH_PROVIDER.set(header_by_hash_fn).map_err(|_| "Failed to set hash provider")?;
-    HEADER_BY_NUMBER_PROVIDER.set(header_by_number_fn).map_err(|_| "Failed to set number provider")?;
+    HEADER_BY_NUMBER_PROVIDER
+        .set(header_by_number_fn)
+        .map_err(|_| "Failed to set number provider")?;
 
     // Create function for best block number
     let provider_clone3 = provider.clone();
-    let best_block_number_fn = Arc::new(move || -> Option<u64> { provider_clone3.best_block_number().ok() });
+    let best_block_number_fn =
+        Arc::new(move || -> Option<u64> { provider_clone3.best_block_number().ok() });
     BEST_BLOCK_NUMBER_PROVIDER
         .set(best_block_number_fn)
         .map_err(|_| "Failed to set best block number provider")?;
@@ -225,7 +293,9 @@ pub fn get_best_canonical_td() -> Option<u128> {
 }
 
 /// Store the block import sender globally. Returns an error if it was set before.
-pub fn set_block_import_mined_sender(sender: UnboundedSender<IncomingMinedBlock>) -> Result<(), UnboundedSender<IncomingMinedBlock>> {
+pub fn set_block_import_mined_sender(
+    sender: UnboundedSender<IncomingMinedBlock>,
+) -> Result<(), UnboundedSender<IncomingMinedBlock>> {
     BLOCK_IMPORT_MINED_SENDER.set(sender)
 }
 
@@ -235,7 +305,9 @@ pub fn get_block_import_mined_sender() -> Option<&'static UnboundedSender<Incomi
 }
 
 /// Store the block import sender globally. Returns an error if it was set before.
-pub fn set_block_import_sender(sender: UnboundedSender<IncomingBlock>) -> Result<(), UnboundedSender<IncomingBlock>> {
+pub fn set_block_import_sender(
+    sender: UnboundedSender<IncomingBlock>,
+) -> Result<(), UnboundedSender<IncomingBlock>> {
     BLOCK_IMPORT_SENDER.set(sender)
 }
 
@@ -260,7 +332,9 @@ pub fn init_bid_package_queue() {
 }
 
 /// Push a bid package to the global queue
-pub fn push_bid_package(package: crate::node::miner::bid_simulator::Bid) -> Result<(), &'static str> {
+pub fn push_bid_package(
+    package: crate::node::miner::bid_simulator::Bid,
+) -> Result<(), &'static str> {
     if let Some(queue) = BID_PACKAGE_QUEUE.get() {
         queue.lock().push_back(package);
         Ok(())
@@ -280,7 +354,9 @@ pub fn bid_package_queue_len() -> usize {
 }
 
 /// Store the reth `NetworkHandle` globally for dynamic peer actions.
-pub fn set_network_handle(handle: NetworkHandle<BscNetworkPrimitives>) -> Result<(), NetworkHandle<BscNetworkPrimitives>> {
+pub fn set_network_handle(
+    handle: NetworkHandle<BscNetworkPrimitives>,
+) -> Result<(), NetworkHandle<BscNetworkPrimitives>> {
     NETWORK_HANDLE.set(handle)
 }
 
@@ -290,7 +366,9 @@ pub fn get_network_handle() -> Option<NetworkHandle<BscNetworkPrimitives>> {
 }
 
 /// Set global payload events broadcast sender.
-pub fn set_payload_events_tx(tx: broadcast::Sender<Events<BscPayloadTypes>>) -> Result<(), broadcast::Sender<Events<BscPayloadTypes>>> {
+pub fn set_payload_events_tx(
+    tx: broadcast::Sender<Events<BscPayloadTypes>>,
+) -> Result<(), broadcast::Sender<Events<BscPayloadTypes>>> {
     PAYLOAD_EVENTS_TX.set(tx)
 }
 
@@ -300,10 +378,11 @@ pub fn get_payload_events_tx() -> Option<&'static broadcast::Sender<Events<BscPa
 }
 
 /// Store the fork choice engine globally.
-/// 
+///
 /// This stores a `BscForkChoiceEngine` instance to provide global access for fork choice operations.
-pub fn set_fork_choice_engine<P>(engine: crate::node::consensus::BscForkChoiceEngine<P>) 
-    -> Result<(), Box<dyn std::error::Error>>
+pub fn set_fork_choice_engine<P>(
+    engine: crate::node::consensus::BscForkChoiceEngine<P>,
+) -> Result<(), Box<dyn std::error::Error>>
 where
     P: HeaderProvider<Header = Header> + BlockNumReader + Clone + Send + Sync + 'static,
 {
@@ -318,7 +397,9 @@ pub fn get_fork_choice_engine() -> Option<&'static dyn ForkChoiceEngineTrait> {
 }
 
 /// Set the global full block provider
-pub fn set_full_block_provider(provider: Arc<dyn FullBlockProvider + Send + Sync>) -> Result<(), Arc<dyn FullBlockProvider + Send + Sync>> {
+pub fn set_full_block_provider(
+    provider: Arc<dyn FullBlockProvider + Send + Sync>,
+) -> Result<(), Arc<dyn FullBlockProvider + Send + Sync>> {
     FULL_BLOCK_PROVIDER.set(provider)
 }
 
@@ -347,7 +428,9 @@ where
     ByHash: Fn(&B256) -> Option<BscBlock> + Send + Sync + 'static,
     ByNumber: Fn(u64) -> Option<BscBlock> + Send + Sync + 'static,
 {
-    pub fn new(by_hash: ByHash, by_number: ByNumber) -> Self { Self { by_hash, by_number } }
+    pub fn new(by_hash: ByHash, by_number: ByNumber) -> Self {
+        Self { by_hash, by_number }
+    }
 }
 
 impl<ByHash, ByNumber> FullBlockProvider for ClosureFullBlockProvider<ByHash, ByNumber>
@@ -355,8 +438,12 @@ where
     ByHash: Fn(&B256) -> Option<BscBlock> + Send + Sync + 'static,
     ByNumber: Fn(u64) -> Option<BscBlock> + Send + Sync + 'static,
 {
-    fn block_by_hash(&self, hash: &B256) -> Option<BscBlock> { (self.by_hash)(hash) }
-    fn block_by_number(&self, number: u64) -> Option<BscBlock> { (self.by_number)(number) }
+    fn block_by_hash(&self, hash: &B256) -> Option<BscBlock> {
+        (self.by_hash)(hash)
+    }
+    fn block_by_number(&self, number: u64) -> Option<BscBlock> {
+        (self.by_number)(number)
+    }
 }
 
 /// Helper to install a closure-based full block provider.
@@ -416,15 +503,124 @@ pub fn clear_body_cache() {
     }
 }
 
+// ============ MEV Running Status ============
+
+/// Set global MEV running status (called by MevWorkWorker on startup)
+pub fn set_mev_running(running: Arc<AtomicBool>) -> Result<(), Arc<AtomicBool>> {
+    MEV_RUNNING.set(running)
+}
+
+/// Get global MEV running status
+pub fn is_mev_running() -> bool {
+    MEV_RUNNING.get().map(|status| status.load(Ordering::Relaxed)).unwrap_or(false)
+}
+
+// ============= IPC client ===============
+pub static IPC_CLIENT: OnceLock<Arc<jsonrpsee::async_client::Client>> = OnceLock::new();
+
+/// Set the IPC client
+pub async fn set_ipc_client(path: String) -> Result<(), eyre::Error> {
+    let client = reth_ipc::client::IpcClientBuilder::default()
+        .build(&path)
+        .await
+        .map_err(|e| eyre::eyre!("Failed to build RPC client: {:?}", e))?;
+    IPC_CLIENT.set(Arc::new(client)).map_err(|e| eyre::eyre!("Failed to set RPC client: {:?}", e))?;
+    Ok(())
+}
+
+/// Get the IPC client
+pub fn get_ipc_client() -> Option<Arc<jsonrpsee::async_client::Client>> {
+    IPC_CLIENT.get().cloned()
+}
+
+/// Call the IPC client to get the result of an Ethereum call
+/// This is a wrapper around the reth_rpc_eth_api::EthApiClient::call function
+/// It takes a transaction request, a block ID, a state overrides, and a block overrides
+/// It returns the result of the call as a Bytes object
+pub async fn ipc_eth_call(
+    req: RpcTransactionRequest,
+    block_id: Option<BlockId>,
+    state_overrides: Option<StateOverride>,
+    block_overrides: Option<Box<BlockOverrides>>,
+) -> Result<Bytes, eyre::Error> {
+    let client = get_ipc_client().ok_or(eyre::eyre!("Failed to get RPC client"))?;
+    reth_rpc_eth_api::EthApiClient::<
+        RpcTransactionRequest,
+        RpcTransaction,
+        RpcBlock,
+        RpcReceipt,
+        RpcHeader,
+    >::call(client.as_ref(), req, block_id, state_overrides, block_overrides)
+    .await
+    .map_err(|e| eyre::eyre!("failed to query chain id from healthy node: {e}"))
+}
+
+pub async fn ipc_estimate_gas(
+    req: RpcTransactionRequest,
+    block_id: Option<BlockId>,
+    state_overrides: Option<StateOverride>,
+) -> Result<U256, eyre::Error> {
+    let client = get_ipc_client().ok_or(eyre::eyre!("Failed to get RPC client"))?;
+    reth_rpc_eth_api::EthApiClient::<
+        RpcTransactionRequest,
+        RpcTransaction,
+        RpcBlock,
+        RpcReceipt,
+        RpcHeader,
+    >::estimate_gas(client.as_ref(), req, block_id, state_overrides)
+    .await
+    .map_err(|e| eyre::eyre!("failed to query chain id from healthy node: {e}"))
+}
+
+pub async fn ipc_send_transaction(
+    req: RpcTransactionRequest,
+) -> Result<B256, eyre::Error> {
+    let client = get_ipc_client().ok_or(eyre::eyre!("Failed to get RPC client"))?;
+    reth_rpc_eth_api::EthApiClient::<
+        RpcTransactionRequest,
+        RpcTransaction,
+        RpcBlock,
+        RpcReceipt,
+        RpcHeader,
+    >::send_transaction(client.as_ref(), req)
+    .await
+    .map_err(|e| eyre::eyre!("failed to query chain id from healthy node: {e}"))
+}
+
+/// Send a raw signed transaction via IPC (eth_sendRawTransaction)
+pub async fn ipc_send_raw_transaction(
+    tx: TransactionSigned,
+)-> Result<B256, eyre::Error> {
+    let client = get_ipc_client().ok_or(eyre::eyre!("Failed to get RPC client"))?;
+    let mut buf = Vec::new();
+    tx.encode(&mut buf);
+    let bytes = Bytes::from(buf);
+    reth_rpc_eth_api::EthApiClient::<
+        RpcTransactionRequest,
+        RpcTransaction,
+        RpcBlock,
+        RpcReceipt,
+        RpcHeader,
+    >::send_raw_transaction(client.as_ref(), bytes)
+    .await
+    .map_err(|e| eyre::eyre!("failed to query chain id from healthy node: {e}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_consensus::Header;
     use crate::BscBlockBody;
+    use alloy_consensus::Header;
 
     fn mk_block(num: u64, parent: B256) -> BscBlock {
         let header = Header { parent_hash: parent, number: num, ..Default::default() };
-        BscBlock { header, body: BscBlockBody { inner: reth_ethereum_primitives::BlockBody::default(), sidecars: None } }
+        BscBlock {
+            header,
+            body: BscBlockBody {
+                inner: reth_ethereum_primitives::BlockBody::default(),
+                sidecars: None,
+            },
+        }
     }
 
     #[test]

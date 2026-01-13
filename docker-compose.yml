@@ -7,7 +7,7 @@ services:
       - "127.0.0.1:9000:${METRICS_PORT}"
       - "127.0.0.1:8545:8545"
       - "127.0.0.1:8546:8546"
-    command: node --chain bsc --datadir=/data --http --http.api all --http.port=8545 --ws ---ws.port=8547 --rpc.max-connections=4096 --rpc.max-response-size=1000 --db.max-size=8TB --db.read-transaction-timeout=0 --metrics=127.0.0.1:9000 --log.file.directory=/logs --log.file.max-size=200 --log.file.max-files=5 --log.file.filter=info
+    command: node --chain bsc --datadir=/data --http --http.api all --http.port=8545 --ws --ws.port=8547 --rpc.max-connections=4096 --rpc.max-response-size=1000 --db.max-size=8TB --db.read-transaction-timeout=0 --metrics=127.0.0.1:9000 --log.file.directory=/logs --log.file.max-size=200 --log.file.max-files=5 --log.file.filter=info
     volumes:
       - /home/deploy/bsc_data/server/data-seed/data_dir:/data
       - /home/deploy/bsc_node/logs:/logs

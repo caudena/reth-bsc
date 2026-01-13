@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   reth-bsc:
     image: "caudenacom/reth_bsc:${BUDDY_EXECUTION_REVISION}"

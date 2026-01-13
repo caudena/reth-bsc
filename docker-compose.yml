@@ -11,7 +11,7 @@ services:
     environment:
       - RPC_ADDR=${RPC_ADDR}
       - METRICS_PORT=${METRICS_PORT}
-    command: node --chain bsc --datadir=/data --http --http.api all --http.addr=${RPC_ADDR} --http.port=8545 --ws --ws.addr=${RPC_ADDR} --ws.port=8547 --rpc.max-connections=4096 --rpc.max-response-size=1000 --db.max-size=8TB --db.read-transaction-timeout=0 --metrics=${RPC_ADDR}:${METRICS_PORT} --log.file.directory=/logs
+    command: node --chain bsc --datadir=/data --http --http.api all --http.addr=${RPC_ADDR} --http.port=8545 --ws --ws.addr=${RPC_ADDR} --ws.port=8547 --rpc.max-connections=4096 --rpc.max-response-size=1000 --db.max-size=8TB --db.read-transaction-timeout=0 --metrics=${RPC_ADDR}:${METRICS_PORT} --log.file.directory=/logs --log.file.max-size=200 --log.file.max-files=5 --log.file.filter=info
     volumes:
       - /home/deploy/bsc_data/server/data-seed/data_dir:/data
       - /home/deploy/bsc_node/logs:/logs

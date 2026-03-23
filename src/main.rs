@@ -10,6 +10,8 @@ use reth_bsc::consensus::parlia::bls_signer;
 use std::sync::Arc;
 use std::path::PathBuf;
 
+use reth::rpc_ext::{EthBlockReceiptsTraceApiServer, EthBlockReceiptsTraceExt};
+
 // We use jemalloc for performance reasons
 #[cfg(all(feature = "jemalloc", unix))]
 #[global_allocator]
@@ -377,6 +379,12 @@ fn main() -> eyre::Result<()> {
                         let blob_api = BlobApiImpl::new(pool, provider);
                         ctx.modules.merge_configured(blob_api.into_rpc())?;
                         tracing::info!("Succeed to register Blob RPC API");
+
+                        tracing::info!("Start to register EthBlockReceiptsTrace RPC API...");
+                        let trace_api = EthBlockReceiptsTraceExt::new(ctx.registry.eth_api().clone());
+                        ctx.modules.merge_configured(trace_api.into_rpc())?;
+                        tracing::info!("Succeed to register EthBlockReceiptsTrace RPC API");
+
                         Ok(())
                     })
                     .launch().await?;

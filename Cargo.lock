@@ -7420,7 +7420,7 @@ checksum = "1e061d1b48cb8d38042de4ae0a7a6401009d6143dc80d2e2d6f31f0bdd6470c7"
 [[package]]
 name = "reth"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -7436,16 +7436,16 @@ dependencies = [
  "futures",
  "jsonrpsee",
  "jsonrpsee-types",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-cli-runner",
  "reth-cli-util",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ethereum-cli",
  "reth-ethereum-payload-builder",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network",
  "reth-network-api",
  "reth-node-api",
@@ -7454,12 +7454,12 @@ dependencies = [
  "reth-node-ethereum",
  "reth-node-metrics",
  "reth-payload-builder",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ress-protocol",
  "reth-ress-provider",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc",
  "reth-rpc-api",
  "reth-rpc-builder",
@@ -7479,7 +7479,7 @@ dependencies = [
 [[package]]
 name = "reth-basic-payload-builder"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -7487,14 +7487,14 @@ dependencies = [
  "futures-core",
  "futures-util",
  "metrics",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-payload-builder",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "tokio",
  "tracing",
@@ -7534,7 +7534,7 @@ dependencies = [
 [[package]]
 name = "reth-chain-state"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -7546,14 +7546,14 @@ dependencies = [
  "parking_lot",
  "pin-project",
  "rand 0.9.2",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-database",
  "revm-state",
  "rust-eth-triedb-common",
@@ -7586,7 +7586,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -7597,22 +7597,22 @@ dependencies = [
  "alloy-trie",
  "auto_impl",
  "derive_more 2.1.1",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde_json",
 ]
 
 [[package]]
 name = "reth-cli"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-genesis",
  "clap",
  "eyre",
  "reth-cli-runner",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde_json",
  "shellexpand",
 ]
@@ -7620,7 +7620,7 @@ dependencies = [
 [[package]]
 name = "reth-cli-commands"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -7644,16 +7644,16 @@ dependencies = [
  "proptest-arbitrary-interop",
  "ratatui",
  "reqwest 0.12.28",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-cli",
  "reth-cli-runner",
  "reth-cli-util",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-discv4",
  "reth-discv5",
  "reth-downloaders",
@@ -7662,34 +7662,34 @@ dependencies = [
  "reth-era-downloader",
  "reth-era-utils",
  "reth-eth-wire",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-exex",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-libmdbx 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-libmdbx 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-net-nat",
  "reth-network",
  "reth-network-p2p",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-node-api",
  "reth-node-builder",
  "reth-node-core",
  "reth-node-events",
  "reth-node-metrics",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-prune",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-stages",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-static-file",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rust-eth-triedb",
  "secp256k1 0.30.0",
  "serde",
@@ -7706,7 +7706,7 @@ dependencies = [
 [[package]]
 name = "reth-cli-runner"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "reth-tasks",
  "tokio",
@@ -7716,7 +7716,7 @@ dependencies = [
 [[package]]
 name = "reth-cli-util"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -7724,7 +7724,7 @@ dependencies = [
  "eyre",
  "libc",
  "rand 0.8.5",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "secp256k1 0.30.0",
  "serde",
  "thiserror 2.0.18",
@@ -7754,7 +7754,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -7765,8 +7765,8 @@ dependencies = [
  "bytes 1.11.1",
  "modular-bitfield",
  "op-alloy-consensus",
- "reth-codecs-derive 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-zstd-compressors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs-derive 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-zstd-compressors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "visibility",
 ]
@@ -7784,7 +7784,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7807,14 +7807,14 @@ dependencies = [
 [[package]]
 name = "reth-config"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "eyre",
  "humantime-serde",
- "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "toml 0.8.23",
  "url",
@@ -7836,13 +7836,13 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "auto_impl",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "thiserror 2.0.18",
 ]
 
@@ -7861,19 +7861,19 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
 ]
 
 [[package]]
 name = "reth-consensus-debug-client"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -7888,8 +7888,8 @@ dependencies = [
  "futures",
  "reqwest 0.12.28",
  "reth-node-api",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "ringbuffer",
  "serde",
  "serde_json",
@@ -7925,7 +7925,7 @@ dependencies = [
 [[package]]
 name = "reth-db"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "derive_more 2.1.1",
@@ -7933,14 +7933,14 @@ dependencies = [
  "metrics",
  "page_size",
  "parking_lot",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-libmdbx 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-nippy-jar 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-libmdbx 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-nippy-jar 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rustc-hash",
  "strum 0.27.2",
  "sysinfo",
@@ -7979,7 +7979,7 @@ dependencies = [
 [[package]]
 name = "reth-db-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -7991,15 +7991,15 @@ dependencies = [
  "modular-bitfield",
  "parity-scale-codec",
  "proptest",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-models 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-optimism-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-models 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-optimism-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "roaring",
  "serde",
 ]
@@ -8041,7 +8041,7 @@ dependencies = [
 [[package]]
 name = "reth-db-common"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -8049,20 +8049,20 @@ dependencies = [
  "alloy-trie",
  "boyer-moore-magiclen",
  "eyre",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rust-eth-triedb",
  "rust-eth-triedb-common",
  "rust-eth-triedb-state-trie",
@@ -8090,22 +8090,22 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "arbitrary",
  "bytes 1.11.1",
  "modular-bitfield",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
 ]
 
 [[package]]
 name = "reth-discv4"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -8114,10 +8114,10 @@ dependencies = [
  "itertools 0.14.0",
  "parking_lot",
  "rand 0.8.5",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-net-nat",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "schnellru",
  "secp256k1 0.30.0",
  "serde",
@@ -8130,7 +8130,7 @@ dependencies = [
 [[package]]
 name = "reth-discv5"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -8141,10 +8141,10 @@ dependencies = [
  "itertools 0.14.0",
  "metrics",
  "rand 0.9.2",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "secp256k1 0.30.0",
  "thiserror 2.0.18",
  "tokio",
@@ -8154,7 +8154,7 @@ dependencies = [
 [[package]]
 name = "reth-dns-discovery"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "data-encoding",
@@ -8162,8 +8162,8 @@ dependencies = [
  "hickory-resolver",
  "linked_hash_set",
  "parking_lot",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tokio-util",
  "schnellru",
  "secp256k1 0.30.0",
@@ -8178,7 +8178,7 @@ dependencies = [
 [[package]]
 name = "reth-downloaders"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8191,15 +8191,15 @@ dependencies = [
  "metrics",
  "pin-project",
  "rayon",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-p2p",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-testing-utils",
  "tempfile",
@@ -8213,7 +8213,7 @@ dependencies = [
 [[package]]
 name = "reth-ecies"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "aes",
  "alloy-primitives",
@@ -8228,7 +8228,7 @@ dependencies = [
  "hmac",
  "pin-project",
  "rand 0.8.5",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "secp256k1 0.30.0",
  "sha2 0.10.9",
  "thiserror 2.0.18",
@@ -8241,20 +8241,20 @@ dependencies = [
 [[package]]
 name = "reth-engine-local"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "alloy-rpc-types-engine",
  "eyre",
  "futures-util",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-payload-builder",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-transaction-pool",
  "tokio",
  "tokio-stream",
@@ -8289,7 +8289,7 @@ dependencies = [
 [[package]]
 name = "reth-engine-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8297,15 +8297,15 @@ dependencies = [
  "alloy-rpc-types-engine",
  "auto_impl",
  "futures",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "thiserror 2.0.18",
  "tokio",
@@ -8314,30 +8314,30 @@ dependencies = [
 [[package]]
 name = "reth-engine-service"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "futures",
  "pin-project",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-engine-tree",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-p2p",
- "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-payload-builder",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-prune",
  "reth-stages-api",
  "reth-tasks",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
 ]
 
 [[package]]
 name = "reth-engine-tree"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eip7928",
@@ -8355,34 +8355,34 @@ dependencies = [
  "moka",
  "parking_lot",
  "rayon",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-p2p",
  "reth-payload-builder",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-prune",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-stages",
  "reth-stages-api",
  "reth-static-file",
  "reth-tasks",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-trie-parallel",
- "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-trie-sparse-parallel",
  "revm",
  "revm-primitives",
@@ -8400,7 +8400,7 @@ dependencies = [
 [[package]]
 name = "reth-engine-util"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-rpc-types-engine",
@@ -8408,16 +8408,16 @@ dependencies = [
  "futures",
  "itertools 0.14.0",
  "pin-project",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-engine-tree",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "serde_json",
  "tokio",
@@ -8428,7 +8428,7 @@ dependencies = [
 [[package]]
 name = "reth-era"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8443,7 +8443,7 @@ dependencies = [
 [[package]]
 name = "reth-era-downloader"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "bytes 1.11.1",
@@ -8451,7 +8451,7 @@ dependencies = [
  "futures-util",
  "reqwest 0.12.28",
  "reth-era",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "sha2 0.10.9",
  "tokio",
 ]
@@ -8459,21 +8459,21 @@ dependencies = [
 [[package]]
 name = "reth-era-utils"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "eyre",
  "futures-util",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-era",
  "reth-era-downloader",
- "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tokio",
  "tracing",
 ]
@@ -8492,18 +8492,18 @@ dependencies = [
 [[package]]
 name = "reth-errors"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "reth-eth-wire"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -8513,13 +8513,13 @@ dependencies = [
  "derive_more 2.1.1",
  "futures",
  "pin-project",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ecies",
  "reth-eth-wire-types",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "snap",
  "thiserror 2.0.18",
@@ -8532,7 +8532,7 @@ dependencies = [
 [[package]]
 name = "reth-eth-wire-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -8545,10 +8545,10 @@ dependencies = [
  "derive_more 2.1.1",
  "proptest",
  "proptest-arbitrary-interop",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-codecs-derive 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-codecs-derive 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "thiserror 2.0.18",
 ]
@@ -8556,22 +8556,22 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-cli"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "clap",
  "eyre",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-cli",
  "reth-cli-commands",
  "reth-cli-runner",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-node-api",
  "reth-node-builder",
  "reth-node-core",
  "reth-node-ethereum",
  "reth-node-metrics",
  "reth-rpc-server-types",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tracing",
 ]
 
@@ -8594,16 +8594,16 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tracing",
 ]
 
@@ -8628,16 +8628,16 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-engine-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
  "alloy-rpc-types-engine",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "sha2 0.10.9",
  "thiserror 2.0.18",
@@ -8659,7 +8659,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eip2124",
  "alloy-hardforks",
@@ -8673,7 +8673,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-payload-builder"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8681,19 +8681,19 @@ dependencies = [
  "alloy-rlp",
  "alloy-rpc-types-engine",
  "reth-basic-payload-builder",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-payload-builder",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-payload-validator",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-transaction-pool",
  "revm",
  "tracing",
@@ -8722,7 +8722,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8732,9 +8732,9 @@ dependencies = [
  "alloy-serde",
  "arbitrary",
  "modular-bitfield",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-zstd-compressors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-zstd-compressors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "serde_with",
 ]
@@ -8752,10 +8752,10 @@ dependencies = [
 [[package]]
 name = "reth-etl"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "rayon",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tempfile",
 ]
 
@@ -8785,7 +8785,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8796,13 +8796,13 @@ dependencies = [
  "futures-util",
  "metrics",
  "rayon",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "rust-eth-triedb-common",
 ]
@@ -8831,7 +8831,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8840,13 +8840,13 @@ dependencies = [
  "alloy-rpc-types-engine",
  "derive_more 2.1.1",
  "parking_lot",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
 ]
 
@@ -8866,13 +8866,13 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-evm",
  "alloy-primitives",
  "alloy-rlp",
  "nybbles",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "thiserror 2.0.18",
 ]
 
@@ -8897,16 +8897,16 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-evm",
  "alloy-primitives",
  "derive_more 2.1.1",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "serde",
  "serde_with",
@@ -8915,7 +8915,7 @@ dependencies = [
 [[package]]
 name = "reth-exex"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -8925,24 +8925,24 @@ dependencies = [
  "itertools 0.14.0",
  "metrics",
  "parking_lot",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-exex-types",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-node-api",
  "reth-node-core",
  "reth-payload-builder",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-stages-api",
  "reth-tasks",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rmp-serde",
  "thiserror 2.0.18",
  "tokio",
@@ -8953,13 +8953,13 @@ dependencies = [
 [[package]]
 name = "reth-exex-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "serde_with",
 ]
@@ -8977,7 +8977,7 @@ dependencies = [
 [[package]]
 name = "reth-fs-util"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "serde",
  "serde_json",
@@ -8987,7 +8987,7 @@ dependencies = [
 [[package]]
 name = "reth-invalid-block-hooks"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -8997,14 +8997,14 @@ dependencies = [
  "futures",
  "jsonrpsee",
  "pretty_assertions",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-api",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "revm-bytecode",
  "revm-database",
@@ -9015,7 +9015,7 @@ dependencies = [
 [[package]]
 name = "reth-ipc"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "bytes 1.11.1",
  "futures",
@@ -9051,14 +9051,14 @@ dependencies = [
 [[package]]
 name = "reth-libmdbx"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "bitflags 2.11.0",
  "byteorder",
  "dashmap 6.1.0",
  "derive_more 2.1.1",
  "parking_lot",
- "reth-mdbx-sys 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-mdbx-sys 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "smallvec",
  "thiserror 2.0.18",
  "tracing",
@@ -9076,7 +9076,7 @@ dependencies = [
 [[package]]
 name = "reth-mdbx-sys"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "bindgen 0.71.1",
  "cc",
@@ -9094,7 +9094,7 @@ dependencies = [
 [[package]]
 name = "reth-metrics"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "futures",
  "metrics",
@@ -9127,7 +9127,7 @@ dependencies = [
 [[package]]
 name = "reth-net-banlist"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "ipnet",
@@ -9136,7 +9136,7 @@ dependencies = [
 [[package]]
 name = "reth-net-nat"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "futures-util",
  "if-addrs",
@@ -9150,7 +9150,7 @@ dependencies = [
 [[package]]
 name = "reth-network"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9169,25 +9169,25 @@ dependencies = [
  "rand 0.8.5",
  "rand 0.9.2",
  "rayon",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-discv4",
  "reth-discv5",
  "reth-dns-discovery",
  "reth-ecies",
  "reth-eth-wire",
  "reth-eth-wire-types",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
  "reth-network-p2p",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-tokio-util",
  "reth-transaction-pool",
@@ -9206,7 +9206,7 @@ dependencies = [
 [[package]]
 name = "reth-network-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -9217,10 +9217,10 @@ dependencies = [
  "enr",
  "futures",
  "reth-eth-wire-types",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-p2p",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tokio-util",
  "serde",
  "thiserror 2.0.18",
@@ -9231,7 +9231,7 @@ dependencies = [
 [[package]]
 name = "reth-network-p2p"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9240,13 +9240,13 @@ dependencies = [
  "derive_more 2.1.1",
  "futures",
  "parking_lot",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-eth-wire-types",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tokio",
  "tracing",
 ]
@@ -9267,7 +9267,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -9294,12 +9294,12 @@ dependencies = [
 [[package]]
 name = "reth-network-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eip2124",
  "humantime-serde",
- "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "serde_json",
  "tracing",
@@ -9325,14 +9325,14 @@ dependencies = [
 [[package]]
 name = "reth-nippy-jar"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "anyhow",
  "bincode",
  "derive_more 2.1.1",
  "lz4_flex",
  "memmap2",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "thiserror 2.0.18",
  "tracing",
@@ -9342,22 +9342,22 @@ dependencies = [
 [[package]]
 name = "reth-node-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-rpc-types-engine",
  "eyre",
  "reth-basic-payload-builder",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
  "reth-node-core",
- "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-payload-builder",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-tokio-util",
  "reth-transaction-pool",
@@ -9366,7 +9366,7 @@ dependencies = [
 [[package]]
 name = "reth-node-builder"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9382,23 +9382,23 @@ dependencies = [
  "parking_lot",
  "rayon",
  "reth-basic-payload-builder",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-consensus-debug-client",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-downloaders",
  "reth-engine-local",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-engine-service",
  "reth-engine-tree",
  "reth-engine-util",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-exex",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-invalid-block-hooks",
  "reth-network",
  "reth-network-api",
@@ -9409,8 +9409,8 @@ dependencies = [
  "reth-node-events",
  "reth-node-metrics",
  "reth-payload-builder",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-prune",
  "reth-rpc",
  "reth-rpc-api",
@@ -9422,9 +9422,9 @@ dependencies = [
  "reth-static-file",
  "reth-tasks",
  "reth-tokio-util",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-transaction-pool",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rust-eth-triedb",
  "secp256k1 0.30.0",
  "serde_json",
@@ -9436,7 +9436,7 @@ dependencies = [
 [[package]]
 name = "reth-node-core"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9450,32 +9450,32 @@ dependencies = [
  "humantime",
  "ipnet",
  "rand 0.9.2",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-cli-util",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-discv4",
  "reth-discv5",
  "reth-engine-local",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-net-banlist 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-net-nat",
  "reth-network",
  "reth-network-p2p",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-convert",
  "reth-rpc-eth-types",
  "reth-rpc-server-types",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-tracing-otlp 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-tracing-otlp 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-transaction-pool",
  "secp256k1 0.30.0",
  "serde",
@@ -9492,36 +9492,36 @@ dependencies = [
 [[package]]
 name = "reth-node-ethereum"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-network",
  "alloy-rpc-types-engine",
  "alloy-rpc-types-eth",
  "eyre",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-engine-local",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ethereum-payload-builder",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network",
  "reth-node-api",
  "reth-node-builder",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc",
  "reth-rpc-api",
  "reth-rpc-builder",
  "reth-rpc-eth-api",
  "reth-rpc-eth-types",
  "reth-rpc-server-types",
- "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-transaction-pool",
  "revm",
  "tokio",
@@ -9530,16 +9530,16 @@ dependencies = [
 [[package]]
 name = "reth-node-ethstats"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "chrono",
  "futures-util",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-transaction-pool",
  "serde",
  "serde_json",
@@ -9554,7 +9554,7 @@ dependencies = [
 [[package]]
 name = "reth-node-events"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9564,13 +9564,13 @@ dependencies = [
  "futures",
  "humantime",
  "pin-project",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-stages",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tokio",
  "tracing",
 ]
@@ -9578,7 +9578,7 @@ dependencies = [
 [[package]]
 name = "reth-node-metrics"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "bytes 1.11.1",
  "eyre",
@@ -9591,7 +9591,7 @@ dependencies = [
  "metrics-util",
  "procfs 0.17.0",
  "reqwest 0.12.28",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "tikv-jemalloc-ctl",
  "tokio",
@@ -9614,13 +9614,13 @@ dependencies = [
 [[package]]
 name = "reth-node-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
 ]
 
 [[package]]
@@ -9641,14 +9641,14 @@ dependencies = [
 [[package]]
 name = "reth-optimism-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
  "op-alloy-consensus",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "serde_with",
 ]
@@ -9656,19 +9656,19 @@ dependencies = [
 [[package]]
 name = "reth-payload-builder"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "alloy-rpc-types",
  "futures-util",
  "metrics",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -9689,10 +9689,10 @@ dependencies = [
 [[package]]
 name = "reth-payload-builder-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "pin-project",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -9724,7 +9724,7 @@ dependencies = [
 [[package]]
 name = "reth-payload-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9733,12 +9733,12 @@ dependencies = [
  "auto_impl",
  "either",
  "op-alloy-rpc-types-engine",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "thiserror 2.0.18",
  "tokio",
@@ -9747,11 +9747,11 @@ dependencies = [
 [[package]]
 name = "reth-payload-validator"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-rpc-types-engine",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
 ]
 
 [[package]]
@@ -9771,15 +9771,15 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "c-kzg",
  "once_cell",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
 ]
 
 [[package]]
@@ -9817,7 +9817,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9837,7 +9837,7 @@ dependencies = [
  "proptest",
  "proptest-arbitrary-interop",
  "rayon",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-bytecode",
  "revm-primitives",
  "revm-state",
@@ -9894,7 +9894,7 @@ dependencies = [
 [[package]]
 name = "reth-provider"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9907,26 +9907,26 @@ dependencies = [
  "notify",
  "parking_lot",
  "rayon",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-nippy-jar 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-nippy-jar 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-node-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-database",
  "revm-state",
  "rust-eth-triedb",
@@ -9938,7 +9938,7 @@ dependencies = [
 [[package]]
 name = "reth-prune"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -9946,16 +9946,16 @@ dependencies = [
  "itertools 0.14.0",
  "metrics",
  "rayon",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-exex-types",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tokio-util",
  "rustc-hash",
  "thiserror 2.0.18",
@@ -9981,13 +9981,13 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "arbitrary",
  "derive_more 2.1.1",
  "modular-bitfield",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "strum 0.27.2",
  "thiserror 2.0.18",
@@ -9996,17 +9996,17 @@ dependencies = [
 [[package]]
 name = "reth-ress-protocol"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "alloy-rlp",
  "futures",
  "reth-eth-wire",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network",
  "reth-network-api",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -10015,25 +10015,25 @@ dependencies = [
 [[package]]
 name = "reth-ress-provider"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "eyre",
  "futures",
  "parking_lot",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-node-api",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ress-protocol",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-tokio-util",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "schnellru",
  "tokio",
  "tracing",
@@ -10054,20 +10054,20 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
 ]
 
 [[package]]
 name = "reth-rpc"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-dyn-abi",
@@ -10104,34 +10104,34 @@ dependencies = [
  "jsonwebtoken",
  "parking_lot",
  "pin-project",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-node-api",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-api",
  "reth-rpc-convert",
  "reth-rpc-engine-api",
  "reth-rpc-eth-api",
  "reth-rpc-eth-types",
  "reth-rpc-server-types",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-transaction-pool",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "revm-inspectors",
  "revm-primitives",
@@ -10150,7 +10150,7 @@ dependencies = [
 [[package]]
 name = "reth-rpc-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eip7928",
  "alloy-eips",
@@ -10169,18 +10169,18 @@ dependencies = [
  "alloy-rpc-types-txpool",
  "alloy-serde",
  "jsonrpsee",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-eth-api",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde_json",
 ]
 
 [[package]]
 name = "reth-rpc-builder"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-network",
  "alloy-provider",
@@ -10189,23 +10189,23 @@ dependencies = [
  "jsonrpsee",
  "metrics",
  "pin-project",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ipc",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
  "reth-node-core",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc",
  "reth-rpc-api",
  "reth-rpc-eth-api",
  "reth-rpc-eth-types",
  "reth-rpc-layer",
  "reth-rpc-server-types",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-tokio-util",
  "reth-transaction-pool",
@@ -10221,7 +10221,7 @@ dependencies = [
 [[package]]
 name = "reth-rpc-convert"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-evm",
@@ -10233,9 +10233,9 @@ dependencies = [
  "auto_impl",
  "dyn-clone",
  "jsonrpsee-types",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
  "thiserror 2.0.18",
 ]
@@ -10243,7 +10243,7 @@ dependencies = [
 [[package]]
 name = "reth-rpc-engine-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -10252,16 +10252,16 @@ dependencies = [
  "jsonrpsee-core",
  "jsonrpsee-types",
  "metrics",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
  "reth-payload-builder",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-api",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-transaction-pool",
  "serde",
@@ -10273,7 +10273,7 @@ dependencies = [
 [[package]]
 name = "reth-rpc-eth-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-dyn-abi",
@@ -10294,22 +10294,22 @@ dependencies = [
  "jsonrpsee",
  "jsonrpsee-types",
  "parking_lot",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
  "reth-node-api",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-convert",
  "reth-rpc-eth-types",
  "reth-rpc-server-types",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-transaction-pool",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "revm-inspectors",
  "rust-eth-triedb",
@@ -10320,7 +10320,7 @@ dependencies = [
 [[package]]
 name = "reth-rpc-eth-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -10339,21 +10339,21 @@ dependencies = [
  "metrics",
  "rand 0.9.2",
  "reqwest 0.12.28",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-convert",
  "reth-rpc-server-types",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "reth-transaction-pool",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "revm-inspectors",
  "schnellru",
@@ -10368,7 +10368,7 @@ dependencies = [
 [[package]]
 name = "reth-rpc-layer"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-rpc-types-engine",
  "http 1.4.0",
@@ -10382,14 +10382,14 @@ dependencies = [
 [[package]]
 name = "reth-rpc-server-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rpc-types-engine",
  "jsonrpsee-core",
  "jsonrpsee-types",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-api",
  "serde",
  "strum 0.27.2",
@@ -10398,7 +10398,7 @@ dependencies = [
 [[package]]
 name = "reth-stages"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -10411,35 +10411,35 @@ dependencies = [
  "num-traits",
  "rayon",
  "reqwest 0.12.28",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-config 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-era",
  "reth-era-downloader",
  "reth-era-utils",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-etl 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-exex",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-p2p",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-prune",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-stages-api",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-testing-utils",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rust-eth-triedb",
  "tempfile",
  "thiserror 2.0.18",
@@ -10450,7 +10450,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -10458,16 +10458,16 @@ dependencies = [
  "auto_impl",
  "futures-util",
  "metrics",
- "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-consensus 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network-p2p",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-prune",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-static-file",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tokio-util",
  "thiserror 2.0.18",
  "tokio",
@@ -10491,33 +10491,33 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "arbitrary",
  "bytes 1.11.1",
  "modular-bitfield",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "serde",
 ]
 
 [[package]]
 name = "reth-static-file"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "parking_lot",
  "rayon",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tokio-util",
  "tracing",
 ]
@@ -10537,7 +10537,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "clap",
@@ -10574,23 +10574,23 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
  "alloy-rpc-types-engine",
  "auto_impl",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-db-models 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-db-models 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-database",
  "serde_json",
 ]
@@ -10615,15 +10615,15 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
  "derive_more 2.1.1",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-prune-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-static-file-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-database-interface",
  "revm-state",
  "thiserror 2.0.18",
@@ -10632,7 +10632,7 @@ dependencies = [
 [[package]]
 name = "reth-tasks"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "auto_impl",
  "dyn-clone",
@@ -10640,7 +10640,7 @@ dependencies = [
  "metrics",
  "pin-project",
  "rayon",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -10650,7 +10650,7 @@ dependencies = [
 [[package]]
 name = "reth-testing-utils"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -10658,15 +10658,15 @@ dependencies = [
  "alloy-primitives",
  "rand 0.8.5",
  "rand 0.9.2",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "secp256k1 0.30.0",
 ]
 
 [[package]]
 name = "reth-tokio-util"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "tokio",
  "tokio-stream",
@@ -10691,11 +10691,11 @@ dependencies = [
 [[package]]
 name = "reth-tracing"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "clap",
  "eyre",
- "reth-tracing-otlp 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-tracing-otlp 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rolling-file",
  "tracing",
  "tracing-appender",
@@ -10723,7 +10723,7 @@ dependencies = [
 [[package]]
 name = "reth-tracing-otlp"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "clap",
  "eyre",
@@ -10741,7 +10741,7 @@ dependencies = [
 [[package]]
 name = "reth-transaction-pool"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -10756,15 +10756,15 @@ dependencies = [
  "paste",
  "pin-project",
  "rand 0.9.2",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-eth-wire-types",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-fs-util 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-tasks",
  "revm-interpreter",
  "revm-primitives",
@@ -10808,7 +10808,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -10819,13 +10819,13 @@ dependencies = [
  "itertools 0.14.0",
  "metrics",
  "parking_lot",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-database",
  "tracing",
  "triehash",
@@ -10863,7 +10863,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -10880,8 +10880,8 @@ dependencies = [
  "nybbles",
  "plain_hasher",
  "rayon",
- "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-codecs 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm-database",
  "rust-eth-triedb",
  "rust-eth-triedb-state-trie",
@@ -10913,20 +10913,20 @@ dependencies = [
 [[package]]
 name = "reth-trie-db"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "metrics",
  "parking_lot",
- "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-stages-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-api 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "rust-eth-triedb",
  "tracing",
 ]
@@ -10934,7 +10934,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-parallel"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -10944,13 +10944,13 @@ dependencies = [
  "itertools 0.14.0",
  "metrics",
  "rayon",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-storage-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -10976,7 +10976,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -10984,10 +10984,10 @@ dependencies = [
  "auto_impl",
  "metrics",
  "rayon",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "smallvec",
  "tracing",
 ]
@@ -10995,17 +10995,17 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse-parallel"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "alloy-trie",
  "metrics",
  "rayon",
- "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-execution-errors 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-sparse 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "smallvec",
  "tracing",
 ]
@@ -11021,7 +11021,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.10.2"
-source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9#89d3d657c25c7e596922bb80b212892c78fbcb46"
+source = "git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState#406e3984737f9578bfa45cb0ec7cd9e884770d98"
 dependencies = [
  "zstd",
 ]
@@ -11085,48 +11085,48 @@ dependencies = [
  "rand 0.9.2",
  "reth",
  "reth-basic-payload-builder",
- "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-chain-state 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-chainspec 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-cli",
  "reth-cli-commands",
  "reth-cli-util",
- "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-discv4",
  "reth-engine-local",
- "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-engine-tree",
  "reth-eth-wire",
  "reth-eth-wire-types",
- "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-engine-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-ethereum-forks 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ethereum-payload-builder",
- "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-ethereum-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-evm-ethereum 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-execution-types 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-ipc",
- "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-metrics 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-network",
  "reth-network-api",
  "reth-network-p2p",
- "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-network-peers 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-node-builder",
  "reth-node-core",
  "reth-node-ethereum",
- "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-payload-builder-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-payload-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-primitives-traits 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-provider 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-revm 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "reth-rpc-convert",
  "reth-rpc-engine-api",
  "reth-rpc-eth-api",
  "reth-rpc-server-types",
  "reth-tasks",
  "reth-transaction-pool",
- "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
- "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9)",
+ "reth-trie-common 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
+ "reth-trie-db 1.10.2 (git+https://github.com/caudena/reth_for_BSC.git?branch=bsc_reth_0.0.9_plainState)",
  "revm",
  "revm-context-interface",
  "revm-database",

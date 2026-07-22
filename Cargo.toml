@@ -16,66 +16,60 @@ name = "reth-bsc"
 path = "src/main.rs"
 
 [dependencies]
-reth = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-cli = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-cli-commands = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-basic-payload-builder = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-db = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-engine-local = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-engine-tree = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-node-builder = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-chainspec = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-cli-util = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-discv4 = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState", features = [
+reth = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-cli = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-cli-commands = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-basic-payload-builder = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-db = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-engine-local = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-engine-tree = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-node-builder = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-chainspec = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-cli-util = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-discv4 = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a", features = [
     "test-utils",
 ] }
-reth-engine-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-ethereum-forks = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState", features = [
+reth-engine-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-ethereum-forks = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a", features = [
     "serde",
 ] }
-reth-ethereum-payload-builder = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-payload-builder-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-chain-state = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-ethereum-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-eth-wire = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-eth-wire-types = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-evm = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-evm-ethereum = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-execution-types = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-ipc = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-metrics = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-node-core = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-revm = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-network = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState", features = [
+reth-ethereum-payload-builder = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-payload-builder-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-chain-state = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-ethereum-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-eth-wire = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-eth-wire-types = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-evm = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-evm-ethereum = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-execution-types = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-ipc = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-metrics = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-node-core = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-revm = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-network = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a", features = [
     "test-utils",
 ] }
-reth-network-p2p = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-network-api = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-node-ethereum = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState", features = [
+reth-network-p2p = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-network-api = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-node-ethereum = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a", features = [
     "test-utils",
 ] }
-reth-network-peers = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-payload-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-ethereum-engine-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
+reth-network-peers = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-payload-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-ethereum-engine-primitives = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
 reth-primitives-traits = { git = "https://github.com/bnb-chain/reth-core.git", branch = "v0.3.1-v2", default-features = false }
 reth-codecs = { git = "https://github.com/bnb-chain/reth-core.git", branch = "v0.3.1-v2" }
-reth-provider = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState", features = [
+reth-provider = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a", features = [
     "test-utils",
 ] }
-reth-rpc-eth-api = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-rpc-convert = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-rpc-engine-api = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-rpc-server-types = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-trie-common = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-trie-db = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-tasks = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-reth-transaction-pool = { git = "https://github.com/caudena/reth_for_BSC.git", branch = "bsc_reth_0.0.10_plainState" }
-
-# triedb dependencies
-rust-eth-triedb = { git = "https://github.com/bnb-chain/reth-bsc-triedb.git", branch = "develop" }
-rust-eth-triedb-common = { git = "https://github.com/bnb-chain/reth-bsc-triedb.git", branch = "develop", package = "rust-eth-triedb-common" }
-rust-eth-triedb-pathdb = { git = "https://github.com/bnb-chain/reth-bsc-triedb.git", branch = "develop", package = "rust-eth-triedb-pathdb" }
-rust-eth-triedb-state-trie = { git = "https://github.com/bnb-chain/reth-bsc-triedb.git", branch = "develop", package = "rust-eth-triedb-state-trie" }
+reth-rpc-eth-api = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-rpc-convert = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-rpc-engine-api = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-rpc-server-types = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-trie-common = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-trie-db = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-tasks = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
+reth-transaction-pool = { git = "https://github.com/caudena/reth_for_BSC.git", rev = "21213e56942da165331e26a9920d984368ac492a" }
 
 revm = "38.0.0"
 revm-database = "13.0.0"
@@ -247,9 +241,9 @@ debug = "line-tables-only"
 strip = false
 split-debuginfo = "off"
 
-# Apply the same to every transitive dependency so triedb/revm/rayon frames
-# also resolve. Without this, only reth-bsc's own symbols show up and the
-# whole state-root path still looks opaque.
+# Apply the same to every transitive dependency so revm/rayon frames also
+# resolve. Without this, only reth-bsc's own symbols show up and the whole
+# state-root path still looks opaque.
 [profile.maxperf.package."*"]
 debug = "line-tables-only"
 strip = false

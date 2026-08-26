@@ -177,6 +177,12 @@ libc = "0.2"
 [features]
 default = ["jemalloc"]
 jemalloc = ["dep:tikv-jemallocator", "reth/jemalloc"]
+jemalloc-prof = [
+    "jemalloc",
+    "tikv-jemallocator?/profiling",
+    "reth/jemalloc-prof",
+]
+jemalloc-symbols = ["jemalloc-prof", "reth/jemalloc-symbols"]
 dev = ["reth-cli-commands/arbitrary", "reth/dev", "revm/dev"]
 asm-keccak = [
     "reth/asm-keccak",

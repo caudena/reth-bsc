@@ -29,6 +29,11 @@ ENV RUSTFLAGS="$RUSTFLAGS"
 ARG FEATURES=""
 ENV FEATURES=$FEATURES
 
+# reth-bsc's main.rs has no `malloc_conf` static, so jemalloc profiling is compiled
+# in but inactive unless the config is baked into libjemalloc at build time.
+ARG JEMALLOC_SYS_WITH_MALLOC_CONF=""
+ENV JEMALLOC_SYS_WITH_MALLOC_CONF=$JEMALLOC_SYS_WITH_MALLOC_CONF
+
 # Builds dependencies
 RUN cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json
 

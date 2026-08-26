@@ -34,6 +34,14 @@ ENV FEATURES=$FEATURES
 ARG JEMALLOC_SYS_WITH_MALLOC_CONF=""
 ENV JEMALLOC_SYS_WITH_MALLOC_CONF=$JEMALLOC_SYS_WITH_MALLOC_CONF
 
+# `[profile.release]` sets `strip = "symbols"`, which leaves the binary with no
+# symbol table for the heap profiler to resolve against. Override to "none" when
+# collecting profiles; the defaults below reproduce a normal release build.
+ARG CARGO_PROFILE_RELEASE_STRIP=symbols
+ENV CARGO_PROFILE_RELEASE_STRIP=$CARGO_PROFILE_RELEASE_STRIP
+ARG CARGO_PROFILE_RELEASE_DEBUG=none
+ENV CARGO_PROFILE_RELEASE_DEBUG=$CARGO_PROFILE_RELEASE_DEBUG
+
 # Builds dependencies
 RUN cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json
 

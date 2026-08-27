@@ -90,10 +90,17 @@ const PIPELINE_TRIGGER_DELTA: u64 = 64;
 ///
 /// Each in-flight recovery pins every ancestor block it has walked back
 /// through, and BSC bodies are large, so this is a memory bound as much as a
-/// concurrency one. Announcements arriving while all permits are held are
-/// dropped rather than queued: heads are re-announced continuously, and
-/// recovering a stale head is wasted work.
-const MAX_CONCURRENT_FORK_RECOVERIES: usize = 4;
+/// concurrency one. `PIPELINE_TRIGGER_DELTA` caps a normal walk at ~64 bodies
+/// (~50MB), so this can be generous: the binding constraint is availability,
+/// not memory. A hop can stall for `FETCH_TIMEOUT * MAX_PEER_ATTEMPTS` (~15s)
+/// against an unresponsive peer, and while every permit is held no reorg gets
+/// resolved — so leave enough headroom that a few stuck peers cannot block
+/// recovery outright.
+///
+/// Announcements arriving while all permits are held are dropped rather than
+/// queued: heads are re-announced continuously, and recovering a stale head is
+/// wasted work.
+const MAX_CONCURRENT_FORK_RECOVERIES: usize = 16;
 
 /// A service that handles bidirectional block import communication with the network.
 /// It receives new blocks from the network via `from_network` channel and sends back

@@ -13,3 +13,8 @@ services:
     volumes:
       - /home/deploy/bsc_data/server/data-seed/data_dir:/data
       - /home/deploy/bsc_node/logs:/logs
+    logging:
+      driver: "local"
+      options:
+        max-size: "100m"
+        max-file: "5"

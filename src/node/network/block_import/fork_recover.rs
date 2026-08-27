@@ -1,13 +1,12 @@
 //! Fork recovery: ancestor-aware block pull that replaces the naive
 //! batch range-request call in the import service.
 
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashSet, sync::Arc, time::Duration};
 
 use alloy_primitives::B256;
 use alloy_rpc_types_engine::PayloadStatusEnum;
 use futures::future::BoxFuture;
 use parking_lot::Mutex;
-use reth::network::cache::LruCache;
 use reth_engine_primitives::ConsensusEngineHandle;
 use reth_network_api::PeerId;
 use reth_payload_primitives::PayloadTypes;
@@ -506,15 +505,15 @@ pub fn new_failed_heads_cooler(capacity: u32) -> FailedHeadsCooler {
     FailedHeadsCooler::new(capacity, FAILED_HEAD_COOLDOWN)
 }
 
-/// RAII guard that removes a head hash from the dedup cache on drop, even on
+/// RAII guard that removes a head hash from the dedup set on drop, even on
 /// task panic or early return.
 pub struct RecoveringHeadGuard {
     hash: B256,
-    set: Arc<Mutex<LruCache<B256>>>,
+    set: RecoveringHeads,
 }
 
 impl RecoveringHeadGuard {
-    pub fn new(hash: B256, set: Arc<Mutex<LruCache<B256>>>) -> Self {
+    pub fn new(hash: B256, set: RecoveringHeads) -> Self {
         Self { hash, set }
     }
 }
@@ -525,12 +524,26 @@ impl Drop for RecoveringHeadGuard {
     }
 }
 
-/// Shared dedup set — one entry per in-flight recovery.
-pub type RecoveringHeads = Arc<Mutex<LruCache<B256>>>;
+/// Shared registry of in-flight recoveries — one entry per running task.
+///
+/// A plain `HashSet`, not a capacity-bounded LRU: eviction is wrong for an
+/// in-flight registry. `LruCache::insert` drops the least-recently-used entry
+/// once capacity is exceeded, and evicting a head whose task is still running
+/// un-dedups it — the next announcement spawns a duplicate, whose entry the
+/// first task's `RecoveringHeadGuard` then removes, compounding it.
+///
+/// `MAX_CONCURRENT_FORK_RECOVERIES` already holds the live count far below any
+/// plausible LRU capacity, so this is defence in depth rather than the
+/// load-bearing fix. It earns its place by decoupling the invariant from
+/// `LRU_PROCESSED_BLOCKS_SIZE`, which is about processed blocks and has no
+/// relation to recovery concurrency: the set stays correct however that cap is
+/// later tuned. Size is bounded by the same semaphore, since the guard removes
+/// each entry when its recovery ends.
+pub type RecoveringHeads = Arc<Mutex<HashSet<B256>>>;
 
-/// Convenience constructor matching `LRU_PROCESSED_BLOCKS_SIZE` cap.
-pub fn new_recovering_heads(cap: u32) -> RecoveringHeads {
-    Arc::new(Mutex::new(LruCache::new(cap)))
+/// Convenience constructor.
+pub fn new_recovering_heads() -> RecoveringHeads {
+    Arc::new(Mutex::new(HashSet::new()))
 }
 
 #[cfg(test)]

@@ -43,6 +43,7 @@ use std::{
     task::{Context, Poll},
 };
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tokio::sync::Semaphore;
 
 /// Network message containing a new block
 pub(crate) type BlockMsg = NewBlockMessage<BscNewBlock>;
@@ -72,12 +73,27 @@ const LRU_PROCESSED_BLOCKS_SIZE: u32 = 100;
 /// this many blocks are routed to the staged backfill pipeline (via a
 /// synthesized FCU) instead of `fork_recover`.
 ///
-/// Matches `fork_recover::MAX_FORK_DEPTH`: at or below that cap, `fork_recover`
-/// can reach a common ancestor and resolve the reorg itself; beyond it, the
-/// ancestor walk must fail (`ForkTooDeep`), so we skip the doomed attempt and
-/// hand off to the pipeline via engine-tree's optimistic-sync branch.
-const PIPELINE_TRIGGER_DELTA: u64 =
-    crate::node::network::block_import::fork_recover::MAX_FORK_DEPTH;
+/// Deliberately far below `fork_recover::MAX_FORK_DEPTH`. Reachability is not
+/// the binding constraint — throughput is. The ancestor walk fetches
+/// `FORK_RECOVER_HOP_COUNT` blocks per sequential round-trip, so closing a gap
+/// of a few hundred blocks costs hundreds of RTTs while fresh heads arrive
+/// every ~450ms. Recoveries then outpace completions, each pinning its full
+/// ancestor list in memory, and the node can never climb back out because the
+/// only mechanism that could — the backfill pipeline — was gated behind the
+/// 2048 cap it never reaches.
+///
+/// BSC fast finality keeps genuine reorgs to a handful of blocks, so anything
+/// deeper than this is a sync gap, not a reorg, and belongs to the pipeline.
+const PIPELINE_TRIGGER_DELTA: u64 = 64;
+
+/// Upper bound on fork recoveries running at once.
+///
+/// Each in-flight recovery pins every ancestor block it has walked back
+/// through, and BSC bodies are large, so this is a memory bound as much as a
+/// concurrency one. Announcements arriving while all permits are held are
+/// dropped rather than queued: heads are re-announced continuously, and
+/// recovering a stale head is wasted work.
+const MAX_CONCURRENT_FORK_RECOVERIES: usize = 4;
 
 /// A service that handles bidirectional block import communication with the network.
 /// It receives new blocks from the network via `from_network` channel and sends back
@@ -112,6 +128,8 @@ where
     /// behaviour when the 3s head-announce tick re-announces the same
     /// unreachable head.
     failed_heads: crate::node::network::block_import::fork_recover::FailedHeadsCooler,
+    /// Caps concurrent fork recoveries; see `MAX_CONCURRENT_FORK_RECOVERIES`.
+    recovery_permits: Arc<Semaphore>,
     /// Periodic timer for head announcement.
     announce_interval: tokio::time::Interval,
 }
@@ -165,12 +183,11 @@ where
             processed_blocks: LruCache::new(LRU_PROCESSED_BLOCKS_SIZE),
             queued_blocks: LruCache::new(LRU_PROCESSED_BLOCKS_SIZE),
             recovering_heads:
-                crate::node::network::block_import::fork_recover::new_recovering_heads(
-                    LRU_PROCESSED_BLOCKS_SIZE,
-                ),
+                crate::node::network::block_import::fork_recover::new_recovering_heads(),
             failed_heads: crate::node::network::block_import::fork_recover::new_failed_heads_cooler(
                 LRU_PROCESSED_BLOCKS_SIZE,
             ),
+            recovery_permits: Arc::new(Semaphore::new(MAX_CONCURRENT_FORK_RECOVERIES)),
             announce_interval: {
                 // 3s ≈ 6-7 BSC slots (450ms each). Fast enough to break fork
                 // livelocks, slow enough to be negligible overhead.
@@ -187,6 +204,7 @@ where
         let forkchoice_engine = self.forkchoice_engine.clone();
         let recovering_heads = self.recovering_heads.clone();
         let failed_heads = self.failed_heads.clone();
+        let recovery_permits = self.recovery_permits.clone();
 
         let announced_hash = block.hash;
         let block_hash = block.block.0.block.header.hash_slow();
@@ -282,12 +300,20 @@ where
                         // Fire-and-forget spawn; `recover_ancestors` runs its
                         // own Phase-1 local checks so it's correct even if the
                         // head is already on chain by the time the task starts.
-                        {
-                            let mut guard = recovering_heads.lock();
-                            if guard.contains(&block_hash) {
-                                return None;
-                            }
-                            guard.insert(block_hash);
+                        // Take a permit before claiming the dedup slot, so a
+                        // rejected attempt leaves no entry behind for the guard
+                        // that will never run to clean it up.
+                        let Ok(permit) = recovery_permits.clone().try_acquire_owned() else {
+                            tracing::debug!(
+                                target: "bsc::block_import",
+                                %block_hash,
+                                block_number,
+                                "Skipping fork recovery: at concurrency limit"
+                            );
+                            return None;
+                        };
+                        if !recovering_heads.lock().insert(block_hash) {
+                            return None;
                         }
                         let provider = forkchoice_engine.provider.clone();
                         let engine_clone = engine.clone();
@@ -306,6 +332,7 @@ where
                                 header.clone(),
                             );
                         tokio::spawn(async move {
+                            let _permit = permit;
                             let _guard = crate::node::network::block_import::fork_recover::RecoveringHeadGuard::new(
                                 block_hash, recovering,
                             );
@@ -608,9 +635,10 @@ where
 
             let delta = hash_number.number.saturating_sub(local_tip);
             if delta > PIPELINE_TRIGGER_DELTA {
-                // Far-behind: fork_recover's 2048-ancestor walk cannot close
-                // this gap. Mark processed so subsequent announcements of the
-                // same head are deduped, then synthesize an FCU. Engine-tree's
+                // Far-behind: the sequential ancestor walk cannot close a gap
+                // this size at any useful rate. Mark processed so subsequent
+                // announcements of the same head are deduped, then synthesize
+                // an FCU. Engine-tree's
                 // optimistic-sync branch treats `head_block_hash` as a
                 // backfill target when `finalized_block_hash` is zero (BSC has
                 // no CL to supply one).
@@ -625,13 +653,21 @@ where
                 continue;
             }
 
+            // Take a permit before claiming the dedup slot, so a rejected
+            // attempt leaves no entry behind for the guard that will never run
+            // to clean it up.
+            let Ok(permit) = self.recovery_permits.clone().try_acquire_owned() else {
+                tracing::debug!(
+                    target: "bsc::block_import",
+                    block_hash = %hash_number.hash,
+                    block_number = hash_number.number,
+                    "Skipping fork recovery: at concurrency limit"
+                );
+                continue;
+            };
             // Concurrent-dedup: one recovery per head at a time.
-            {
-                let mut guard = self.recovering_heads.lock();
-                if guard.contains(&hash_number.hash) {
-                    continue;
-                }
-                guard.insert(hash_number.hash);
+            if !self.recovering_heads.lock().insert(hash_number.hash) {
+                continue;
             }
 
             tracing::debug!(
@@ -652,6 +688,7 @@ where
             let head_num = hash_number.number;
 
             tokio::spawn(async move {
+                let _permit = permit;
                 let _guard =
                     crate::node::network::block_import::fork_recover::RecoveringHeadGuard::new(
                         head_hash, recovering,
@@ -1487,7 +1524,7 @@ mod tests {
 
     #[tokio::test]
     async fn routes_at_threshold_to_fork_recover_not_pipeline() {
-        // Equality case: gap == PIPELINE_TRIGGER_DELTA (2048). Threshold is a
+        // Equality case: gap == PIPELINE_TRIGGER_DELTA. Threshold is a
         // strict `>`, so this announcement must NOT dispatch an FCU — it goes
         // to fork_recover (which will itself no-op here since the MockProvider
         // has no BSC peer and no ancestry, but we only assert absence of FCU).

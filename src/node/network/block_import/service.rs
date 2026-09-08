@@ -43,6 +43,7 @@ use std::{
     task::{Context, Poll},
 };
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tokio::sync::Semaphore;
 
 /// Network message containing a new block
 pub(crate) type BlockMsg = NewBlockMessage<BscNewBlock>;
@@ -79,6 +80,21 @@ const LRU_PROCESSED_BLOCKS_SIZE: u32 = 100;
 const PIPELINE_TRIGGER_DELTA: u64 =
     crate::node::network::block_import::fork_recover::MAX_FORK_DEPTH;
 
+/// Upper bound on fork recoveries running at once.
+///
+/// Concurrency here buys nothing. Every announced head is a distinct hash, so
+/// dedup never fires while the chain moves, and each recovery independently
+/// re-downloads the same ancestor range: N recoveries fetch N overlapping
+/// copies of one gap, of which only one need complete for the node to advance.
+/// Each copy is pinned in a local `Vec<BscBlock>` until its walk finishes, so
+/// memory and bandwidth scale as `concurrent x gap` instead of `gap`.
+///
+/// Capping this removes redundant copies, not progress — the survivors get more
+/// bandwidth and finish sooner. Announcements arriving while all permits are
+/// held are dropped rather than queued: heads are re-announced continuously, and
+/// recovering a stale head is wasted work.
+const MAX_CONCURRENT_FORK_RECOVERIES: usize = 4;
+
 /// A service that handles bidirectional block import communication with the network.
 /// It receives new blocks from the network via `from_network` channel and sends back
 /// import outcomes via `to_network` channel.
@@ -112,6 +128,8 @@ where
     /// behaviour when the 3s head-announce tick re-announces the same
     /// unreachable head.
     failed_heads: crate::node::network::block_import::fork_recover::FailedHeadsCooler,
+    /// Caps concurrent fork recoveries; see `MAX_CONCURRENT_FORK_RECOVERIES`.
+    recovery_permits: Arc<Semaphore>,
     /// Periodic timer for head announcement.
     announce_interval: tokio::time::Interval,
 }
@@ -171,6 +189,7 @@ where
             failed_heads: crate::node::network::block_import::fork_recover::new_failed_heads_cooler(
                 LRU_PROCESSED_BLOCKS_SIZE,
             ),
+            recovery_permits: Arc::new(Semaphore::new(MAX_CONCURRENT_FORK_RECOVERIES)),
             announce_interval: {
                 // 3s ≈ 6-7 BSC slots (450ms each). Fast enough to break fork
                 // livelocks, slow enough to be negligible overhead.
@@ -187,6 +206,7 @@ where
         let forkchoice_engine = self.forkchoice_engine.clone();
         let recovering_heads = self.recovering_heads.clone();
         let failed_heads = self.failed_heads.clone();
+        let recovery_permits = self.recovery_permits.clone();
 
         let announced_hash = block.hash;
         let block_hash = block.block.0.block.header.hash_slow();
@@ -282,6 +302,18 @@ where
                         // Fire-and-forget spawn; `recover_ancestors` runs its
                         // own Phase-1 local checks so it's correct even if the
                         // head is already on chain by the time the task starts.
+                        // Permit first, then the dedup slot: a rejected attempt
+                        // must not leave an entry behind, since no guard will
+                        // run to remove it.
+                        let Ok(permit) = recovery_permits.clone().try_acquire_owned() else {
+                            tracing::debug!(
+                                target: "bsc::block_import",
+                                %block_hash,
+                                block_number,
+                                "Skipping fork recovery: at concurrency limit"
+                            );
+                            return None;
+                        };
                         {
                             let mut guard = recovering_heads.lock();
                             if guard.contains(&block_hash) {
@@ -306,6 +338,7 @@ where
                                 header.clone(),
                             );
                         tokio::spawn(async move {
+                            let _permit = permit;
                             let _guard = crate::node::network::block_import::fork_recover::RecoveringHeadGuard::new(
                                 block_hash, recovering,
                             );
@@ -625,6 +658,17 @@ where
                 continue;
             }
 
+            // Permit first, then the dedup slot: a rejected attempt must not
+            // leave an entry behind, since no guard will run to remove it.
+            let Ok(permit) = self.recovery_permits.clone().try_acquire_owned() else {
+                tracing::debug!(
+                    target: "bsc::block_import",
+                    block_hash = %hash_number.hash,
+                    block_number = hash_number.number,
+                    "Skipping fork recovery: at concurrency limit"
+                );
+                continue;
+            };
             // Concurrent-dedup: one recovery per head at a time.
             {
                 let mut guard = self.recovering_heads.lock();
@@ -652,6 +696,7 @@ where
             let head_num = hash_number.number;
 
             tokio::spawn(async move {
+                let _permit = permit;
                 let _guard =
                     crate::node::network::block_import::fork_recover::RecoveringHeadGuard::new(
                         head_hash, recovering,

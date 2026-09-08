@@ -289,12 +289,11 @@ impl RecoverTarget {
 
 /// Three-phase ancestor-aware recovery:
 ///
-/// 1. `discover_fork_blocks` walks back from `target.fetch_start_*` to the
-///    common ancestor.
-/// 2. Imports fork blocks oldest → newest via `engine.new_payload`, awaiting
-///    `Valid` on each before submitting the next.
-/// 3. `fork_choice_updated` for `target.fcu_target_*` so engine-tree
-///    re-evaluates canonical selection.
+/// 1. `discover_fork_blocks` walks back from `target.fetch_start_*` to the common ancestor.
+/// 2. Imports fork blocks oldest → newest via `engine.new_payload`, awaiting `Valid` then
+///    `fork_choice_updated` on each before submitting the next.
+/// 3. `fork_choice_updated` for `target.fcu_target_*` so engine-tree re-evaluates canonical
+///    selection.
 ///
 /// See [`RecoverTarget`] for the parent-start vs single-pair design.
 pub async fn recover_ancestors<P>(
@@ -350,10 +349,12 @@ where
     // ---- Phase 2: import oldest → newest via new_payload ----
     let mut to_import = discovery.fork_blocks;
     to_import.reverse();
-    for block in &to_import {
-        let block_hash = block.header.hash_slow();
-        let block_num = block.header.number;
-        let sealed = block.clone().seal_unchecked(block_hash);
+    let mut last_valid: Option<alloy_consensus::Header> = None;
+    for block in to_import {
+        let header = block.header.clone();
+        let block_hash = header.hash_slow();
+        let block_num = header.number;
+        let sealed = block.seal_unchecked(block_hash);
         let payload = BscPayloadTypes::block_to_payload(sealed);
 
         match engine.new_payload(payload).await {
@@ -365,6 +366,18 @@ where
                         block_num,
                         "Fork block imported Valid"
                     );
+
+                    if let Err(err) = forkchoice_engine.update_forkchoice(&header).await {
+                        tracing::warn!(
+                            target: "bsc::fork_recover",
+                            %block_hash,
+                            block_num,
+                            error = %err,
+                            "fork_choice_updated returned error mid-recovery"
+                        );
+                    }
+
+                    last_valid = Some(header);
                 }
                 PayloadStatusEnum::Invalid { validation_error } => {
                     return Err(ForkRecoverError::ImportInvalid {
@@ -394,7 +407,7 @@ where
         &provider,
         fcu_target_hash,
         fcu_target_header.as_ref(),
-        to_import.last(),
+        last_valid.as_ref(),
     )?;
     if let Err(err) = forkchoice_engine.update_forkchoice(&head_header).await {
         // FCU failure is recoverable (engine-tree may retry on next import);
@@ -430,7 +443,7 @@ fn resolve_fcu_head_header<P>(
     provider: &P,
     fcu_target_hash: B256,
     fcu_target_header: Option<&alloy_consensus::Header>,
-    phase_2_tail: Option<&crate::BscBlock>,
+    phase_2_tail: Option<&alloy_consensus::Header>,
 ) -> Result<alloy_consensus::Header, ForkRecoverError>
 where
     P: HeaderProvider<Header = alloy_consensus::Header>,
@@ -450,8 +463,8 @@ where
 
     // 2. Phase-2 tail iff it equals the FCU target.
     if let Some(last) = phase_2_tail {
-        if last.header.hash_slow() == fcu_target_hash {
-            return Ok(last.header.clone());
+        if last.hash_slow() == fcu_target_hash {
+            return Ok(last.clone());
         }
     }
 
@@ -955,7 +968,8 @@ mod tests {
 
         // Legacy single-pair path: fcu_target_header = None, phase_2_tail.hash == fcu_target_hash.
         let resolved =
-            super::resolve_fcu_head_header(&provider, head_hash, None, Some(&tail_block)).unwrap();
+            super::resolve_fcu_head_header(&provider, head_hash, None, Some(&tail_block.header))
+                .unwrap();
         assert_eq!(
             resolved.hash_slow(),
             head_hash,
@@ -1017,7 +1031,7 @@ mod tests {
             &provider,
             target_hash,
             Some(&target),
-            Some(&tail_block),
+            Some(&tail_block.header),
         )
         .unwrap();
         assert_eq!(resolved.hash_slow(), target_hash);
@@ -1066,7 +1080,7 @@ mod tests {
         let tail_block = make_block(parent);
 
         let resolved =
-            super::resolve_fcu_head_header(&provider, target_hash, None, Some(&tail_block))
+            super::resolve_fcu_head_header(&provider, target_hash, None, Some(&tail_block.header))
                 .unwrap();
         assert_eq!(resolved.hash_slow(), target_hash);
         assert_eq!(resolved.number, 10);
@@ -1082,16 +1096,168 @@ mod tests {
 
         let tail_block = make_block(make_header(9, parent_hash, 0x1));
 
-        let err = super::resolve_fcu_head_header(
-            &provider,
-            target_hash,
-            None,
-            Some(&tail_block),
-        )
-        .unwrap_err();
+        let err =
+            super::resolve_fcu_head_header(&provider, target_hash, None, Some(&tail_block.header))
+                .unwrap_err();
         match err {
             ForkRecoverError::HeadHeaderMissing { hash } => assert_eq!(hash, target_hash),
             other => panic!("expected HeadHeaderMissing, got {other:?}"),
+        }
+    }
+
+    mod import_flow {
+        use super::*;
+        use alloy_rpc_types_engine::PayloadStatus;
+        use reth_chainspec::ChainInfo;
+        use reth_engine_primitives::{
+            BeaconEngineMessage, ConsensusEngineHandle, OnForkChoiceUpdated,
+        };
+        use reth_payload_primitives::ExecutionPayload;
+        use reth_provider::{BlockNumReader, ProviderError};
+
+        use crate::node::{consensus::BscForkChoiceEngine, engine_api::payload::BscPayloadTypes};
+
+        impl BlockNumReader for FakeProvider {
+            fn chain_info(&self) -> Result<ChainInfo, ProviderError> {
+                let best_number = self.canonical_by_num.keys().copied().max().unwrap_or(0);
+                let best_hash =
+                    self.canonical_by_num.get(&best_number).copied().unwrap_or_default();
+                Ok(ChainInfo { best_hash, best_number })
+            }
+
+            fn best_block_number(&self) -> Result<u64, ProviderError> {
+                Ok(self.canonical_by_num.keys().copied().max().unwrap_or(0))
+            }
+
+            fn last_block_number(&self) -> Result<u64, ProviderError> {
+                self.best_block_number()
+            }
+
+            fn block_number(&self, hash: B256) -> Result<Option<u64>, ProviderError> {
+                Ok(self.headers_by_hash.get(&hash).map(|header| header.number))
+            }
+        }
+
+        #[derive(Default)]
+        struct ChainFetcher {
+            blocks: HashMap<B256, BscBlock>,
+        }
+
+        impl RangeFetcher for ChainFetcher {
+            fn fetch<'a>(
+                &'a self,
+                _peer: PeerId,
+                _start_num: u64,
+                start_hash: B256,
+                count: u64,
+            ) -> BoxFuture<'a, Result<Vec<BscBlock>, String>> {
+                let mut blocks = Vec::new();
+                let mut cursor = start_hash;
+                for _ in 0..count {
+                    let Some(block) = self.blocks.get(&cursor) else { break };
+                    blocks.push(block.clone());
+                    cursor = block.header.parent_hash;
+                }
+                Box::pin(async move { Ok(blocks) })
+            }
+        }
+
+        type Submissions = Arc<Mutex<Vec<(u64, B256)>>>;
+        type Fcus = Arc<Mutex<Vec<B256>>>;
+
+        fn recording_engine() -> (ConsensusEngineHandle<BscPayloadTypes>, Submissions, Fcus) {
+            let (to_engine, mut from_engine) =
+                tokio::sync::mpsc::unbounded_channel::<BeaconEngineMessage<BscPayloadTypes>>();
+            let handle = ConsensusEngineHandle::new(to_engine);
+            let submissions: Submissions = Arc::new(Mutex::new(Vec::new()));
+            let fcus: Fcus = Arc::new(Mutex::new(Vec::new()));
+            let submissions_recorder = submissions.clone();
+            let fcu_recorder = fcus.clone();
+
+            tokio::spawn(async move {
+                while let Some(message) = from_engine.recv().await {
+                    match message {
+                        BeaconEngineMessage::NewPayload { payload, tx } => {
+                            submissions_recorder
+                                .lock()
+                                .unwrap()
+                                .push((payload.block_number(), payload.block_hash()));
+                            let _ = tx.send(Ok(PayloadStatus::new(PayloadStatusEnum::Valid, None)));
+                        }
+                        BeaconEngineMessage::ForkchoiceUpdated { state, tx, .. } => {
+                            fcu_recorder.lock().unwrap().push(state.head_block_hash);
+                            let _ = tx.send(Ok(OnForkChoiceUpdated::valid(PayloadStatus::new(
+                                PayloadStatusEnum::Valid,
+                                None,
+                            ))));
+                        }
+                        BeaconEngineMessage::QueryTd { number, tx, .. } => {
+                            let _ = tx.send(Ok(Some(alloy_primitives::U256::from(number))));
+                        }
+                        _ => {}
+                    }
+                }
+            });
+
+            (handle, submissions, fcus)
+        }
+
+        fn scenario(
+            local_tip: u64,
+            extension_len: u64,
+        ) -> (FakeProvider, Arc<ChainFetcher>, Vec<(B256, u64)>) {
+            let mut provider = FakeProvider::default();
+            let (local, local_hashes) = linear_chain(0, local_tip + 1, B256::ZERO, 0xC);
+            for header in local {
+                provider.insert_canonical(header);
+            }
+
+            let (extension, extension_hashes) =
+                linear_chain(local_tip + 1, extension_len, local_hashes[local_tip as usize], 0xC);
+            let blocks = extension
+                .iter()
+                .map(|header| (header.hash_slow(), make_block(header.clone())))
+                .collect();
+            let fetcher = Arc::new(ChainFetcher { blocks });
+            let heads = extension_hashes
+                .into_iter()
+                .zip(extension.iter().map(|header| header.number))
+                .collect();
+
+            (provider, fetcher, heads)
+        }
+
+        fn chain_spec() -> Arc<crate::chainspec::BscChainSpec> {
+            Arc::new(crate::chainspec::BscChainSpec::from(crate::chainspec::bsc::bsc_mainnet()))
+        }
+
+        #[tokio::test]
+        async fn every_imported_block_gets_its_own_fcu() {
+            let (provider, fetcher, heads) = scenario(100, 5);
+            let (engine, submissions, fcus) = recording_engine();
+            let (head_hash, head_num) = heads[4];
+            let forkchoice =
+                BscForkChoiceEngine::new(provider.clone(), engine.clone(), chain_spec());
+
+            recover_ancestors(
+                fake_peer(),
+                RecoverTarget::single_pair(head_hash, head_num),
+                provider,
+                engine,
+                forkchoice,
+                fetcher.as_ref(),
+            )
+            .await
+            .unwrap();
+
+            let imported: Vec<u64> =
+                submissions.lock().unwrap().iter().map(|(number, _)| *number).collect();
+            assert_eq!(imported, vec![101, 102, 103, 104, 105]);
+
+            let mut expected_fcus: Vec<B256> = heads.iter().map(|(hash, _)| *hash).collect();
+            // The final FCU repeats the last per-block FCU and is intentionally idempotent.
+            expected_fcus.push(head_hash);
+            assert_eq!(fcus.lock().unwrap().as_slice(), expected_fcus.as_slice());
         }
     }
 }

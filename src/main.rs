@@ -541,6 +541,14 @@ fn main() -> eyre::Result<()> {
                         );
                         ctx.modules.merge_if_module_configured(RethRpcModule::Eth, eth_config.into_rpc())?;
                         tracing::info!("Succeed to register eth_config (EIP-7910) API");
+
+                        tracing::info!("Start to register eth_getBlockReceiptsTrace API...");
+                        use reth::rpc_ext::{EthBlockReceiptsTraceApiServer, EthBlockReceiptsTraceExt};
+
+                        let receipts_trace_api =
+                            EthBlockReceiptsTraceExt::new(ctx.registry.eth_api().clone());
+                        ctx.modules.merge_if_module_configured(RethRpcModule::Eth, receipts_trace_api.into_rpc())?;
+                        tracing::info!("Succeed to register eth_getBlockReceiptsTrace API");
                         Ok(())
                     })
                     .launch().await?;
